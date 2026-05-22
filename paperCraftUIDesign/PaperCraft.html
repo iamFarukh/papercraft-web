@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1440, initial-scale=1" />
+<title>PaperCraft — Academic Operating System</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Geist:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+<link rel="stylesheet" href="styles.css" />
+
+<style>
+  html, body { margin: 0; padding: 0; background: #efece5; font-family: 'Geist', system-ui, sans-serif; color: #15161A; }
+  #root { min-height: 100vh; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="screens/shared.jsx"></script>
+<script type="text/babel" src="screens/ControlCenter.jsx"></script>
+<script type="text/babel" src="screens/Repository.jsx"></script>
+<script type="text/babel" src="screens/PaperBuilder.jsx"></script>
+<script type="text/babel" src="screens/Approval.jsx"></script>
+<script type="text/babel" src="screens/GenerateFlow.jsx"></script>
+<script type="text/babel" src="screens/Curriculum.jsx"></script>
+
+<script type="text/babel">
+  const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+    "canvas": "bilingual"
+  }/*EDITMODE-END*/;
+
+  const App = () => {
+    const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+
+    return (
+      <>
+        <DesignCanvas>
+          <DCSection id="admin" title="Admin · The Operator's View" subtitle="Six surfaces that compose the operational backbone of a school's examination workflow. Light theme, editorial type, premium spacing.">
+            <DCArtboard id="control" label="① Academic Control Center" width={1440} height={1000}>
+              <ControlCenter />
+            </DCArtboard>
+            <DCArtboard id="repo" label="② Question Repository · Workspace" width={1440} height={1000}>
+              <Repository />
+            </DCArtboard>
+            <DCArtboard id="builder" label="③ Paper Builder · Composition Canvas" width={1440} height={1100}>
+              <PaperBuilder tweaks={t} />
+            </DCArtboard>
+          </DCSection>
+
+          <DCSection id="review" title="Approval &amp; Composition" subtitle="The dual screens where admins keep quality high and teachers compose with confidence.">
+            <DCArtboard id="approval" label="④ Approval Workspace · Review Environment" width={1440} height={1100}>
+              <Approval />
+            </DCArtboard>
+            <DCArtboard id="generate" label="⑤ Generate Paper · Teacher Flow" width={1440} height={1000}>
+              <GenerateFlow />
+            </DCArtboard>
+            <DCArtboard id="curriculum" label="⑥ Curriculum Workspace" width={1440} height={1000}>
+              <Curriculum />
+            </DCArtboard>
+          </DCSection>
+        </DesignCanvas>
+
+        <TweaksPanel title="Tweaks">
+          <TweakSection title="Paper Builder · canvas variation">
+            <p style={{ fontSize: 12, color: 'rgba(60,50,40,0.65)', margin: '0 0 8px', lineHeight: 1.45 }}>
+              Pick a layout for the A4 paper canvas in artboard ③. Each is a real published format used by Indian state-board schools.
+            </p>
+            <TweakRadio label="Layout" value={t.canvas} onChange={v => setTweak('canvas', v)}
+              options={[
+                { value: 'classic', label: 'Classic' },
+                { value: 'editorial', label: 'Editorial' },
+                { value: 'bilingual', label: 'Bilingual' },
+              ]} />
+          </TweakSection>
+        </TweaksPanel>
+      </>
+    );
+  };
+
+  ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+
+</body>
+</html>

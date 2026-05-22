@@ -1,0 +1,69 @@
+@import "tailwindcss";
+@import "./styles/theme.css";
+@import "./styles/shell.css";
+@import "./styles/auth.css";
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+    margin: 0;
+  }
+
+  html {
+    font-family: var(--pc-sans);
+    font-size: 13.5px;
+    line-height: 1.5;
+    letter-spacing: -0.005em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background: var(--pc-bg);
+    color: var(--pc-ink);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--pc-serif);
+    font-weight: 500;
+    letter-spacing: -0.022em;
+  }
+
+  code,
+  kbd,
+  pre,
+  samp {
+    font-family: var(--pc-mono);
+    font-size: 0.8125rem;
+  }
+}
+
+/* Editorial scrollbar */
+.pc-scroll {
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(20 22 26 / 10%) transparent;
+}
+
+.pc-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.pc-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.pc-scroll::-webkit-scrollbar-thumb {
+  background: rgb(20 22 26 / 10%);
+  border-radius: 999px;
+}
+
+.pc-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgb(20 22 26 / 16%);
+}

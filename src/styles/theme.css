@@ -1,0 +1,73 @@
+/* PaperCraft design tokens — colors, shadows, radius, typography only */
+
+:root {
+  /* Brand */
+  --pc-primary: #355cff;
+  --pc-primary-50: #eef2ff;
+  --pc-primary-100: #dee5ff;
+  --pc-primary-200: #bfc9ff;
+  --pc-primary-600: #2e4fe0;
+  --pc-primary-700: #2741b8;
+  --pc-primary-ink: #1b2a6b;
+  --pc-primary-light: #5a7bff;
+
+  /* Surfaces */
+  --pc-bg: #f5f4ee;
+  --pc-bg-cool: #f5f7fb;
+  --pc-surface: #ffffff;
+  --pc-surface-2: #fafaf7;
+  --pc-surface-3: #f2f0e9;
+  --pc-paper: #faf8f2;
+  --pc-paper-edge: #ece7d9;
+
+  /* Ink */
+  --pc-ink: #15161a;
+  --pc-ink-2: #2a2c33;
+  --pc-ink-3: #51555e;
+  --pc-ink-4: #80858f;
+  --pc-ink-5: #b7bac2;
+
+  /* Hairlines */
+  --pc-line: #e8e5dd;
+  --pc-line-2: #d9d5c9;
+  --pc-line-cool: #e5e7eb;
+
+  /* Status */
+  --pc-success: #14b87a;
+  --pc-success-bg: #e8f7ef;
+  --pc-success-text: #0e7a52;
+  --pc-warning: #e08a1f;
+  --pc-warning-bg: #fbf2df;
+  --pc-warning-text: #9a5c0f;
+  --pc-danger: #dc4a3d;
+  --pc-danger-bg: #fbe9e5;
+  --pc-danger-text: #a0312a;
+  --pc-info: #355cff;
+  --pc-info-bg: #e7ecff;
+
+  /* Typography */
+  --pc-serif: "Newsreader", "Source Serif 4", "Iowan Old Style", Georgia, serif;
+  --pc-sans: "Geist", "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    system-ui, sans-serif;
+  --pc-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo,
+    monospace;
+
+  /* Shadows */
+  --pc-shadow-xs: 0 1px 0 rgb(20 22 26 / 4%), 0 1px 2px rgb(20 22 26 / 4%);
+  --pc-shadow-sm: 0 1px 2px rgb(20 22 26 / 4%), 0 2px 6px rgb(20 22 26 / 5%);
+  --pc-shadow-md: 0 1px 2px rgb(20 22 26 / 4%), 0 6px 16px rgb(20 22 26 / 6%),
+    0 16px 32px -16px rgb(20 22 26 / 10%);
+  --pc-shadow-lg: 0 2px 4px rgb(20 22 26 / 4%), 0 12px 32px rgb(20 22 26 / 8%),
+    0 32px 64px -24px rgb(20 22 26 / 14%);
+  --pc-shadow-paper: 0 1px 1px rgb(0 0 0 / 4%), 0 8px 16px rgb(0 0 0 / 6%),
+    0 24px 48px -16px rgb(0 0 0 / 12%), 0 60px 80px -40px rgb(0 0 0 / 14%);
+  --pc-ring-primary: 0 0 0 3px rgb(53 92 255 / 18%);
+
+  /* Radius */
+  --pc-r-xs: 4px;
+  --pc-r-sm: 6px;
+  --pc-r-md: 10px;
+  --pc-r-lg: 14px;
+  --pc-r-xl: 20px;
+  --pc-r-2xl: 28px;
+}
