@@ -1,4 +1,5 @@
 import type { MouseEvent } from 'react'
+import { FadeIn } from '@/components/motion/FadeIn'
 import type { QuestionRecord, RepositoryError } from '@/types/question'
 import { QuestionCard } from './QuestionCard'
 import { RepositoryEmptyState } from './RepositoryEmptyState'
@@ -118,23 +119,27 @@ export function QuestionStream({
           isAdmin={isAdmin}
         />
       ) : (
-        <div
-          className={'pc-repo-cards' + (view === 'list' ? ' is-list' : '')}
-        >
-          {questions.map((q) => (
-            <QuestionCard
-              key={q.id}
-              question={q}
-              view={view}
-              isAdmin={isAdmin}
-              selected={selectedIds.has(q.id)}
-              active={activeId === q.id}
-              expanded={expandedId === q.id}
-              onSelect={(e) => onSelect(q.id, e)}
-              onToggleExpand={() => onToggleExpand(q.id)}
-            />
-          ))}
-        </div>
+        <FadeIn>
+          <div
+            className={
+              'pc-repo-cards pc-motion-content-enter' + (view === 'list' ? ' is-list' : '')
+            }
+          >
+            {questions.map((q) => (
+              <QuestionCard
+                key={q.id}
+                question={q}
+                view={view}
+                isAdmin={isAdmin}
+                selected={selectedIds.has(q.id)}
+                active={activeId === q.id}
+                expanded={expandedId === q.id}
+                onSelect={(e) => onSelect(q.id, e)}
+                onToggleExpand={() => onToggleExpand(q.id)}
+              />
+            ))}
+          </div>
+        </FadeIn>
       )}
 
       {questions.length > 0 && hasMore && (

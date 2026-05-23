@@ -33,6 +33,8 @@
 <script type="text/babel" src="screens/Curriculum.jsx"></script>
 <script type="text/babel" src="screens/BulkUpdate.jsx"></script>
 <script type="text/babel" src="screens/BulkUpload.jsx"></script>
+<script type="text/babel" src="screens/RepositoryV2.jsx"></script>
+<script type="text/babel" src="screens/PaperBuilderV2.jsx"></script>
 
 <script type="text/babel">
   const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
@@ -102,6 +104,35 @@
             </DCArtboard>
             <DCArtboard id="csv-5" label="⑤ Complete · imported as Draft" width={1440} height={1100}>
               <CsvComplete />
+            </DCArtboard>
+          </DCSection>
+          <DCSection id="repo-v2" title="Question Repository · redesign" subtitle="Matches the live product UI — Smart filters sidebar (syllabus tree + difficulty/type/status pills), selection action bar, proper Grid/List segmented control, RBSE-flavoured cards, and the Question Detail modal as a separate artboard.">
+            <DCArtboard id="repo-v2-main" label="Question Repository v2 · main" width={1440} height={1000}>
+              <RepositoryV2 />
+            </DCArtboard>
+            <DCArtboard id="repo-v2-modal" label="Question Detail · modal" width={1440} height={1000}>
+              <RepositoryV2 withModal />
+            </DCArtboard>
+          </DCSection>
+
+          <DCSection id="builder-v2" title="Paper Builder · workspace flow" subtitle="The core composition experience — a 3-panel workspace (Repository Browser / A4 paper canvas / Paper Insights). Six steps cover setup, empty state, composing live, a complete paper, full-bleed preview, and submit for approval.">
+            <DCArtboard id="pb-v2-1" label="① Start · new paper setup" width={1440} height={900}>
+              <PBV2Start />
+            </DCArtboard>
+            <DCArtboard id="pb-v2-2" label="② Empty · workspace, empty canvas" width={1440} height={1150}>
+              <PBV2Empty />
+            </DCArtboard>
+            <DCArtboard id="pb-v2-3" label="③ Composing · question being added" width={1440} height={1200}>
+              <PBV2Composing />
+            </DCArtboard>
+            <DCArtboard id="pb-v2-4" label="④ Complete · fully composed paper" width={1440} height={1500}>
+              <PBV2Complete />
+            </DCArtboard>
+            <DCArtboard id="pb-v2-5" label="⑤ Preview · full-bleed paper" width={1440} height={1200}>
+              <PBV2Preview />
+            </DCArtboard>
+            <DCArtboard id="pb-v2-6" label="⑥ Submit · approval modal" width={1440} height={1500}>
+              <PBV2Submit />
             </DCArtboard>
           </DCSection>
         </DesignCanvas>

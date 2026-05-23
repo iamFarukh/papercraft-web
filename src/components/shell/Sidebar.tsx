@@ -1,7 +1,9 @@
 import { ChevronDown, LogOut, Settings } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/context/AuthContext'
+import { listApprovalQueue } from '@/services/firebase/papers'
 import { ADMIN_NAV } from '@/config/admin-nav'
 import { NAV_ROUTES } from '@/config/nav-routes'
 import { useBookmarks } from '@/context/BookmarkContext'
@@ -22,7 +24,25 @@ export function Sidebar({
   footRole = 'Vice Principal · Admin',
   footInitials = 'AK',
 }: SidebarProps) {
-  const { logout, user, role } = useAuth()
+  const { logout, user, role, isAdmin, profileReady } = useAuth()
+  const [approvalPending, setApprovalPending] = useState(0)
+
+  useEffect(() => {
+    if (!isAdmin) return
+    let cancelled = false
+    listApprovalQueue()
+      .then((rows) => {
+        if (!cancelled) {
+          setApprovalPending(rows.filter((r) => r.status === 'submitted').length)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setApprovalPending(0)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [isAdmin])
   const navigate = useNavigate()
   const { formattedCount } = useQuestionCount()
   const { folders } = useBookmarks()
@@ -56,7 +76,9 @@ export function Sidebar({
           <div className="pc-brand-name">
             Paper<em>Craft</em>
           </div>
-          <div className="pc-brand-sub">Admin Workspace</div>
+          <div className="pc-brand-sub">
+            {profileReady && !isAdmin ? 'Teacher Workspace' : 'Admin Workspace'}
+          </div>
         </div>
       </div>
 
@@ -72,12 +94,20 @@ export function Sidebar({
       </div>
 
       <nav className="pc-nav" aria-label="Main">
-        {ADMIN_NAV.map((group, gi) => (
+        {ADMIN_NAV.map((group, gi) => {
+          const items = group.items.filter((item) => {
+            if (item.key === 'approval' && !isAdmin) return false
+            if (group.section === 'Organization' && !isAdmin) return false
+            return true
+          })
+          if (items.length === 0) return null
+
+          return (
           <div className="pc-nav-group" key={gi}>
             {group.section && (
               <div className="pc-nav-label">{group.section}</div>
             )}
-            {group.items.map((item) => {
+            {items.map((item) => {
               const Icon = item.icon
               const to = NAV_ROUTES[item.key] ?? '/app'
               if (item.disabled) {
@@ -89,7 +119,9 @@ export function Sidebar({
                   >
                     <Icon size={15} strokeWidth={1.6} />
                     <span>{item.label}</span>
-                    {item.badge && item.badge !== 'dynamic' && (
+                    {item.badge &&
+                      item.badge !== 'dynamic' &&
+                      item.badge !== 'approvals' && (
                       <span className="pc-nav-item-badge">{item.badge}</span>
                     )}
                   </div>
@@ -111,20 +143,23 @@ export function Sidebar({
                         <motion.div
                           layoutId="active-sidebar-indicator"
                           className="pc-nav-active-bg"
-                          transition={{ type: 'spring', stiffness: 350, damping: 28 }}
+                          transition={{ type: 'spring', stiffness: 380, damping: 32, mass: 0.85 }}
                         />
                       )}
                       <Icon size={15} strokeWidth={1.6} style={{ position: 'relative', zIndex: 2 }} />
                       <span style={{ position: 'relative', zIndex: 2 }}>{item.label}</span>
                       {(item.badge === 'dynamic' ||
+                        (item.key === 'approval' && approvalPending > 0) ||
                         (item.key === 'bookmarks' && bookmarkedQuestionTotal > 0)) && (
                         <span
                           className="pc-nav-item-badge"
                           style={{ position: 'relative', zIndex: 2 }}
                         >
-                          {item.badge === 'dynamic'
-                            ? formattedCount
-                            : String(bookmarkedQuestionTotal)}
+                          {item.key === 'approval'
+                            ? String(approvalPending)
+                            : item.badge === 'dynamic'
+                              ? formattedCount
+                              : String(bookmarkedQuestionTotal)}
                         </span>
                       )}
                     </>
@@ -133,7 +168,8 @@ export function Sidebar({
               )
             })}
           </div>
-        ))}
+          )
+        })}
       </nav>
 
       <div className="pc-sidebar-foot">

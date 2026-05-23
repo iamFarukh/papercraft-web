@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { Filter, Grid3x3, List, Plus, Search, Trash2, Upload } from 'lucide-react'
+import { Filter, Grid3x3, List, Search, Trash2, Upload } from 'lucide-react'
 import type { SortKey } from '@/lib/repository-workspace'
 
 type ViewMode = 'card' | 'list'
@@ -16,12 +16,16 @@ type RepositoryToolbarProps = {
   onSearchFocus?: () => void
   onSearchBlur?: () => void
   matchCount: number
+  loadedCount?: number
+  hasMore?: boolean
+  loadingMore?: boolean
   isAdmin?: boolean
   showTrash?: boolean
+  showTrashMode?: boolean
   trashCount?: number
   onToggleTrash?: () => void
-  onNewQuestion?: () => void
   onFocusFilters?: () => void
+  filterChips?: string[]
 }
 
 export function RepositoryToolbar({
@@ -35,12 +39,16 @@ export function RepositoryToolbar({
   onSearchFocus,
   onSearchBlur,
   matchCount,
+  loadedCount = 0,
+  hasMore = false,
+  loadingMore = false,
   isAdmin = false,
   showTrash = false,
   trashCount = 0,
   onToggleTrash,
-  onNewQuestion,
   onFocusFilters,
+  filterChips = [],
+  showTrashMode = false,
 }: RepositoryToolbarProps) {
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -60,7 +68,8 @@ export function RepositoryToolbar({
   }, [onQueryChange])
 
   return (
-    <div className="pc-repo-toolbar">
+    <div className="pc-repo-toolbar-wrap">
+      <div className="pc-repo-toolbar">
       <label
         className={
           'pc-repo-cmd' +
@@ -101,25 +110,29 @@ export function RepositoryToolbar({
           className={'pc-repo-view-btn' + (view === 'card' ? ' is-active' : '')}
           onClick={() => onViewChange('card')}
           aria-pressed={view === 'card'}
-          title="Grid cards"
+          title="Grid view"
         >
-          <Grid3x3 size={13} strokeWidth={1.6} />
-          <span className="pc-repo-view-btn-label">Grid</span>
+          <Grid3x3 size={16} strokeWidth={1.75} aria-hidden />
         </button>
         <button
           type="button"
           className={'pc-repo-view-btn' + (view === 'list' ? ' is-active' : '')}
           onClick={() => onViewChange('list')}
           aria-pressed={view === 'list'}
-          title="Compact list"
+          title="List view"
         >
-          <List size={13} strokeWidth={1.6} />
-          <span className="pc-repo-view-btn-label">List</span>
+          <List size={16} strokeWidth={1.75} aria-hidden />
         </button>
       </div>
 
       <span className="pc-repo-toolbar-meta pc-num" aria-live="polite">
-        {matchCount} match{matchCount === 1 ? '' : 'es'}
+        {showTrashMode ? 'Trash · ' : ''}
+        {matchCount} shown
+        {hasMore || loadingMore
+          ? ` · ${loadedCount}+ loading`
+          : loadedCount > 0 && matchCount !== loadedCount
+            ? ` · ${loadedCount} loaded`
+            : ''}
       </span>
 
       <button
@@ -153,14 +166,24 @@ export function RepositoryToolbar({
             <Upload size={14} strokeWidth={1.6} />
             Import
           </Link>
-          {onNewQuestion && (
+        </div>
+      )}
+      </div>
+
+      {(filterChips.length > 0 || query) && (
+        <div className="pc-repo-toolbar-chips">
+          {filterChips.map((label) => (
+            <span key={label} className="pc-repo-chip is-active">
+              {label}
+            </span>
+          ))}
+          {query && (
             <button
               type="button"
-              className="pc-btn is-primary is-sm"
-              onClick={onNewQuestion}
+              className="pc-repo-chip is-active"
+              onClick={() => onQueryChange('')}
             >
-              <Plus size={14} strokeWidth={1.6} />
-              New Question
+              Search: {query.length > 28 ? `${query.slice(0, 28)}…` : query} ×
             </button>
           )}
         </div>

@@ -142,7 +142,7 @@ export function AuthorPreviewPanel({ form }: AuthorPreviewPanelProps) {
         <dt>Syllabus alignment</dt>
         <dd>
           Aligned to {form.chapterName || 'selected chapter'} ·{' '}
-          {form.topicName || 'topic'} (placeholder)
+          {form.topicName?.trim() || '—'}
         </dd>
       </dl>
     </aside>

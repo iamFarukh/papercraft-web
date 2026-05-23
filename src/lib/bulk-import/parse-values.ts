@@ -24,8 +24,12 @@ export function parseClassNumber(raw: string): number | null {
     const n = Number(digits[0])
     if (n >= 1 && n <= 12) return n
   }
-  const roman = t.replace(/class/gi, '').trim().toLowerCase()
-  if (ROMAN[roman]) return ROMAN[roman]
+  const romanPart = t.replace(/class/gi, '').trim().toLowerCase()
+  if (ROMAN[romanPart]) return ROMAN[romanPart]
+  const words = romanPart.split(/\s+/).filter(Boolean)
+  for (const w of words) {
+    if (ROMAN[w]) return ROMAN[w]
+  }
   return null
 }
 

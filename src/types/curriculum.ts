@@ -1,10 +1,13 @@
 import type { Timestamp } from 'firebase/firestore'
 
+export type CurriculumLifecycleStatus = 'active' | 'archived'
+
 /** Shared fields for taxonomy documents */
 export type TaxonomyBase = {
   name: string
   /** Lowercase trimmed key for duplicate detection */
   nameKey: string
+  status?: CurriculumLifecycleStatus
   createdAt?: Timestamp
   updatedAt?: Timestamp
 }

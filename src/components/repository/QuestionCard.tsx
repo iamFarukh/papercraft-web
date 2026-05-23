@@ -64,6 +64,7 @@ export function QuestionCard({
 
   const className = [
     'pc-q-card',
+    'pc-motion-surface',
     view === 'list' ? 'is-list' : '',
     selected ? 'is-selected' : '',
     active ? 'is-active' : '',

@@ -1,10 +1,33 @@
 import { FolderOpen, Star } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { EmptyStatePanel, type EmptyStateStep } from '@/components/ui/EmptyStatePanel'
 
 type BookmarksEmptyPanelProps = {
   variant: 'no-folders' | 'empty-folder'
   onCreateFolder?: () => void
 }
+
+const FOLDER_STEPS: EmptyStateStep[] = [
+  {
+    number: 1,
+    content: 'Create a folder below (or from the repository star menu)',
+  },
+  {
+    number: 2,
+    content: (
+      <>
+        Open <strong>Question Repository</strong> and tap{' '}
+        <Star
+          size={12}
+          strokeWidth={1.6}
+          className="pc-bookmarks-inline-star"
+          aria-hidden
+        />{' '}
+        on any question
+      </>
+    ),
+  },
+  { number: 3, content: 'Choose your folder — done' },
+]
 
 export function BookmarksEmptyPanel({
   variant,
@@ -12,52 +35,36 @@ export function BookmarksEmptyPanel({
 }: BookmarksEmptyPanelProps) {
   if (variant === 'empty-folder') {
     return (
-      <div className="pc-bookmarks-empty-panel">
-        <div className="pc-bookmarks-empty-icon" aria-hidden>
-          <Star size={26} strokeWidth={1.5} />
-        </div>
-        <h2 className="pc-bookmarks-empty-title">This folder is empty</h2>
-        <p className="pc-bookmarks-empty-text">
-          Save questions from the repository with the star icon, then pick this folder.
-        </p>
-        <Link to="/app/repository" className="pc-btn is-primary is-sm">
-          Browse questions
-        </Link>
-      </div>
+      <EmptyStatePanel
+        icon={Star}
+        title="This folder is empty"
+        description="Save questions from the repository with the star icon, then pick this folder."
+        actions={[
+          { kind: 'link', label: 'Browse questions', to: '/app/repository', primary: true },
+        ]}
+      />
     )
   }
 
   return (
-    <div className="pc-bookmarks-empty-panel">
-      <div className="pc-bookmarks-empty-icon" aria-hidden>
-        <FolderOpen size={26} strokeWidth={1.5} />
-      </div>
-      <h2 className="pc-bookmarks-empty-title">No bookmark folders yet</h2>
-      <p className="pc-bookmarks-empty-text">
-        Create a folder for mid-terms, revision sets, or practice — then save questions while you browse.
-      </p>
-      <ul className="pc-bookmarks-empty-steps">
-        <li>
-          <span className="pc-num">1</span> Create a folder below (or from the repository star menu)
-        </li>
-        <li>
-          <span className="pc-num">2</span> Open <strong>Question Repository</strong> and tap{' '}
-          <Star size={12} strokeWidth={1.6} className="pc-bookmarks-inline-star" /> on any question
-        </li>
-        <li>
-          <span className="pc-num">3</span> Choose your folder — done
-        </li>
-      </ul>
-      <div className="pc-bookmarks-empty-actions">
-        {onCreateFolder && (
-          <button type="button" className="pc-btn is-primary is-sm" onClick={onCreateFolder}>
-            Create your first folder
-          </button>
-        )}
-        <Link to="/app/repository" className="pc-btn is-sm">
-          Browse questions
-        </Link>
-      </div>
-    </div>
+    <EmptyStatePanel
+      icon={FolderOpen}
+      title="No bookmark folders yet"
+      description="Create a folder for mid-terms, revision sets, or practice — then save questions while you browse."
+      steps={FOLDER_STEPS}
+      actions={[
+        ...(onCreateFolder
+          ? [
+              {
+                kind: 'button' as const,
+                label: 'Create your first folder',
+                onClick: onCreateFolder,
+                primary: true,
+              },
+            ]
+          : []),
+        { kind: 'link', label: 'Browse questions', to: '/app/repository' },
+      ]}
+    />
   )
 }

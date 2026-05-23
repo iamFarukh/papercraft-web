@@ -4,6 +4,7 @@ import {
   subjectLabelFromId,
   typeLabelFromId,
 } from '@/config/curriculum'
+import { bulkImportFilterLabel } from '@/lib/bulk-import/import-batch'
 import type {
   QuestionDifficulty,
   QuestionQueryFilters,
@@ -22,6 +23,8 @@ export type RepositoryFilters = {
   difficulty: Record<string, boolean>
   types: Record<string, boolean>
   statuses: Record<string, boolean>
+  /** Keys are importBatchId; labels stored separately for display */
+  bulkImports: Record<string, boolean>
 }
 
 export const DIFFICULTY_LABELS = ['Easy', 'Medium', 'Hard'] as const
@@ -97,6 +100,11 @@ export function buildDefaultFilters(questions: QuestionRecord[]): RepositoryFilt
   const toRecord = (values: Set<string>) =>
     Object.fromEntries([...values].sort().map((v) => [v, true]))
 
+  const bulkKeys = new Set<string>()
+  for (const q of questions) {
+    if (q.importBatchId) bulkKeys.add(q.importBatchId)
+  }
+
   return {
     classes: toRecord(classes),
     subjects: toRecord(subjects),
@@ -106,6 +114,7 @@ export function buildDefaultFilters(questions: QuestionRecord[]): RepositoryFilt
     statuses: Object.fromEntries(
       ALL_STATUSES.map((s) => [STATUS_LABELS[s], true]),
     ),
+    bulkImports: Object.fromEntries([...bulkKeys].map((k) => [k, true])),
   }
 }
 
@@ -121,7 +130,24 @@ export function buildEmptyFilters(isAdmin: boolean): RepositoryFilters {
           ALL_STATUSES.map((s) => [STATUS_LABELS[s], true]),
         )
       : { Published: true },
+    bulkImports: {},
   }
+}
+
+/** Display labels for bulk import batch filter keys */
+export function bulkImportFilterLabels(
+  questions: QuestionRecord[],
+): Record<string, string> {
+  const map: Record<string, string> = {}
+  for (const q of questions) {
+    if (!q.importBatchId) continue
+    if (map[q.importBatchId]) continue
+    map[q.importBatchId] = bulkImportFilterLabel(
+      q.importFileName ?? 'Bulk import',
+      q.importedAtMs ?? q.updatedAtMs,
+    )
+  }
+  return map
 }
 
 export function toggleFilter(
@@ -228,6 +254,7 @@ function matchesTextQuery(q: QuestionRecord, query: string): boolean {
     q.classLabel,
     q.subject,
     q.hindi ?? '',
+    q.importFileName ?? '',
   ]
     .join(' ')
     .toLowerCase()
@@ -238,10 +265,25 @@ function matchesClientFilters(
   q: QuestionRecord,
   filters: RepositoryFilters,
 ): boolean {
-  const { classes, subjects, chapters, difficulty, types, statuses } = filters
+  const { classes, subjects, chapters, difficulty, types, statuses, bulkImports } =
+    filters
 
   if (!isGroupFullyOff(classes) && classes[q.classLabel] === false) return false
   if (!isGroupFullyOff(subjects) && subjects[q.subject] === false) return false
+  if (
+    !isGroupFullyOff(bulkImports) &&
+    q.importBatchId &&
+    bulkImports[q.importBatchId] === false
+  ) {
+    return false
+  }
+  if (
+    !isGroupFullyOff(bulkImports) &&
+    !q.importBatchId &&
+    countActiveInGroup(bulkImports) > 0
+  ) {
+    return false
+  }
   if (!isGroupFullyOff(chapters) && !chapterMatches(q, activeKeys(chapters)))
     return false
   if (!isGroupFullyOff(types) && types[q.type] === false) return false
@@ -282,7 +324,10 @@ export function sortQuestions(
   }
 }
 
-export function activeFilterChips(filters: RepositoryFilters): string[] {
+export function activeFilterChips(
+  filters: RepositoryFilters,
+  bulkImportLabels: Record<string, string> = {},
+): string[] {
   const chips: string[] = []
   const push = (group: Record<string, boolean>, prefix?: string) => {
     const active = Object.entries(group).filter(([, on]) => on)
@@ -300,27 +345,14 @@ export function activeFilterChips(filters: RepositoryFilters): string[] {
   push(filters.difficulty, 'difficulty · ')
   push(filters.types, 'types · ')
   push(filters.statuses, 'status · ')
-  return chips
-}
-
-export function mockQuestionIntel(id: string) {
-  let h = 0
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0
-  const n = Math.abs(h)
-  return {
-    quality: 68 + (n % 28),
-    alignment: 82 + (n % 16),
-    bloom: ['Remember', 'Understand', 'Apply', 'Analyze'][n % 4],
-    clarity: 72 + (n % 22),
-    duplicateRisk: n % 7 === 0 ? 'medium' : n % 11 === 0 ? 'high' : 'low',
-    lastUsed: [
-      'Unit Test · Mar 2025',
-      'Half-Yearly · 2024',
-      'Practice Set · Feb 2025',
-      '—',
-    ][n % 4],
-    papersUsed: 1 + (n % 6),
+  const bulkActive = Object.entries(filters.bulkImports).filter(([, on]) => on)
+  const bulkTotal = Object.keys(filters.bulkImports).length
+  if (bulkActive.length > 0 && bulkActive.length < bulkTotal) {
+    bulkActive.forEach(([id]) => {
+      chips.push(bulkImportLabels[id] ?? 'Bulk upload')
+    })
   }
+  return chips
 }
 
 export function filterOptionCounts(
@@ -353,6 +385,10 @@ export function filterOptionCounts(
       case 'statuses':
         key = q.status
         break
+      case 'bulkImports':
+        key = q.importBatchId ?? ''
+        if (!key) continue
+        break
       default:
         continue
     }
@@ -372,6 +408,7 @@ export function mergeFilterOptions(
     'chapters',
     'types',
     'statuses',
+    'bulkImports',
   ]
 
   for (const group of groups) {
@@ -393,6 +430,10 @@ export function mergeFilterOptions(
           break
         case 'statuses':
           key = q.status
+          break
+        case 'bulkImports':
+          key = q.importBatchId ?? ''
+          if (!key) continue
           break
         default:
           continue
@@ -420,17 +461,8 @@ export function computeRepositoryStats(questions: QuestionRecord[]) {
     else if (q.statusRaw === 'archived') lifecycle.archived++
   }
 
-  const qualityScore =
-    questions.length === 0
-      ? 0
-      : Math.round(
-          questions.reduce((s, q) => s + mockQuestionIntel(q.id).quality, 0) /
-            questions.length,
-        )
-
   return {
     totalLoaded: questions.length,
-    qualityScore,
     lifecycle,
   }
 }

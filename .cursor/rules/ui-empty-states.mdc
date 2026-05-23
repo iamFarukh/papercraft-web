@@ -1,0 +1,33 @@
+---
+description: Shared empty-state UI pattern for list and workspace modules
+globs: src/**/*.{tsx,css}
+alwaysApply: false
+---
+
+# Empty states (PaperCraft)
+
+Use the shared **`EmptyStatePanel`** (`src/components/ui/EmptyStatePanel.tsx`) for every “nothing here yet” or blocking empty view — not one-off markup per page.
+
+## Pattern
+
+- Centered **dashed** card (`pc-empty-panel`)
+- **Icon** in soft primary-tinted square (56×56)
+- **Serif title** (20px), sans body copy (13px)
+- Optional **numbered steps** (left-aligned inside card)
+- **Actions**: primary `pc-btn is-primary is-sm` + secondary ghost `pc-btn is-sm`
+- Optional `hint` line in muted 11px text
+- `variant="error"` for load failures (solid danger border, not dashed)
+
+## When empty, hide header CTAs
+
+If the page header has a “New …” button, show it only when the list has items (see `PapersListPage`, `BookmarksWorkspace`).
+
+## Do not
+
+- Build custom empty boxes with solid borders only on one module
+- Use different icon sizes/title fonts per feature
+- Duplicate empty-state CSS in module stylesheets — extend `styles/empty-state.css` if needed
+
+## Examples
+
+- Paper Library, Bookmarks, Repository filter empty → `EmptyStatePanel`

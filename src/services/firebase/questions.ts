@@ -163,9 +163,12 @@ export async function getQuestions(
           'Load questions (fallback)',
         )
       } catch {
-        // Last resort: plain collection read (empty DB / missing index)
+        // Last resort: minimal query (empty DB / missing index). Teachers only see published.
+        const fallbackConstraints = options.isAdmin
+          ? [limit(pageSize + 1)]
+          : [where('status', '==', 'published'), limit(pageSize + 1)]
         const snap = await withTimeout(
-          getDocs(query(collection(db, COLLECTION), limit(pageSize + 1))),
+          getDocs(query(collection(db, COLLECTION), ...fallbackConstraints)),
           FETCH_TIMEOUT_MS,
           'Load questions (simple)',
         )
@@ -190,6 +193,29 @@ export async function getQuestionById(id: string): Promise<QuestionDocument | nu
   const snap = await getDoc(doc(db, COLLECTION, id))
   if (!snap.exists()) return null
   return snap.data() as QuestionDocument
+}
+
+const IN_QUERY_CHUNK = 30
+
+/** Fetch questions by id (batched `in` queries). Missing ids are omitted. */
+export async function getQuestionsByIds(
+  ids: string[],
+): Promise<Map<string, QuestionDocument>> {
+  const unique = [...new Set(ids.filter(Boolean))]
+  const map = new Map<string, QuestionDocument>()
+  if (unique.length === 0) return map
+
+  for (let i = 0; i < unique.length; i += IN_QUERY_CHUNK) {
+    const chunk = unique.slice(i, i + IN_QUERY_CHUNK)
+    const snap = await getDocs(
+      query(collection(db, COLLECTION), where('__name__', 'in', chunk)),
+    )
+    for (const d of snap.docs) {
+      map.set(d.id, d.data() as QuestionDocument)
+    }
+  }
+
+  return map
 }
 
 export async function createQuestion(

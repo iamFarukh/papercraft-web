@@ -1,4 +1,5 @@
 import { FilterX, Library, Plus, Search, Upload } from 'lucide-react'
+import { EmptyStatePanel } from '@/components/ui/EmptyStatePanel'
 
 type EmptyVariant =
   | 'no-results'
@@ -54,49 +55,44 @@ export function RepositoryEmptyState({
   seeding = false,
   isAdmin = false,
 }: RepositoryEmptyStateProps) {
-  const { icon: Icon, title, body, hint } = COPY[variant]
+  const { icon, title, body, hint } = COPY[variant]
+
+  const actions: Parameters<typeof EmptyStatePanel>[0]['actions'] = []
+
+  if (variant === 'no-results' && onClearSearch) {
+    actions.push({ kind: 'button', label: 'Clear search', onClick: onClearSearch })
+  }
+  if (variant === 'filters-strict' && onResetFilters) {
+    actions.push({ kind: 'button', label: 'Reset filters', onClick: onResetFilters })
+  }
+  if (variant === 'empty-database' && isAdmin) {
+    if (onSeed) {
+      actions.push({
+        kind: 'button',
+        label: seeding ? 'Seeding…' : 'Seed sample questions',
+        onClick: onSeed,
+        disabled: seeding,
+      })
+    }
+    if (onCreate) {
+      actions.push({
+        kind: 'button',
+        label: 'Create first question',
+        onClick: onCreate,
+        primary: true,
+      })
+    }
+  }
 
   return (
-    <div className="pc-repo-empty">
-      <div className="pc-repo-empty-icon" aria-hidden>
-        <Icon size={22} strokeWidth={1.5} />
-      </div>
-      <h4 className="pc-repo-empty-title pc-serif">{title}</h4>
-      <p className="pc-repo-empty-body">{body}</p>
-      {hint && <p className="pc-repo-empty-hint">{hint}</p>}
-      <div className="pc-repo-empty-actions">
-        {variant === 'no-results' && onClearSearch && (
-          <button type="button" className="pc-btn is-sm" onClick={onClearSearch}>
-            Clear search
-          </button>
-        )}
-        {variant === 'filters-strict' && onResetFilters && (
-          <button type="button" className="pc-btn is-sm" onClick={onResetFilters}>
-            Reset filters
-          </button>
-        )}
-        {variant === 'empty-database' && isAdmin && (
-          <>
-            {onSeed && (
-              <button
-                type="button"
-                className="pc-btn is-sm"
-                onClick={onSeed}
-                disabled={seeding}
-              >
-                <Upload size={13} strokeWidth={1.6} />
-                {seeding ? 'Seeding…' : 'Seed sample questions'}
-              </button>
-            )}
-            {onCreate && (
-              <button type="button" className="pc-btn is-primary is-sm" onClick={onCreate}>
-                <Plus size={14} strokeWidth={1.6} />
-                Create first question
-              </button>
-            )}
-          </>
-        )}
-      </div>
-    </div>
+    <EmptyStatePanel
+      icon={icon}
+      title={title}
+      description={body}
+      hint={hint}
+      actions={actions}
+      wide
+      className="pc-repo-empty-wrap"
+    />
   )
 }

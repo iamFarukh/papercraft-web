@@ -86,7 +86,7 @@ export function ImportWizardLayout({
             </div>
             <p className="pc-csv-wizard-sub">
               {fileMeta ??
-                'Migrate question banks safely. Imported rows arrive as Draft for review.'}
+                'Upload a CSV or spreadsheet — questions publish to the repository and are tagged with your file name.'}
             </p>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { AlertTriangle, X } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
+import { modalPop, overlayFade } from '@/lib/motion/variants'
 
 type DeleteConfirmDialogProps = {
   open: boolean
@@ -11,21 +12,22 @@ type DeleteConfirmDialogProps = {
 }
 
 export function DeleteConfirmDialog({
-  open,
+  open: _open,
   count,
   usageWarning = false,
   onCancel,
   onConfirm,
   busy = false,
 }: DeleteConfirmDialogProps) {
-  if (!open) return null
+  const reduced = useReducedMotion()
 
   return (
     <motion.div
       className="pc-repo-sheet-overlay pc-repo-confirm-overlay"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      variants={overlayFade}
+      initial={reduced ? false : 'hidden'}
+      animate="visible"
+      exit="exit"
       role="dialog"
       aria-modal="true"
       aria-labelledby="pc-delete-confirm-title"
@@ -38,8 +40,10 @@ export function DeleteConfirmDialog({
       />
       <motion.div
         className="pc-repo-confirm"
-        initial={{ scale: 0.96, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
+        variants={modalPop}
+        initial={reduced ? false : 'hidden'}
+        animate="visible"
+        exit="exit"
         onClick={(e) => e.stopPropagation()}
       >
         <button

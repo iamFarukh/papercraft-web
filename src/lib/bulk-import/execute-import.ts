@@ -7,8 +7,10 @@ import {
   listTopics,
 } from '@/services/firebase/curriculum'
 import { nameKey } from '@/lib/curriculum-normalize'
+import { resolveSubjectForImport } from '@/lib/subject-resolve'
 import type { ImportField } from '@/lib/bulk-import/fields'
 import type { CurriculumApprovals, ValidatedImportRow } from '@/lib/bulk-import/validate-rows'
+import type { ImportBatchMeta } from '@/lib/bulk-import/import-batch'
 import { batchImportQuestions } from '@/services/firebase/bulk-import'
 import type { QuestionDocument } from '@/types/question'
 import type { TaxonomyOption } from '@/types/curriculum'
@@ -39,6 +41,7 @@ export async function executeValidatedImport(
   mapping: Partial<Record<ImportField, string>>,
   approvals: CurriculumApprovals,
   createdBy: string,
+  batch?: ImportBatchMeta,
 ): Promise<ImportResult> {
   const subjectCache = new Map<string, TaxonomyOption[]>()
   const chapterCache = new Map<string, TaxonomyOption[]>()
@@ -57,8 +60,9 @@ export async function executeValidatedImport(
     const subjectName = getMapped(row.raw, mapping, 'subject')
     const chapterName = getMapped(row.raw, mapping, 'chapter')
     const topicName = getMapped(row.raw, mapping, 'topic') || chapterName
+    const resolvedSubject = resolveSubjectForImport(subjectName, classNumber)
 
-    const subKey = `${classNumber}|${nameKey(subjectName)}`
+    const subKey = `${classNumber}|${nameKey(resolvedSubject.name)}`
     let subject = createdSubjects.get(subKey)
     if (!subject) {
       if (!subjectCache.has(String(classNumber))) {
@@ -67,9 +71,13 @@ export async function executeValidatedImport(
           await listSubjectsForClass(classNumber, null),
         )
       }
-      subject = findByName(subjectCache.get(String(classNumber))!, subjectName)
+      subject =
+        (resolvedSubject.catalogId
+          ? { id: resolvedSubject.catalogId, label: resolvedSubject.name }
+          : null) ??
+        findByName(subjectCache.get(String(classNumber))!, resolvedSubject.name)
       if (!subject && approvals.subjects.has(subKey)) {
-        const res = await createSubject(subjectName, classNumber)
+        const res = await createSubject(resolvedSubject.name, classNumber)
         if (!res.ok) throw new Error(res.message)
         subject = res.option
       }
@@ -117,13 +125,19 @@ export async function executeValidatedImport(
       chapterName: chapter.label,
       topicId: topic.id,
       topicName: topic.label,
-      status: 'draft',
+      status: 'published',
       source: 'bulk_import',
       createdBy,
+      importBatchId: batch?.batchId,
+      importFileName: batch?.fileName,
     })
   }
 
-  const ids = await batchImportQuestions(docs, createdBy)
+  const ids = await batchImportQuestions(docs, createdBy, {
+    importBatchId: batch?.batchId,
+    importFileName: batch?.fileName,
+    status: 'published',
+  })
   return {
     imported: ids.length,
     skipped: rows.length - ids.length,

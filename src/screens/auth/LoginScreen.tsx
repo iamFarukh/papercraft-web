@@ -14,7 +14,7 @@ function formatAuthError(error: unknown): string {
       case "auth/user-not-found":
       case "auth/wrong-password":
       case "auth/invalid-credential":
-        return "Email or password is incorrect.";
+        return "Login ID or password is incorrect.";
       case "auth/too-many-requests":
         return "Too many attempts. Please wait a moment and try again.";
       default:
@@ -30,8 +30,8 @@ function formatAuthError(error: unknown): string {
 export function LoginScreen() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("test@gmail.com");
-  const [password, setPassword] = useState("Test@123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -88,8 +88,8 @@ export function LoginScreen() {
           <div className="pc-login-panel-head">
             <h2>Sign in</h2>
             <p>
-              Access your institution workspace. Accounts are provisioned by
-              your admin.
+              Use the login ID and password your administrator created for you.
+              No email is sent — this is your school sign-in only.
             </p>
           </div>
 
@@ -101,14 +101,14 @@ export function LoginScreen() {
 
           <form onSubmit={handleSubmit} noValidate>
             <div className="pc-login-field">
-              <label htmlFor="email">Email</label>
+              <label htmlFor="email">Login ID</label>
               <input
                 id="email"
                 className="pc-login-input"
-                type="email"
+                type="text"
                 name="email"
-                autoComplete="email"
-                placeholder="you@school.edu"
+                autoComplete="username"
+                placeholder="jitu@school.edu"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -154,7 +154,7 @@ export function LoginScreen() {
           </form>
 
           <p className="pc-login-footnote">
-            New accounts are created by your school administrator.
+            Accounts are created by your administrator with a login ID and password.
             Self-registration is not available.
           </p>
         </div>

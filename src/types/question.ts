@@ -74,6 +74,10 @@ export type QuestionDocument = {
   /** Set when row came from bulk CSV/XLSX import */
   source?: 'bulk_import' | 'manual'
   importedAt?: Timestamp
+  /** Original upload file name for bulk import batch tracking */
+  importFileName?: string
+  /** Shared id for all questions from one bulk import session */
+  importBatchId?: string
   /** Soft-delete: recoverable by admin for 12 hours */
   deletedAt?: Timestamp | null
   deletedBy?: string | null
@@ -81,7 +85,7 @@ export type QuestionDocument = {
   statusBeforeDelete?: QuestionStatus | null
 }
 
-export type QuestionFlag = 'new' | 'review' | 'bilingual'
+export type QuestionFlag = 'new' | 'review' | 'bilingual' | 'missing'
 
 /** UI-facing question row for repository cards */
 export type QuestionRecord = {
@@ -121,6 +125,9 @@ export type QuestionRecord = {
   statusBeforeDelete?: QuestionStatus
   isInTrash?: boolean
   restoreTimeLeft?: string
+  importFileName?: string
+  importBatchId?: string
+  importedAtMs?: number | null
 }
 
 export type QuestionQueryFilters = {

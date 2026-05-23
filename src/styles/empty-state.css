@@ -1,0 +1,120 @@
+/* Shared empty states — use EmptyStatePanel across modules */
+
+.pc-empty-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  max-width: 440px;
+  margin: 32px auto 0;
+  animation: pc-empty-fade-in 280ms ease;
+  padding: 36px 28px 32px;
+  border-radius: 14px;
+  border: 1px dashed var(--pc-line-2);
+  background: var(--pc-surface);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 60%) inset;
+}
+
+.pc-empty-panel.is-error {
+  border-style: solid;
+  border-color: rgb(220 74 61 / 28%);
+  background: var(--pc-danger-bg);
+}
+
+.pc-empty-panel.is-wide {
+  max-width: 480px;
+}
+
+.pc-empty-panel__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 16px;
+  border-radius: 14px;
+  background: rgb(53 92 255 / 8%);
+  color: var(--pc-primary);
+}
+
+.pc-empty-panel.is-error .pc-empty-panel__icon {
+  background: rgb(220 74 61 / 10%);
+  color: var(--pc-danger-text);
+}
+
+.pc-empty-panel__title {
+  margin: 0 0 8px;
+  font-family: var(--pc-serif);
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--pc-ink);
+  letter-spacing: -0.02em;
+}
+
+.pc-empty-panel__text {
+  margin: 0 0 20px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--pc-ink-3);
+  max-width: 36ch;
+}
+
+.pc-empty-panel__hint {
+  margin: -12px 0 18px;
+  font-size: 11px;
+  color: var(--pc-ink-4);
+}
+
+.pc-empty-panel__steps {
+  list-style: none;
+  margin: 0 0 22px;
+  padding: 0;
+  width: 100%;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pc-empty-panel__steps li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--pc-ink-3);
+}
+
+.pc-empty-panel__step-num {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: var(--pc-surface-3);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--pc-ink-2);
+}
+
+.pc-empty-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+@keyframes pc-empty-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

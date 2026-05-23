@@ -18,12 +18,15 @@ import { QuestionStream } from '@/components/repository/QuestionStream'
 import { RepositoryToolbar } from '@/components/repository/RepositoryToolbar'
 import { RepositoryToolbarSkeleton } from '@/components/repository/RepositorySkeleton'
 import { useQuestions } from '@/hooks/useQuestions'
+import { useTeacherScope } from '@/hooks/useTeacherScope'
 import {
   activeFilterChips,
   buildEmptyFilters,
+  bulkImportFilterLabels,
   filterOptionCounts,
   filterQuestionsClient,
   isGroupFullyOff,
+  mergeFilterOptions,
   sortQuestions,
   toggleFilter,
   type RepositoryFilters,
@@ -54,6 +57,7 @@ function loadSavedView(): 'card' | 'list' {
 export function RepositoryWorkspace() {
   const navigate = useNavigate()
   const { isAdmin, loading: authLoading, user } = useAuth()
+  const { filterQuestions: scopeByAssignment, isScoped } = useTeacherScope()
   const { push: toast } = useToast()
   const filtersRef = useRef<HTMLDivElement>(null)
   const [view, setView] = useState<'card' | 'list'>(loadSavedView)
@@ -111,15 +115,23 @@ export function RepositoryWorkspace() {
   }, [authLoading, isAdmin])
 
   useEffect(() => {
-    if (allLoaded.length === 0 || filtersInitialized.current) return
-    filtersInitialized.current = true
-    setFilters(initFiltersFromData(allLoaded))
-  }, [allLoaded.length, initFiltersFromData])
+    if (allLoaded.length === 0) return
+    setFilters((prev) => {
+      if (!filtersInitialized.current) {
+        filtersInitialized.current = true
+        return initFiltersFromData(allLoaded)
+      }
+      return mergeFilterOptions(prev, allLoaded)
+    })
+  }, [allLoaded, initFiltersFromData])
 
   const activePool = useMemo(() => {
-    if (showTrash) return allLoaded.filter((q) => q.isInTrash)
-    return allLoaded.filter((q) => !q.isInTrash)
-  }, [allLoaded, showTrash])
+    let pool = showTrash
+      ? allLoaded.filter((q) => q.isInTrash)
+      : allLoaded.filter((q) => !q.isInTrash)
+    if (isScoped) pool = scopeByAssignment(pool)
+    return pool
+  }, [allLoaded, showTrash, isScoped, scopeByAssignment])
 
   const trashCount = useMemo(
     () => allLoaded.filter((q) => q.isInTrash).length,
@@ -142,23 +154,29 @@ export function RepositoryWorkspace() {
   }, [])
 
   const curriculumTree = useMemo(
-    () => buildCurriculumTree(allLoaded.filter((q) => !q.isInTrash)),
-    [allLoaded],
+    () => buildCurriculumTree(activePool),
+    [activePool],
   )
+
+  const bulkLabels = useMemo(() => bulkImportFilterLabels(activePool), [activePool])
 
   const filterCounts = useMemo(
     () => ({
-      classes: filterOptionCounts(allLoaded, 'classes', filters, query),
-      subjects: filterOptionCounts(allLoaded, 'subjects', filters, query),
-      chapters: filterOptionCounts(allLoaded, 'chapters', filters, query),
-      difficulty: filterOptionCounts(allLoaded, 'difficulty', filters, query),
-      types: filterOptionCounts(allLoaded, 'types', filters, query),
-      statuses: filterOptionCounts(allLoaded, 'statuses', filters, query),
+      classes: filterOptionCounts(activePool, 'classes', filters, query),
+      subjects: filterOptionCounts(activePool, 'subjects', filters, query),
+      chapters: filterOptionCounts(activePool, 'chapters', filters, query),
+      difficulty: filterOptionCounts(activePool, 'difficulty', filters, query),
+      types: filterOptionCounts(activePool, 'types', filters, query),
+      statuses: filterOptionCounts(activePool, 'statuses', filters, query),
+      bulkImports: filterOptionCounts(activePool, 'bulkImports', filters, query),
     }),
-    [allLoaded, filters, query],
+    [activePool, filters, query],
   )
 
-  const chips = useMemo(() => activeFilterChips(filters), [filters])
+  const chips = useMemo(
+    () => activeFilterChips(filters, bulkLabels),
+    [filters, bulkLabels],
+  )
 
   const selectedQuestion = useMemo(
     () => allLoaded.find((q) => q.id === activeId) ?? null,
@@ -207,6 +225,14 @@ export function RepositoryWorkspace() {
     },
     [curriculumTree],
   )
+
+  const handleChapterBulkToggle = useCallback((chapters: string[], on: boolean) => {
+    setFilters((f) => {
+      const nextChapters = { ...f.chapters }
+      for (const ch of chapters) nextChapters[ch] = on
+      return { ...f, chapters: nextChapters }
+    })
+  }, [])
 
   const handleResetFilters = useCallback(() => {
     setFilters(
@@ -391,55 +417,9 @@ export function RepositoryWorkspace() {
   }, [activeId, restoreQuestions, toast, handleCloseDrawer])
 
   const showBulk = selectedIds.size > 0
-  const totalLabel = isEmptyDb
-    ? '0'
-    : hasMore
-      ? `${allLoaded.length}+`
-      : String(allLoaded.length)
 
   return (
     <div className="pc-repo-workspace">
-      <header className="pc-repo-header">
-        <div className="pc-repo-header-top">
-          <div>
-            <div className="pc-repo-kicker">The Repository · RBSE</div>
-            <h1 className="pc-repo-title">
-              <span className="pc-num">{totalLabel}</span>{' '}
-              {showTrash ? 'in trash' : 'questions'}{' '}
-              <em>{showTrash ? '12h recovery' : 'Classes V–VIII'}</em>
-            </h1>
-          </div>
-          <p className="pc-repo-match">
-            <strong className="pc-num">{filtered.length}</strong> in current view
-          </p>
-        </div>
-        <div className="pc-repo-chips">
-          {chips.length === 0 ? (
-            <span className="pc-repo-chip is-active">
-              {isAdmin ? 'All filters' : 'Published only'}
-            </span>
-          ) : (
-            chips.map((label) => (
-              <span key={label} className="pc-repo-chip is-active">
-                {label}
-              </span>
-            ))
-          )}
-          {query && (
-            <>
-              <span className="pc-repo-chip-sep" aria-hidden />
-              <button
-                type="button"
-                className="pc-repo-chip is-active"
-                onClick={() => setQuery('')}
-              >
-                Search: {query.length > 24 ? `${query.slice(0, 24)}…` : query} ×
-              </button>
-            </>
-          )}
-        </div>
-      </header>
-
       {loading && !allLoaded.length ? (
         <RepositoryToolbarSkeleton />
       ) : (
@@ -460,9 +440,13 @@ export function RepositoryWorkspace() {
           onSearchFocus={() => setSearchFocused(true)}
           onSearchBlur={() => setSearchFocused(false)}
           matchCount={filtered.length}
+          loadedCount={activePool.length}
+          hasMore={hasMore}
+          loadingMore={loadingMore}
           isAdmin={isAdmin}
-          onNewQuestion={handleNewQuestion}
           onFocusFilters={handleFocusFilters}
+          filterChips={chips}
+          showTrashMode={showTrash}
         />
       )}
 
@@ -506,12 +490,16 @@ export function RepositoryWorkspace() {
         ) : (
           <div ref={filtersRef} className="pc-repo-filters-anchor">
             <FilterPanel
-              questions={allLoaded}
+              questions={activePool}
               filters={filters}
               counts={filterCounts}
+              bulkImportLabels={bulkLabels}
+              hasMore={hasMore}
+              loadingMore={loadingMore}
               isAdmin={isAdmin}
               onToggle={handleToggleFilter}
               onSyllabusToggle={handleSyllabusToggle}
+              onChapterBulkToggle={handleChapterBulkToggle}
               onReset={handleResetFilters}
             />
           </div>

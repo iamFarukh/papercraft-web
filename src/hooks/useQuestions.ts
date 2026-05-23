@@ -119,6 +119,12 @@ export function useQuestions({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- queryKey is the intentional trigger
   }, [enabled, queryKey])
 
+  /** Load every page so syllabus filters include all classes/subjects (not just the first 50). */
+  useEffect(() => {
+    if (!enabled || !hasMore || loading || loadingMore) return
+    loadPage(false)
+  }, [enabled, hasMore, loading, loadingMore, loadPage])
+
   const loadMore = useCallback(() => {
     if (!hasMore || loadingMore || loading) return
     loadPage(false)

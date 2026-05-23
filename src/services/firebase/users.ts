@@ -1,11 +1,21 @@
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
+import { applyPendingTeacherProfile } from '@/services/firebase/teachers'
 
 export type UserRole = 'admin' | 'teacher'
 
 const ROLE_LOOKUP_MS = 5_000
 
-export async function getUserRole(uid: string): Promise<UserRole> {
+function isPermissionDenied(err: unknown): boolean {
+  const code =
+    err && typeof err === 'object' && 'code' in err
+      ? String((err as { code: string }).code)
+      : ''
+  return code === 'permission-denied'
+}
+
+/** Read role from Firestore only — never guess admin when the doc is missing. */
+export async function getUserRole(uid: string): Promise<UserRole | null> {
   try {
     const snap = await Promise.race([
       getDoc(doc(db, 'users', uid)),
@@ -24,14 +34,17 @@ export async function getUserRole(uid: string): Promise<UserRole> {
   const devRole = import.meta.env.VITE_DEV_ROLE
   if (devRole === 'admin' || devRole === 'teacher') return devRole
 
-  return 'admin'
+  return null
 }
 
-/** Create users/{uid} on first login so Firestore rules can resolve isAdmin(). */
+/**
+ * Ensures users/{uid} exists with the correct role.
+ * Never auto-promotes unknown accounts to admin (that caused teacher permission bugs).
+ */
 export async function ensureUserProfile(
   uid: string,
   email?: string | null,
-): Promise<UserRole> {
+): Promise<UserRole | null> {
   const ref = doc(db, 'users', uid)
   try {
     const snap = await getDoc(ref)
@@ -40,21 +53,63 @@ export async function ensureUserProfile(
       if (role === 'admin' || role === 'teacher') return role
     }
 
-    const role: UserRole =
-      import.meta.env.VITE_DEV_ROLE === 'teacher' ? 'teacher' : 'admin'
+    if (email) {
+      try {
+        const applied = await applyPendingTeacherProfile(uid, email)
+        if (applied) return 'teacher'
+      } catch (err) {
+        if (!isPermissionDenied(err)) throw err
+      }
+    }
 
-    await setDoc(
-      ref,
-      {
-        role,
-        email: email ?? '',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      },
-      { merge: true },
-    )
-    return role
+    const devRole = import.meta.env.VITE_DEV_ROLE
+    if (devRole === 'admin' || devRole === 'teacher') {
+      await setDoc(
+        ref,
+        {
+          role: devRole,
+          email: email ?? '',
+          active: true,
+          assignments: [],
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true },
+      )
+      return devRole
+    }
+
+    return null
   } catch {
     return getUserRole(uid)
   }
+}
+
+/** Resolve display labels for teacher UIDs (email local-part or short id). */
+export async function getUserDisplayMap(uids: string[]): Promise<Map<string, string>> {
+  const unique = [...new Set(uids.filter(Boolean))]
+  const map = new Map<string, string>()
+  await Promise.all(
+    unique.map(async (uid) => {
+      try {
+        const snap = await getDoc(doc(db, 'users', uid))
+        if (snap.exists()) {
+          const data = snap.data()
+          const email = typeof data.email === 'string' ? data.email : ''
+          const name =
+            typeof data.displayName === 'string' && data.displayName.trim()
+              ? data.displayName.trim()
+              : email
+                ? email.split('@')[0]
+                : ''
+          map.set(uid, name || 'Teacher')
+        } else {
+          map.set(uid, 'Teacher')
+        }
+      } catch {
+        map.set(uid, 'Teacher')
+      }
+    }),
+  )
+  return map
 }

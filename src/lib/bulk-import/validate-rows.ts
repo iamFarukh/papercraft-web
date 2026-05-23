@@ -4,7 +4,9 @@ import {
   listSubjectsForClass,
   listTopics,
 } from '@/services/firebase/curriculum'
+import { classLabelForNumber } from '@/lib/rbse-catalog'
 import { nameKey } from '@/lib/curriculum-normalize'
+import { resolveSubjectForImport } from '@/lib/subject-resolve'
 import type { ImportField } from '@/lib/bulk-import/fields'
 import {
   parseBloom,
@@ -112,7 +114,7 @@ function buildDocument(
     difficulty,
     marks,
     bloomLevel,
-    status: 'draft',
+    status: 'published',
     tags,
     estimatedMinutes,
     usageCount: 0,
@@ -175,7 +177,9 @@ export async function validateImportRows(
 
     const classNumber = parseClassNumber(getMapped(raw, mapping, 'class'))
     if (classNumber === null) {
-      issues.push('Class is missing or not recognized (use 5–8 or Class VI).')
+      issues.push(
+        'Class is missing or not recognized (use 9, Class IX, CLASS 9, or Roman numerals I–XII).',
+      )
       state = 'failed'
     }
 
@@ -242,13 +246,35 @@ export async function validateImportRows(
       subjectCache.set(classKey, await listSubjectsForClass(classNumber!, null))
     }
     const subjects = subjectCache.get(classKey)!
-    let subject = findByName(subjects, subjectName)
+    const subjectResolve = resolveSubjectForImport(subjectName, classNumber!)
 
-    const subKey = `${classNumber}|${nameKey(subjectName)}`
+    if (subjectResolve.suggestion) {
+      issues.push(
+        `Subject "${subjectName}" is not recognized for ${classLabelForNumber(classNumber!)}. Did you mean "${subjectResolve.suggestion}"?`,
+      )
+      results.push({
+        rowNumber,
+        raw,
+        state: 'failed',
+        issues,
+        curriculumNeeds,
+        document: null,
+      })
+      continue
+    }
 
-    if (!subject) {
-      curriculumNeeds.subject = subjectName
-      subject = { id: `pending-sub-${subKey}`, label: subjectName }
+    let subject: TaxonomyOption | null = null
+    const subKey = `${classNumber}|${nameKey(subjectResolve.name || subjectName)}`
+
+    if (subjectResolve.catalogId) {
+      subject = { id: subjectResolve.catalogId, label: subjectResolve.name }
+    } else {
+      subject = findByName(subjects, subjectResolve.name)
+    }
+
+    if (!subject && state !== 'failed') {
+      curriculumNeeds.subject = subjectResolve.name
+      subject = { id: `pending-sub-${subKey}`, label: subjectResolve.name }
       if (state === 'valid') state = 'warning'
     }
 

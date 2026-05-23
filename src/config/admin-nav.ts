@@ -39,22 +39,22 @@ export const ADMIN_NAV: NavGroup[] = [
     items: [
       { key: 'repo', label: 'Question Repository', icon: Archive, badge: 'dynamic' },
       { key: 'bookmarks', label: 'Bookmarks', icon: Bookmark },
-      { key: 'curriculum', label: 'Curriculum', icon: Layers, disabled: true },
+      { key: 'curriculum', label: 'Curriculum', icon: Layers },
       { key: 'blueprint', label: 'Blueprints', icon: Target, disabled: true },
     ],
   },
   {
     section: 'Papers',
     items: [
-      { key: 'papers', label: 'Paper Library', icon: FileText, disabled: true },
-      { key: 'builder', label: 'Paper Builder', icon: Pencil, disabled: true },
-      { key: 'approval', label: 'Approvals', icon: Check, badge: '7', disabled: true },
+      { key: 'papers', label: 'Paper Library', icon: FileText },
+      { key: 'builder', label: 'Paper Builder', icon: Pencil },
+      { key: 'approval', label: 'Approvals', icon: Check, badge: 'approvals' },
     ],
   },
   {
     section: 'Organization',
     items: [
-      { key: 'teachers', label: 'Teachers', icon: Users, disabled: true },
+      { key: 'teachers', label: 'Teachers', icon: Users },
       { key: 'analytics', label: 'Analytics', icon: BarChart3, disabled: true },
     ],
   },

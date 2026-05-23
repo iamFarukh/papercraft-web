@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { ChevronDown, ChevronRight, Search } from 'lucide-react'
+import { TopicFilterDropdown } from '@/components/repository/TopicFilterDropdown'
 import {
   DIFFICULTY_LABELS,
   type RepositoryFilters,
@@ -25,6 +26,8 @@ type FilterRowProps = {
   swatch?: string
   indent?: number
   onToggle: () => void
+  /** Click label to focus (e.g. topic picker) without toggling checkbox */
+  onActivate?: () => void
 }
 
 function FilterRow({
@@ -34,6 +37,7 @@ function FilterRow({
   swatch,
   indent = 0,
   onToggle,
+  onActivate,
 }: FilterRowProps) {
   const checked = state === 'on'
   const indeterminate = state === 'mixed'
@@ -59,7 +63,16 @@ function FilterRow({
       {swatch && (
         <span className="pc-repo-filter-swatch" style={{ background: swatch }} />
       )}
-      <span className="pc-repo-filter-row-label">{label}</span>
+      <span
+        className="pc-repo-filter-row-label"
+        onClick={(e) => {
+          if (!onActivate) return
+          e.preventDefault()
+          onActivate()
+        }}
+      >
+        {label}
+      </span>
       {count !== undefined && (
         <span className="pc-repo-filter-count pc-num">{count}</span>
       )}
@@ -117,10 +130,15 @@ type FilterPanelProps = {
     difficulty: Record<string, number>
     types: Record<string, number>
     statuses: Record<string, number>
+    bulkImports: Record<string, number>
   }
+  bulkImportLabels?: Record<string, string>
+  hasMore?: boolean
+  loadingMore?: boolean
   isAdmin?: boolean
   onToggle: (group: keyof RepositoryFilters, key: string) => void
   onSyllabusToggle: (target: SyllabusToggleTarget) => void
+  onChapterBulkToggle: (chapters: string[], on: boolean) => void
   onReset: () => void
 }
 
@@ -128,26 +146,42 @@ export function FilterPanel({
   questions,
   filters,
   counts,
+  bulkImportLabels = {},
+  hasMore = false,
+  loadingMore = false,
   isAdmin = false,
   onToggle,
   onSyllabusToggle,
+  onChapterBulkToggle,
   onReset,
 }: FilterPanelProps) {
   const [syllabusSearch, setSyllabusSearch] = useState('')
   const [expandedClasses, setExpandedClasses] = useState<Set<string>>(() => new Set())
-  const [expandedSubjects, setExpandedSubjects] = useState<Set<string>>(() => new Set())
+  const [topicScope, setTopicScope] = useState<{
+    classLabel: string
+    subject: string
+  } | null>(null)
 
   /** Full syllabus tree — never hide options when a class/subject is unchecked. */
   const tree = useMemo(() => buildCurriculumTree(questions), [questions])
   const didAutoExpand = useRef(false)
 
   useEffect(() => {
-    if (didAutoExpand.current || tree.length === 0) return
-    didAutoExpand.current = true
-    const first = tree[0]!
-    setExpandedClasses(new Set([first.classLabel]))
-    if (first.subjects[0]) {
-      setExpandedSubjects(new Set([first.subjects[0]!.key]))
+    if (tree.length === 0) return
+    setExpandedClasses((prev) => {
+      const next = new Set(prev)
+      for (const cls of tree) next.add(cls.classLabel)
+      return next
+    })
+    if (!didAutoExpand.current) {
+      didAutoExpand.current = true
+      const first = tree[0]!
+      if (first.subjects[0]) {
+        setTopicScope({
+          classLabel: first.classLabel,
+          subject: first.subjects[0]!.subject,
+        })
+      }
     }
   }, [tree])
 
@@ -157,20 +191,11 @@ export function FilterPanel({
     if (!search) return tree
     return tree
       .map((cls) => {
-        const subjects = cls.subjects
-          .map((sub) => {
-            const chapters = sub.chapters.filter(
-              (ch) =>
-                matchesFilterSearch(ch.chapter, search) ||
-                matchesFilterSearch(sub.subject, search) ||
-                matchesFilterSearch(cls.classLabel, search),
-            )
-            if (chapters.length === 0 && !matchesFilterSearch(sub.subject, search)) {
-              return null
-            }
-            return { ...sub, chapters }
-          })
-          .filter(Boolean) as ClassTreeNode['subjects']
+        const subjects = cls.subjects.filter(
+          (sub) =>
+            matchesFilterSearch(sub.subject, search) ||
+            matchesFilterSearch(cls.classLabel, search),
+        )
         if (subjects.length === 0 && !matchesFilterSearch(cls.classLabel, search)) {
           return null
         }
@@ -203,26 +228,22 @@ export function FilterPanel({
     })
   }
 
-  function toggleSubjectExpand(key: string) {
-    setExpandedSubjects((prev) => {
-      const next = new Set(prev)
-      if (next.has(key)) next.delete(key)
-      else next.add(key)
-      return next
-    })
-  }
-
-  function ensureExpanded(classLabel: string, subjectKey: string) {
-    setExpandedClasses((prev) => new Set(prev).add(classLabel))
-    setExpandedSubjects((prev) => new Set(prev).add(subjectKey))
-  }
+  const topicChapters = useMemo(() => {
+    if (!topicScope) return []
+    const cls = tree.find((c) => c.classLabel === topicScope.classLabel)
+    const sub = cls?.subjects.find((s) => s.subject === topicScope.subject)
+    return sub?.chapters ?? []
+  }, [topicScope, tree])
 
   return (
     <aside className="pc-repo-filters pc-scroll" aria-label="Filters">
       <div className="pc-repo-filters-intro">
         <div>
           <span className="pc-repo-filters-title">Smart filters</span>
-          <span className="pc-repo-filters-sub">{activeSummary}</span>
+          <span className="pc-repo-filters-sub">
+            {activeSummary}
+            {(hasMore || loadingMore) && ' · loading more…'}
+          </span>
         </div>
         <button type="button" className="pc-repo-filters-reset" onClick={onReset}>
           Reset
@@ -233,7 +254,7 @@ export function FilterPanel({
         <Search size={14} strokeWidth={1.6} />
         <input
           type="search"
-          placeholder="Search class, subject, chapter…"
+          placeholder="Search class or subject…"
           value={syllabusSearch}
           onChange={(e) => setSyllabusSearch(e.target.value)}
         />
@@ -241,7 +262,11 @@ export function FilterPanel({
 
       <CollapseSection
         title="Syllabus"
-        meta={`${filteredTree.length} classes`}
+        meta={
+          hasMore || loadingMore
+            ? `${filteredTree.length} classes · syncing`
+            : `${filteredTree.length} classes`
+        }
         defaultOpen
       >
         {filteredTree.length === 0 ? (
@@ -283,64 +308,38 @@ export function FilterPanel({
 
                   {classOpen &&
                     cls.subjects.map((sub) => {
-                      const subOpen =
-                        expandedSubjects.has(sub.key) || search.length > 0
                       const subState = subjectTriState(sub, filters)
+                      const isTopicTarget =
+                        topicScope?.classLabel === cls.classLabel &&
+                        topicScope?.subject === sub.subject
 
                       return (
-                        <div key={sub.key} className="pc-repo-filter-tree-subject">
-                          <div className="pc-repo-filter-tree-row">
-                            <button
-                              type="button"
-                              className="pc-repo-filter-tree-chevron"
-                              onClick={() => toggleSubjectExpand(sub.key)}
-                              aria-label={subOpen ? 'Collapse' : 'Expand'}
-                            >
-                              {subOpen ? (
-                                <ChevronDown size={12} strokeWidth={1.6} />
-                              ) : (
-                                <ChevronRight size={12} strokeWidth={1.6} />
-                              )}
-                            </button>
-                            <FilterRow
-                              label={sub.subject}
-                              count={counts.subjects[sub.subject] ?? sub.count}
-                              state={subState}
-                              indent={1}
-                              onToggle={() => {
-                                ensureExpanded(cls.classLabel, sub.key)
-                                onSyllabusToggle({
-                                  level: 'subject',
-                                  classLabel: cls.classLabel,
-                                  subject: sub.subject,
-                                })
-                              }}
-                            />
-                          </div>
-
-                          {subOpen &&
-                            sub.chapters.map((ch) => (
-                              <FilterRow
-                                key={`${sub.key}|${ch.key}`}
-                                label={ch.chapter}
-                                count={counts.chapters[ch.chapter] ?? ch.count}
-                                state={
-                                  isFilterOn(filters.chapters, ch.chapter)
-                                    ? 'on'
-                                    : 'off'
-                                }
-                                indent={2}
-                                onToggle={() => {
-                                  ensureExpanded(cls.classLabel, sub.key)
-                                  onSyllabusToggle({
-                                    level: 'chapter',
-                                    classLabel: cls.classLabel,
-                                    subject: sub.subject,
-                                    chapter: ch.chapter,
-                                  })
-                                }}
-                              />
-                            ))}
+                        <div
+                          key={sub.key}
+                          className={
+                            'pc-repo-filter-tree-subject' +
+                            (isTopicTarget ? ' is-topic-target' : '')
+                          }
+                        >
+                          <FilterRow
+                            label={sub.subject}
+                            count={counts.subjects[sub.subject] ?? sub.count}
+                            state={subState}
+                            indent={1}
+                            onActivate={() =>
+                              setTopicScope({
+                                classLabel: cls.classLabel,
+                                subject: sub.subject,
+                              })
+                            }
+                            onToggle={() =>
+                              onSyllabusToggle({
+                                level: 'subject',
+                                classLabel: cls.classLabel,
+                                subject: sub.subject,
+                              })
+                            }
+                          />
                         </div>
                       )
                     })}
@@ -350,6 +349,52 @@ export function FilterPanel({
           </div>
         )}
       </CollapseSection>
+
+      <CollapseSection title="Topics" defaultOpen>
+        {topicScope && topicChapters.length > 0 ? (
+          <TopicFilterDropdown
+            classLabel={topicScope.classLabel}
+            subject={topicScope.subject}
+            chapters={topicChapters}
+            chapterFilters={filters.chapters}
+            counts={counts.chapters}
+            onToggleChapter={(chapter) =>
+              onSyllabusToggle({
+                level: 'chapter',
+                classLabel: topicScope.classLabel,
+                subject: topicScope.subject,
+                chapter,
+              })
+            }
+            onToggleAll={onChapterBulkToggle}
+          />
+        ) : (
+          <p className="pc-repo-filter-empty">
+            Select a class and subject above to filter by topic.
+          </p>
+        )}
+      </CollapseSection>
+
+      {Object.keys(filters.bulkImports).length > 0 && (
+        <CollapseSection title="Bulk uploads" defaultOpen>
+          <p className="pc-repo-filter-bulk-hint">
+            Filter by import file — name and upload date from bulk import.
+          </p>
+          <div className="pc-repo-filter-options pc-repo-filter-options--compact">
+            {Object.keys(filters.bulkImports)
+              .sort((a, b) => (bulkImportLabels[b] ?? b).localeCompare(bulkImportLabels[a] ?? a))
+              .map((batchId) => (
+                <FilterRow
+                  key={batchId}
+                  label={bulkImportLabels[batchId] ?? batchId}
+                  count={counts.bulkImports[batchId] ?? 0}
+                  state={filters.bulkImports[batchId] ? 'on' : 'off'}
+                  onToggle={() => onToggle('bulkImports', batchId)}
+                />
+              ))}
+          </div>
+        </CollapseSection>
+      )}
 
       <CollapseSection title="Difficulty" defaultOpen={false}>
         <div className="pc-repo-filter-chips">

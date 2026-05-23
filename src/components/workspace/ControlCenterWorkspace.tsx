@@ -1,8 +1,18 @@
 import { ActivityFeed } from '@/components/dashboard/ActivityFeed'
 import { ApprovalPipeline } from '@/components/dashboard/ApprovalPipeline'
 import { MetricOverview } from '@/components/dashboard/MetricOverview'
+import { useControlCenterData } from '@/hooks/useControlCenterData'
 
 export function ControlCenterWorkspace() {
+  const { loading, error, metrics, pipeline, activities, papersInFlow, greeting } =
+    useControlCenterData()
+  const dateLabel = new Date().toLocaleDateString(undefined, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+
   return (
     <main
       className="pc-scroll"
@@ -33,7 +43,7 @@ export function ControlCenterWorkspace() {
               marginBottom: 6,
             }}
           >
-            Tuesday · 21 May 2026 · Term II in progress
+            {dateLabel}
           </div>
           <h1
             className="pc-serif"
@@ -44,7 +54,7 @@ export function ControlCenterWorkspace() {
               lineHeight: 1.1,
             }}
           >
-            Good morning, Aarav.
+            {greeting.salutation}, {greeting.name}.
             <span
               style={{
                 color: 'var(--pc-ink-4)',
@@ -53,15 +63,20 @@ export function ControlCenterWorkspace() {
               }}
             >
               {' '}
-              Seven papers await your review.
+              {greeting.subline}
             </span>
           </h1>
         </div>
       </header>
 
-      <MetricOverview />
-      <ApprovalPipeline />
-      <ActivityFeed />
+      <MetricOverview loading={loading} error={error} metrics={metrics} />
+      <ApprovalPipeline
+        loading={loading}
+        error={error}
+        pipeline={pipeline}
+        papersInFlow={papersInFlow}
+      />
+      <ActivityFeed loading={loading} error={error} activities={activities} />
     </main>
   )
 }

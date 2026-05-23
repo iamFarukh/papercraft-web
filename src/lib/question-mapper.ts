@@ -54,8 +54,8 @@ export function mapQuestionDoc(
 
   return {
     id,
-    chapter: doc.chapterName,
-    topic: doc.topicName,
+    chapter: doc.chapterName?.trim() || '—',
+    topic: doc.topicName?.trim() || '',
     type: typeLabelFromId(doc.type),
     marks: doc.marks,
     difficulty: DIFFICULTY_NUM[doc.difficulty] ?? 2,
@@ -92,6 +92,9 @@ export function mapQuestionDoc(
       delMs && canRestoreDelete(doc.deletedAt)
         ? formatRestoreTimeLeft(delMs)
         : undefined,
+    importFileName: doc.importFileName,
+    importBatchId: doc.importBatchId,
+    importedAtMs: doc.importedAt?.toMillis?.() ?? null,
   }
 }
 

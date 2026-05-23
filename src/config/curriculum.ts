@@ -1,10 +1,15 @@
-/** Display lookups for RBSE Classes V–VIII seed curriculum */
+/** Display lookups for RBSE curriculum */
+
+import { classLabelForNumber } from '@/lib/rbse-catalog'
+import { subjects as RBSE_SUBJECTS } from '@/data/rbse-subjects'
 
 export const SUBJECT_LABELS: Record<string, string> = {
   mathematics: 'Mathematics',
   science: 'Science',
   hindi: 'Hindi',
 }
+
+const SUBJECT_NAME_BY_ID = new Map(RBSE_SUBJECTS.map((s) => [s.id, s.name]))
 
 export const CLASS_LABELS: Record<number, string> = {
   5: 'Class V',
@@ -32,19 +37,23 @@ export const STATUS_LABELS: Record<string, string> = {
 }
 
 export function classLabelFromNumber(n: number): string {
-  return CLASS_LABELS[n] ?? `Class ${n}`
+  return CLASS_LABELS[n] ?? classLabelForNumber(n)
 }
 
 export function subjectLabelFromId(id: string): string {
-  if (SUBJECT_LABELS[id]) return SUBJECT_LABELS[id]
-  if (id.startsWith('sub_')) {
-    const name = id
-      .slice(4)
-      .replace(/_/g, ' ')
-      .replace(/\b\w/g, (c) => c.toUpperCase())
-    return name
+  if (!id?.trim()) {
+    return 'Unassigned subject'
   }
-  return id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+  const catalog = SUBJECT_NAME_BY_ID.get(id)
+  if (catalog) return catalog
+  if (SUBJECT_LABELS[id]) return SUBJECT_LABELS[id]
+  if (id.startsWith('pending-')) return 'Custom subject'
+  const fromId = id
+    .replace(/^sub_/, '')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+  if (fromId && fromId.length >= 2) return fromId
+  return 'Unknown subject'
 }
 
 export function typeLabelFromId(type: string): string {

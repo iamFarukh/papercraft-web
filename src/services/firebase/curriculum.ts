@@ -44,7 +44,7 @@ const META = 'curriculum_meta'
 const META_DOC = 'sync'
 
 /** Old chapter seeds — same subject, different doc id; hide from picker */
-const LEGACY_SUBJECT_IDS = new Set(['mathematics', 'science', 'hindi'])
+export const LEGACY_SUBJECT_IDS = new Set(['mathematics', 'science', 'hindi'])
 
 const CATALOG_TO_LEGACY: Record<string, string> = {
   sub_mathematics: 'mathematics',
@@ -207,6 +207,7 @@ export async function listSubjectsForClass(
       return { id: d.id, label: data.name, data }
     })
     .filter((o) => !LEGACY_SUBJECT_IDS.has(o.id))
+    .filter((o) => o.data.status !== 'archived')
     .filter((o) => subjectAppliesToClass(o.data, classNumber, stream))
     .filter((o) => {
       const key = o.data.nameKey ?? nameKey(o.label)
@@ -248,9 +249,11 @@ export async function listChapters(
       ),
     )
     for (const d of snap.docs) {
+      const data = d.data() as CurriculumChapterDoc
+      if (data.status === 'archived') continue
       byId.set(d.id, {
         id: d.id,
-        label: (d.data() as CurriculumChapterDoc).name,
+        label: data.name,
       })
     }
   }
@@ -264,6 +267,7 @@ export async function listTopics(chapterId: string): Promise<TaxonomyOption[]> {
     query(collection(db, TOPICS), where('chapterId', '==', chapterId)),
   )
   return snap.docs
+    .filter((d) => (d.data() as CurriculumTopicDoc).status !== 'archived')
     .map((d) => ({
       id: d.id,
       label: (d.data() as CurriculumTopicDoc).name,
@@ -405,6 +409,7 @@ export async function createSubject(
     classNumbers: [classNumber],
     streams: stream ? [stream] : [],
     isActive: true,
+    status: 'active',
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   } satisfies CurriculumSubjectDoc)
@@ -439,6 +444,7 @@ export async function createChapter(
     subjectId,
     name: validated.name,
     nameKey: validated.nameKey,
+    status: 'active',
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   } satisfies CurriculumChapterDoc)
@@ -475,6 +481,7 @@ export async function createTopic(
     chapterId,
     name: validated.name,
     nameKey: validated.nameKey,
+    status: 'active',
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   } satisfies CurriculumTopicDoc)

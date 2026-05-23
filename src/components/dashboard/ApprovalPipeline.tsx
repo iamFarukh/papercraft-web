@@ -1,77 +1,55 @@
-import { useState, type CSSProperties } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
-import { PIPELINE_STAGES } from '@/data/control-center-mock'
-import { ApprovalDrawer } from './ApprovalDrawer'
+import { useNavigate } from 'react-router-dom'
+import { motion, type CSSProperties } from 'framer-motion'
+import type { ControlCenterPipelineStage } from '@/hooks/useControlCenterData'
+import { listItemReveal, listReveal } from '@/lib/motion/variants'
 
-type PaperItem = {
-  title: string
-  detail: string
-  initials: string
-  avatar: string
+type Props = {
+  loading: boolean
+  error: string | null
+  pipeline: ControlCenterPipelineStage[]
+  papersInFlow: number
 }
 
-const pipelineContainerVariants = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.05,
-      delayChildren: 0.1,
-    },
-  },
-}
-
-const stageVariants = {
-  hidden: { y: 15, opacity: 0 },
-  show: {
-    y: 0,
-    opacity: 1,
-    transition: {
-      type: 'spring',
-      stiffness: 90,
-      damping: 14,
-    },
-  },
-}
-
-export function ApprovalPipeline() {
-  const [selectedPaper, setSelectedPaper] = useState<PaperItem | null>(null)
-  const [stageMeta, setStageMeta] = useState<{ name: string; accent: string } | null>(null)
+export function ApprovalPipeline({ loading, error, pipeline, papersInFlow }: Props) {
+  const navigate = useNavigate()
 
   return (
     <section className="pc-panel pc-panel-pad pc-pipeline-panel">
       <header className="pc-section-head">
         <div>
-          <h2 className="pc-serif pc-section-title">Approval Pipeline</h2>
-          <p className="pc-section-sub">Term II · all examinations · institutional workflow</p>
+          <h2 className="pc-serif pc-section-title">Paper workflow</h2>
+          <p className="pc-section-sub">Draft through approval · your recent papers</p>
         </div>
         <div className="pc-pipeline-summary pc-num">
-          <span className="pc-pipeline-summary-value">66</span>
+          <span className="pc-pipeline-summary-value">
+            {loading ? '—' : papersInFlow}
+          </span>
           <span className="pc-pipeline-summary-label">papers in flow</span>
         </div>
       </header>
 
+      {error ? (
+        <p className="pc-section-sub" style={{ marginTop: 0 }}>
+          {error}
+        </p>
+      ) : null}
+
       <motion.div
         className="pc-pipeline-flow"
-        variants={pipelineContainerVariants}
+        variants={listReveal}
         initial="hidden"
-        animate="show"
+        animate="visible"
       >
-        {PIPELINE_STAGES.map((stage, index) => (
+        {pipeline.map((stage, index) => (
           <div key={stage.key} className="pc-pipeline-stage-wrap">
-            {index > 0 && (
+            {index > 0 ? (
               <div className="pc-pipeline-connector" aria-hidden>
                 <span className="pc-pipeline-connector-line" />
               </div>
-            )}
+            ) : null}
             <motion.div
-              className="pc-pipeline-stage"
-              variants={stageVariants}
-              whileHover={{
-                boxShadow: 'var(--pc-shadow-md)',
-                borderColor: 'var(--pc-line-2)',
-                transition: { duration: 0.2 },
-              }}
+              className="pc-pipeline-stage pc-motion-surface"
+              variants={listItemReveal}
               style={{ '--stage-accent': stage.accent } as CSSProperties}
             >
               <div className="pc-pipeline-stage-head">
@@ -82,26 +60,27 @@ export function ApprovalPipeline() {
                 />
               </div>
               <div className="pc-pipeline-stage-count pc-serif pc-num">
-                {stage.count}
+                {loading ? '—' : stage.count}
               </div>
               <p className="pc-pipeline-stage-meta">{stage.meta}</p>
 
               <ul className="pc-pipeline-papers">
+                {stage.papers.length === 0 && !loading ? (
+                  <li className="pc-pipeline-paper pc-pipeline-paper--empty">
+                    <span className="pc-pipeline-paper-detail">{stage.emptyMeta}</span>
+                  </li>
+                ) : null}
                 {stage.papers.map((paper) => (
                   <motion.li
-                    key={paper.title}
-                    className="pc-pipeline-paper"
-                    whileHover={{
-                      scale: 1.025,
-                      boxShadow: 'var(--pc-shadow-sm)',
-                      borderColor: 'var(--pc-primary-200)',
-                      cursor: 'pointer',
-                    }}
+                    key={paper.id}
+                    className="pc-pipeline-paper pc-motion-surface"
                     onClick={() => {
-                      setSelectedPaper(paper)
-                      setStageMeta({ name: stage.name, accent: stage.accent })
+                      if (stage.key === 'submitted' || stage.key === 'approved') {
+                        navigate('/app/approvals')
+                        return
+                      }
+                      navigate(`/app/builder/${paper.id}`)
                     }}
-                    transition={{ type: 'spring', stiffness: 200, damping: 15 }}
                   >
                     <div className="pc-pipeline-paper-body">
                       <div className="pc-pipeline-paper-title">{paper.title}</div>
@@ -117,22 +96,6 @@ export function ApprovalPipeline() {
           </div>
         ))}
       </motion.div>
-
-      <AnimatePresence>
-        {selectedPaper && stageMeta ? (
-          <ApprovalDrawer
-            key={`${selectedPaper.title}-${selectedPaper.initials}`}
-            paper={selectedPaper}
-            stageName={stageMeta.name}
-            stageAccent={stageMeta.accent}
-            onClose={() => {
-              setSelectedPaper(null)
-              setStageMeta(null)
-            }}
-          />
-        ) : null}
-      </AnimatePresence>
     </section>
   )
 }
-

@@ -10,9 +10,17 @@ import type { QuestionDocument } from '@/types/question'
 const COLLECTION = 'questions'
 const BATCH_LIMIT = 400
 
+export type BatchImportOptions = {
+  importBatchId?: string
+  importFileName?: string
+  /** Default published for bulk upload */
+  status?: QuestionDocument['status']
+}
+
 export async function batchImportQuestions(
   docs: Omit<QuestionDocument, 'createdAt' | 'updatedAt'>[],
   createdBy: string,
+  options: BatchImportOptions = {},
 ): Promise<string[]> {
   if (docs.length === 0) return []
 
@@ -27,10 +35,12 @@ export async function batchImportQuestions(
       ids.push(ref.id)
       batch.set(ref, {
         ...data,
-        status: 'draft',
+        status: options.status ?? data.status ?? 'published',
         source: 'bulk_import',
         createdBy,
         usageCount: data.usageCount ?? 0,
+        importBatchId: options.importBatchId ?? data.importBatchId,
+        importFileName: options.importFileName ?? data.importFileName,
         importedAt: serverTimestamp(),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),

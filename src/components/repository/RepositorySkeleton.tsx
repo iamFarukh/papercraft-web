@@ -10,7 +10,7 @@ export function RepositoryToolbarSkeleton() {
 
 export function QuestionCardSkeleton() {
   return (
-    <article className="pc-q-card pc-q-card--skeleton" aria-hidden>
+    <article className="pc-q-card pc-q-card--skeleton pc-motion-content-enter" aria-hidden>
       <div className="pc-skel pc-skel-line is-short" />
       <div className="pc-skel pc-skel-line is-title" />
       <div className="pc-skel pc-skel-line" />

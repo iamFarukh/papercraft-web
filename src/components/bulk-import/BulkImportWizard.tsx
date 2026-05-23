@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useToast } from '@/context/ToastContext'
+import { notifyBulkImportCompleted } from '@/services/firebase/workflow-notifications'
 import { downloadSampleTemplate } from '@/lib/bulk-import/sample-template'
 import {
   autoMapColumns,
@@ -32,7 +33,9 @@ import {
 } from '@/lib/bulk-import/mapping-ui'
 import { parseImportFile, supportedImportFile } from '@/lib/bulk-import/parse-file'
 import type { ParsedSheet } from '@/lib/bulk-import/parse-file'
+import { ImportRowEditor } from '@/components/bulk-import/ImportRowEditor'
 import { executeValidatedImport } from '@/lib/bulk-import/execute-import'
+import { createImportBatch, type ImportBatchMeta } from '@/lib/bulk-import/import-batch'
 import {
   buildApprovalsFromRows,
   collectCurriculumToCreate,
@@ -79,7 +82,17 @@ export function BulkImportWizard() {
   const [fileError, setFileError] = useState<string | null>(null)
   const [previewFilter, setPreviewFilter] = useState<PreviewFilter>('all')
   const [includeWarnings, setIncludeWarnings] = useState(true)
-  const [confirmDraft, setConfirmDraft] = useState(true)
+  const [confirmPublish, setConfirmPublish] = useState(true)
+  const [importBatch, setImportBatch] = useState<ImportBatchMeta | null>(null)
+  const [rowEdits, setRowEdits] = useState<Record<number, Record<string, string>>>({})
+
+  function rowsForValidation(): Record<string, string>[] {
+    if (!parsed) return []
+    return parsed.rows.map((raw, i) => ({
+      ...raw,
+      ...rowEdits[i + 2],
+    }))
+  }
 
   const summary = useMemo(
     () => (validated ? summarizeValidation(validated) : null),
@@ -113,6 +126,8 @@ export function BulkImportWizard() {
     try {
       const sheet = await parseImportFile(file)
       setParsed(sheet)
+      setImportBatch(createImportBatch(file.name))
+      setRowEdits({})
       setMapping(autoMapColumns(sheet.headers))
       setValidated(null)
       setStep('mapping')
@@ -133,7 +148,7 @@ export function BulkImportWizard() {
     }
     setValidating(true)
     try {
-      const rows = await validateImportRows(parsed.rows, mapping, {
+      const rows = await validateImportRows(rowsForValidation(), mapping, {
         subjects: new Set(),
         chapters: new Set(),
         topics: new Set(),
@@ -146,10 +161,37 @@ export function BulkImportWizard() {
     } finally {
       setValidating(false)
     }
-  }, [parsed, mapping, toast])
+  }, [parsed, mapping, toast, rowEdits])
+
+  const applyRowEdit = useCallback(
+    async (rowNumber: number, patch: Record<string, string>) => {
+      setRowEdits((prev) => ({ ...prev, [rowNumber]: { ...prev[rowNumber], ...patch } }))
+      if (!parsed) return
+      setValidating(true)
+      try {
+        const merged = parsed.rows.map((raw, i) => ({
+          ...raw,
+          ...rowEdits[i + 2],
+          ...(i + 2 === rowNumber ? patch : {}),
+        }))
+        const rows = await validateImportRows(merged, mapping, {
+          subjects: new Set(),
+          chapters: new Set(),
+          topics: new Set(),
+        })
+        setValidated(rows)
+        toast('Row updated — validation refreshed', 'success')
+      } catch (err) {
+        toast(err instanceof Error ? err.message : 'Re-validation failed', 'info')
+      } finally {
+        setValidating(false)
+      }
+    },
+    [parsed, mapping, rowEdits, toast],
+  )
 
   const handleImport = useCallback(async () => {
-    if (!validated || !user?.uid || !confirmDraft) return
+    if (!validated || !user?.uid || !confirmPublish) return
     const approvals = buildApprovalsFromRows(validated, mapping)
     setImporting(true)
     try {
@@ -158,16 +200,23 @@ export function BulkImportWizard() {
         mapping,
         approvals,
         user.uid,
+        importBatch ?? undefined,
       )
       setImportedCount(result.imported)
       setStep('complete')
-      toast(`${result.imported} questions imported as draft`, 'success')
+      toast(`${result.imported} questions published to the repository`, 'success')
+      void notifyBulkImportCompleted({
+        adminUserId: user.uid,
+        fileName: importBatch?.fileName ?? 'import file',
+        imported: result.imported,
+        batchId: importBatch?.id,
+      }).catch(() => undefined)
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Import failed', 'info')
     } finally {
       setImporting(false)
     }
-  }, [validated, mapping, user?.uid, confirmDraft, toast])
+  }, [validated, mapping, user?.uid, confirmPublish, importBatch, toast])
 
   const mappingPreview = useMemo(() => {
     if (!parsed?.rows[0]) return null
@@ -194,36 +243,27 @@ export function BulkImportWizard() {
               <div>
                 <p className="pc-csv-kicker">Step 5 of 5 · Import complete</p>
                 <h1 className="pc-csv-done-title pc-serif">
-                  <span className="pc-num">{importedCount}</span> questions imported{' '}
-                  <em>as Draft</em>
+                  <span className="pc-num">{importedCount}</span> questions published
                 </h1>
                 <p className="pc-csv-done-meta">
-                  Saved to the repository · review and publish when ready
+                  {importBatch?.fileName
+                    ? `From ${importBatch.fileName} · visible in repository and bulk upload filters`
+                    : 'Saved to the repository · ready for papers'}
                 </p>
               </div>
             </div>
 
-            <div className="pc-csv-draft-banner">
-              <span className="pc-csv-draft-banner-icon">
-                <Lock size={18} strokeWidth={1.6} />
-              </span>
-              <div>
-                <p className="pc-csv-draft-banner-title pc-serif">
-                  Imported as Draft — review before publishing
-                </p>
-                <p className="pc-csv-draft-banner-body">
-                  Questions stay hidden from teachers until an admin publishes them
-                  from the repository.
-                </p>
+            {importBatch ? (
+              <div className="pc-csv-draft-banner is-published">
+                <span className="pc-csv-draft-banner-icon">
+                  <CheckCircle2 size={18} strokeWidth={1.6} />
+                </span>
+                <div>
+                  <p className="pc-csv-draft-banner-title pc-serif">Bulk upload batch</p>
+                  <p className="pc-csv-draft-banner-body pc-mono">{importBatch.fileName}</p>
+                </div>
               </div>
-              <button
-                type="button"
-                className="pc-btn is-primary is-sm"
-                onClick={() => navigate('/app/repository')}
-              >
-                Review drafts
-              </button>
-            </div>
+            ) : null}
 
             <div className="pc-csv-done-actions">
               <button
@@ -263,9 +303,8 @@ export function BulkImportWizard() {
           left={
             step === 'upload' ? (
               <span className="pc-csv-foot-note">
-                <Lock size={12} strokeWidth={1.6} />
-                Imports never auto-publish. All rows arrive as{' '}
-                <strong>Draft</strong> for admin review.
+                <CheckCircle2 size={12} strokeWidth={1.6} />
+                Bulk imports are <strong>published</strong> immediately and tagged with your file name.
               </span>
             ) : step === 'mapping' && parsed ? (
               <span className="pc-csv-foot-note">
@@ -292,10 +331,10 @@ export function BulkImportWizard() {
               <label className="pc-csv-foot-check">
                 <input
                   type="checkbox"
-                  checked={confirmDraft}
-                  onChange={(e) => setConfirmDraft(e.target.checked)}
+                  checked={confirmPublish}
+                  onChange={(e) => setConfirmPublish(e.target.checked)}
                 />
-                I understand all questions arrive as <strong>Draft</strong>
+                I understand all questions will be <strong>published</strong> immediately
               </label>
             ) : null
           }
@@ -346,10 +385,10 @@ export function BulkImportWizard() {
                 <button
                   type="button"
                   className="pc-btn is-primary is-sm"
-                  disabled={importing || !confirmDraft || summary.importable === 0}
+                  disabled={importing || !confirmPublish || summary.importable === 0}
                   onClick={() => void handleImport()}
                 >
-                  {importing ? 'Importing…' : `Import ${summary.importable} as Draft`}
+                  {importing ? 'Importing…' : `Publish ${summary.importable} questions`}
                 </button>
               )}
             </>
@@ -478,7 +517,7 @@ export function BulkImportWizard() {
                 ['sliders', 'Map columns', 'Auto-detected when possible. You confirm.'],
                 ['check', 'Every row validated', 'Types, marks, duplicates, curriculum.'],
                 ['eye', 'Preview before commit', 'Nothing is skipped silently.'],
-                ['lock', 'Imported as Draft', 'Never auto-published to teachers.'],
+                ['check', 'Published automatically', 'Questions go live in the repository immediately.'],
               ].map(([icon, title, body], i) => (
                 <div key={title} className="pc-csv-how-row">
                   <span className="pc-csv-how-icon">
@@ -608,7 +647,7 @@ export function BulkImportWizard() {
               <div className="pc-panel pc-panel-pad pc-csv-preview-card">
                 <div className="pc-csv-preview-head">
                   <span className="pc-mono">Row 1</span>
-                  <span className="pc-tag is-warning">will be Draft</span>
+                  <span className="pc-tag is-success">will be Published</span>
                 </div>
                 {mappingPreview.en && (
                   <p className="pc-serif pc-csv-preview-en">{mappingPreview.en}</p>
@@ -727,6 +766,14 @@ export function BulkImportWizard() {
                           {issues.join(' · ')}
                         </p>
                       )}
+                      {state === 'failed' && (
+                        <ImportRowEditor
+                          rowNumber={row.rowNumber}
+                          raw={{ ...row.raw, ...rowEdits[row.rowNumber] }}
+                          mapping={mapping}
+                          onSave={(num, patch) => void applyRowEdit(num, patch)}
+                        />
+                      )}
                       {state === 'curriculum' && issues.length === 0 && (
                         <p className="pc-csv-validate-issue is-curriculum">
                           New curriculum — created on import
@@ -790,7 +837,7 @@ export function BulkImportWizard() {
 
             <div className="pc-csv-summary-strip">
               {[
-                { label: 'Will import', v: summary.importable, hint: 'as Draft' },
+                { label: 'Will publish', v: summary.importable, hint: 'to repository' },
                 { label: 'Skipped', v: summary.failed, hint: 'failed validation' },
                 {
                   label: 'New curriculum',
@@ -826,15 +873,15 @@ export function BulkImportWizard() {
                 </ul>
               </div>
 
-              <div className="pc-csv-draft-panel">
-                <Lock size={16} strokeWidth={1.6} />
+              <div className="pc-csv-draft-panel is-published">
+                <CheckCircle2 size={16} strokeWidth={1.6} />
                 <div>
                   <p className="pc-csv-draft-panel-title pc-serif">
-                    Imports as Draft
+                    Auto-publish on import
                   </p>
                   <p>
-                    Imported questions never auto-publish. Review in the
-                    repository before teachers can use them.
+                    Questions are published immediately and appear in the repository.
+                    Use bulk upload filters to find this file later.
                   </p>
                 </div>
               </div>

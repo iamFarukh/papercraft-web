@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
+import { drawerSlideBottom, overlayFade } from '@/lib/motion/variants'
 import { X, CheckCircle2, AlertTriangle, Printer, Layers, Clock, ShieldAlert } from 'lucide-react'
 
 type PaperItem = {
@@ -35,34 +36,32 @@ export function ApprovalDrawer({
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
+  const reduced = useReducedMotion()
+
   return (
     <motion.div
       className="pc-approval-overlay"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.22, ease: 'easeOut' }}
+      variants={overlayFade}
+      initial={reduced ? false : 'hidden'}
+      animate="visible"
+      exit="exit"
       role="dialog"
       aria-modal="true"
       aria-label="Paper approval detail"
     >
-      <motion.button
+      <button
         type="button"
         className="pc-approval-backdrop"
         aria-label="Close preview"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.22 }}
         onClick={onClose}
       />
 
       <motion.aside
         className="pc-approval-sheet pc-scroll"
-        initial={{ y: '100%', opacity: 0.85 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: '100%', opacity: 0.85 }}
-        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+        variants={drawerSlideBottom}
+        initial={reduced ? false : 'hidden'}
+        animate="visible"
+        exit="exit"
         onClick={(e) => e.stopPropagation()}
       >
         <header

@@ -1,0 +1,49 @@
+import { doc, onSnapshot } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
+import type { UserProfile } from '@/types/user-profile'
+import { normalizeAssignmentScope } from '@/lib/teacher-assignments'
+import type { TeacherAssignment } from '@/types/teacher'
+import type { UserRole } from '@/services/firebase/users'
+
+function parseProfile(uid: string, data: Record<string, unknown>): UserProfile {
+  const role: UserRole = data.role === 'teacher' ? 'teacher' : 'admin'
+  const email = typeof data.email === 'string' ? data.email : ''
+  const displayName =
+    typeof data.displayName === 'string' && data.displayName.trim()
+      ? data.displayName.trim()
+      : email
+        ? email.split('@')[0] ?? ''
+        : ''
+  const assignments = Array.isArray(data.assignments)
+    ? (data.assignments as TeacherAssignment[])
+    : []
+  const assignmentScope = normalizeAssignmentScope(data.assignmentScope, assignments)
+
+  return {
+    uid,
+    email,
+    displayName: displayName || (role === 'admin' ? 'Administrator' : 'Teacher'),
+    role,
+    active: data.active !== false,
+    assignmentScope,
+    assignments,
+  }
+}
+
+export function subscribeUserProfile(
+  uid: string,
+  onData: (profile: UserProfile | null) => void,
+  onError?: (err: Error) => void,
+): () => void {
+  return onSnapshot(
+    doc(db, 'users', uid),
+    (snap) => {
+      if (!snap.exists()) {
+        onData(null)
+        return
+      }
+      onData(parseProfile(uid, snap.data()))
+    },
+    (err) => onError?.(err),
+  )
+}

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
+import { drawerSlideBottom, overlayFade } from '@/lib/motion/variants'
 import {
   Archive,
   Lock,
@@ -153,6 +154,7 @@ export function QuestionDetailDrawer({
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
+  const reduced = useReducedMotion()
   const meta = STATUS_META[detail.statusRaw]
   const actions =
     isAdmin && !trashMode ? availableLifecycleActions(detail.statusRaw) : []
@@ -172,31 +174,27 @@ export function QuestionDetailDrawer({
   return (
     <motion.div
       className="pc-repo-sheet-overlay"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
+      variants={overlayFade}
+      initial={reduced ? false : 'hidden'}
+      animate="visible"
+      exit="exit"
       role="dialog"
       aria-modal="true"
       aria-label="Question detail"
     >
-      <motion.button
+      <button
         type="button"
         className="pc-repo-drawer-backdrop"
         aria-label="Close question detail"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
         onClick={onClose}
       />
 
       <motion.aside
         className="pc-repo-drawer"
-        initial={{ y: '100%', opacity: 0.9 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: '100%', opacity: 0.9 }}
-        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+        variants={drawerSlideBottom}
+        initial={reduced ? false : 'hidden'}
+        animate="visible"
+        exit="exit"
         onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
       >

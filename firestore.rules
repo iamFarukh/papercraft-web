@@ -18,8 +18,12 @@ service cloud.firestore {
       return hasUserDoc() ? get(userPath()).data.role : '';
     }
 
+    /** Admins explicitly tagged, or legacy user docs with no role field yet. */
     function isAdmin() {
-      return isAuth() && hasUserDoc() && getUserRole() == 'admin';
+      return isAuth() && hasUserDoc() && (
+        !('role' in get(userPath()).data) ||
+        get(userPath()).data.role == 'admin'
+      );
     }
 
     function questionNotTrashed() {
@@ -57,9 +61,35 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /papers/{paperId} {
+      allow read: if isAuth() && (
+        resource.data.createdBy == request.auth.uid || isAdmin()
+      );
+      allow create: if isAuth()
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.status == 'draft';
+      allow update: if isAuth() && (
+        isAdmin() ||
+        (
+          resource.data.createdBy == request.auth.uid
+          && resource.data.status == 'draft'
+          && (
+            request.resource.data.status == 'draft' ||
+            (
+              request.resource.data.status == 'submitted'
+              && request.resource.data.submittedBy == request.auth.uid
+              && request.resource.data.submittedAt is timestamp
+            )
+          )
+        )
+      );
+      allow delete: if isAdmin();
+    }
+
     match /users/{userId} {
       allow read: if isAuth() && (request.auth.uid == userId || isAdmin());
-      allow create: if isAuth() && request.auth.uid == userId;
+      /** Self on first login, or admin provisioning teachers (users/{teacherUid}). */
+      allow create: if isAuth() && (request.auth.uid == userId || isAdmin());
       allow update: if isAuth() && (request.auth.uid == userId || isAdmin());
       allow delete: if isAdmin();
 
@@ -74,6 +104,22 @@ service cloud.firestore {
       match /bookmark_index/{questionId} {
         allow read, write: if isAuth() && request.auth.uid == userId;
       }
+    }
+
+    match /teacher_pending/{pendingId} {
+      allow read: if isAdmin() || (
+        isAuth() &&
+        request.auth.token.email != null &&
+        resource.data.email == string.lower(request.auth.token.email)
+      );
+      allow write: if isAdmin();
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isAuth() && resource.data.userId == request.auth.uid;
+      allow create: if isAuth();
+      allow update: if isAuth() && resource.data.userId == request.auth.uid;
+      allow delete: if isAuth() && resource.data.userId == request.auth.uid;
     }
   }
 }
