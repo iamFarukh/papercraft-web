@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { MetricCardSkeleton } from '@/components/dashboard/MetricCardSkeleton'
 import type { ControlCenterMetric, MetricTrend } from '@/lib/control-center'
 import { listItemReveal, listReveal } from '@/lib/motion/variants'
 
@@ -42,16 +43,6 @@ function MetricCard({ metric }: { metric: ControlCenterMetric }) {
   )
 }
 
-function MetricSkeleton() {
-  return (
-    <article className="pc-metric-card" aria-hidden>
-      <div className="pc-skeleton" style={{ height: 12, width: '55%', marginBottom: 14 }} />
-      <div className="pc-skeleton" style={{ height: 32, width: '40%', marginBottom: 12 }} />
-      <div className="pc-skeleton" style={{ height: 10, width: '70%' }} />
-    </article>
-  )
-}
-
 export function MetricOverview({ loading, error, metrics }: Props) {
   return (
     <motion.section
@@ -62,7 +53,7 @@ export function MetricOverview({ loading, error, metrics }: Props) {
       animate="visible"
     >
       {loading
-        ? Array.from({ length: 4 }, (_, i) => <MetricSkeleton key={i} />)
+        ? Array.from({ length: 4 }, (_, i) => <MetricCardSkeleton key={i} />)
         : null}
       {!loading && error ? (
         <p className="pc-metric-hint" style={{ gridColumn: '1 / -1' }}>

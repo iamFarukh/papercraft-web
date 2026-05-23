@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion'
-import { FadeIn } from '@/components/motion/FadeIn'
 import type { ActivityRow } from '@/lib/control-center'
 import { listItemReveal, listReveal } from '@/lib/motion/variants'
 
@@ -22,13 +21,13 @@ export function ActivityFeed({ loading, error, activities }: Props) {
       </header>
 
       {loading ? (
-        <ul className="pc-activity-list" aria-busy>
+        <ul className="pc-activity-list" aria-busy aria-hidden>
           {Array.from({ length: 4 }, (_, i) => (
-            <li key={i} className="pc-activity-item">
-              <div className="pc-skeleton" style={{ width: 32, height: 32, borderRadius: 8 }} />
-              <div style={{ flex: 1 }}>
-                <div className="pc-skeleton" style={{ height: 12, width: '80%', marginBottom: 8 }} />
-                <div className="pc-skeleton" style={{ height: 10, width: '45%' }} />
+            <li key={i} className="pc-activity-item pc-activity-item--skeleton">
+              <span className="pc-skel pc-skel-activity-av" />
+              <div className="pc-activity-body">
+                <span className="pc-skel pc-skel-activity-title" />
+                <span className="pc-skel pc-skel-activity-meta" />
               </div>
             </li>
           ))}
@@ -46,7 +45,6 @@ export function ActivityFeed({ loading, error, activities }: Props) {
       ) : null}
 
       {!loading && !error && activities.length > 0 ? (
-        <FadeIn>
         <motion.ul
           className="pc-activity-list"
           variants={listReveal}
@@ -90,7 +88,6 @@ export function ActivityFeed({ loading, error, activities }: Props) {
             </motion.li>
           ))}
         </motion.ul>
-        </FadeIn>
       ) : null}
     </section>
   )

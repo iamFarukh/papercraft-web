@@ -241,8 +241,15 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 22px;
+  margin-bottom: 8px;
   gap: 12px;
+}
+
+.pc-login-remember-hint {
+  margin: 0 0 18px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--pc-ink-4);
 }
 
 .pc-login-remember {

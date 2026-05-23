@@ -1,10 +1,9 @@
 import type { MouseEvent } from 'react'
-import { FadeIn } from '@/components/motion/FadeIn'
 import type { QuestionRecord, RepositoryError } from '@/types/question'
 import { QuestionCard } from './QuestionCard'
 import { RepositoryEmptyState } from './RepositoryEmptyState'
 import { RepositoryErrorState } from './RepositoryErrorState'
-import { QuestionCardSkeleton } from './RepositorySkeleton'
+import { RepositoryStreamSkeleton } from './RepositorySkeleton'
 
 type QuestionStreamProps = {
   questions: QuestionRecord[]
@@ -56,18 +55,7 @@ export function QuestionStream({
   onCreate,
 }: QuestionStreamProps) {
   if (loading) {
-    return (
-      <section className="pc-repo-stream pc-scroll" aria-busy="true">
-        <div className="pc-repo-stream-head">
-          <div className="pc-skel pc-skel-line is-title" />
-        </div>
-        <div className={'pc-repo-cards' + (view === 'list' ? ' is-list' : '')}>
-          {Array.from({ length: 4 }).map((_, i) => (
-            <QuestionCardSkeleton key={i} />
-          ))}
-        </div>
-      </section>
-    )
+    return <RepositoryStreamSkeleton view={view} />
   }
 
   if (error && questions.length === 0) {
@@ -119,27 +107,23 @@ export function QuestionStream({
           isAdmin={isAdmin}
         />
       ) : (
-        <FadeIn>
-          <div
-            className={
-              'pc-repo-cards pc-motion-content-enter' + (view === 'list' ? ' is-list' : '')
-            }
-          >
-            {questions.map((q) => (
-              <QuestionCard
-                key={q.id}
-                question={q}
-                view={view}
-                isAdmin={isAdmin}
-                selected={selectedIds.has(q.id)}
-                active={activeId === q.id}
-                expanded={expandedId === q.id}
-                onSelect={(e) => onSelect(q.id, e)}
-                onToggleExpand={() => onToggleExpand(q.id)}
-              />
-            ))}
-          </div>
-        </FadeIn>
+        <div
+          className={'pc-repo-cards' + (view === 'list' ? ' is-list' : '')}
+        >
+          {questions.map((q) => (
+            <QuestionCard
+              key={q.id}
+              question={q}
+              view={view}
+              isAdmin={isAdmin}
+              selected={selectedIds.has(q.id)}
+              active={activeId === q.id}
+              expanded={expandedId === q.id}
+              onSelect={(e) => onSelect(q.id, e)}
+              onToggleExpand={() => onToggleExpand(q.id)}
+            />
+          ))}
+        </div>
       )}
 
       {questions.length > 0 && hasMore && (

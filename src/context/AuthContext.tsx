@@ -13,6 +13,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
@@ -29,6 +30,8 @@ type AuthContextValue = {
   isAdmin: boolean
   profileReady: boolean
   assignments: TeacherAssignment[]
+  /** True only during the first session bootstrap (not token refresh). */
+  bootstrapping: boolean
   loading: boolean
   login: (email: string, password: string, remember?: boolean) => Promise<void>
   logout: () => Promise<void>
@@ -41,23 +44,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<UserRole | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [profileReady, setProfileReady] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [bootstrapping, setBootstrapping] = useState(true)
+
+  const uidRef = useRef<string | null>(null)
+  const profileReadyRef = useRef(false)
 
   useEffect(() => {
     let cancelled = false
 
     const unsubscribe = onAuthStateChanged(auth, async (nextUser) => {
       setUser(nextUser)
-      setProfile(null)
-      setProfileReady(false)
 
       if (!nextUser) {
+        uidRef.current = null
+        profileReadyRef.current = false
         setRole(null)
-        setLoading(false)
+        setProfile(null)
+        setProfileReady(false)
+        setBootstrapping(false)
         return
       }
 
-      setLoading(true)
+      const prevUid = uidRef.current
+      uidRef.current = nextUser.uid
+
+      if (prevUid === nextUser.uid) {
+        if (profileReadyRef.current) {
+          setBootstrapping(false)
+        }
+        return
+      }
+
+      if (prevUid !== nextUser.uid) {
+        profileReadyRef.current = false
+        setProfile(null)
+        setProfileReady(false)
+        setRole(null)
+      }
+
+      setBootstrapping(true)
       try {
         const resolved = await ensureUserProfile(nextUser.uid, nextUser.email)
         if (!cancelled && resolved) setRole(resolved)
@@ -81,12 +106,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfile(next)
         if (next?.role) setRole(next.role)
         else if (next === null) setRole(null)
+        profileReadyRef.current = true
         setProfileReady(true)
-        setLoading(false)
+        setBootstrapping(false)
       },
       () => {
+        profileReadyRef.current = true
         setProfileReady(true)
-        setLoading(false)
+        setBootstrapping(false)
       },
     )
     return unsub
@@ -104,6 +131,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   const logout = useCallback(async () => {
+    uidRef.current = null
+    profileReadyRef.current = false
     await signOut(auth)
   }, [])
 
@@ -113,6 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   const isAdmin = profileReady && role === 'admin'
+  const loading = bootstrapping
 
   const value = useMemo(
     () => ({
@@ -121,12 +151,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile,
       isAdmin,
       profileReady,
+      bootstrapping,
       assignments,
       loading,
       login,
       logout,
     }),
-    [user, role, profile, isAdmin, profileReady, assignments, loading, login, logout],
+    [user, role, profile, isAdmin, profileReady, bootstrapping, assignments, loading, login, logout],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

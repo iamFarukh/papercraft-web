@@ -1,11 +1,8 @@
-import { AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Plus } from 'lucide-react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
-import { PageTransition } from '@/components/motion/PageTransition'
 import { AppShell } from '@/components/shell/AppShell'
 import { isRepositoryAuthorPath, navKeyFromPath } from '@/config/nav-routes'
 import { useAuth } from '@/context/AuthContext'
-import { pageMotionKey } from '@/lib/motion/page-key'
 
 const CRUMBS: Record<string, string[]> = {
   home: ['Saraswati Vidya Niketan', 'Control Center'],
@@ -44,7 +41,6 @@ export function AppLayout() {
   else if (pathname.startsWith('/app/approvals')) crumbKey = 'approval'
 
   const crumbs = CRUMBS[crumbKey] ?? CRUMBS.home
-  const motionKey = pageMotionKey(pathname)
 
   const isImport = pathname === '/app/repository/import'
 
@@ -62,11 +58,7 @@ export function AppLayout() {
 
   return (
     <AppShell activeNav={activeNav} crumbs={crumbs} topbarActions={topbarActions}>
-      <AnimatePresence mode="wait" initial={false}>
-        <PageTransition key={motionKey} motionKey={motionKey}>
-          <Outlet />
-        </PageTransition>
-      </AnimatePresence>
+      <Outlet />
     </AppShell>
   )
 }

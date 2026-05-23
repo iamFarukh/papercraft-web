@@ -1674,9 +1674,32 @@ button.pc-repo-chip:hover {
   height: 32px;
 }
 
-.pc-skel-toggle {
+.pc-skel-view-toggle {
+  width: 74px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 8px;
+}
+
+.pc-skel-toolbar-meta {
+  width: 72px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+.pc-skel-toolbar-btn {
+  width: 52px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 6px;
+}
+
+.pc-skel-toolbar-btn.is-wide {
   width: 64px;
-  height: 32px;
+}
+
+.pc-repo-toolbar--skeleton {
+  min-height: 48px;
 }
 
 .pc-skel-line {
@@ -1726,19 +1749,213 @@ button.pc-repo-chip:hover {
   height: 120px;
 }
 
-.pc-skel-filter-group {
-  height: 72px;
-  margin-bottom: 14px;
+/* Filter panel skeleton */
+.pc-skel-filter-title {
+  display: block;
+  width: 88px;
+  height: 12px;
+  margin-bottom: 6px;
 }
 
+.pc-skel-filter-sub {
+  display: block;
+  width: 120px;
+  height: 10px;
+}
+
+.pc-skel-filter-search {
+  display: block;
+  width: 100%;
+  height: 14px;
+}
+
+.pc-repo-filter-section--skel {
+  padding: 10px 0;
+}
+
+.pc-repo-filter-section-head--skel {
+  cursor: default;
+  pointer-events: none;
+}
+
+.pc-skel-section-label {
+  width: 64px;
+  height: 10px;
+}
+
+.pc-skel-section-meta {
+  width: 36px;
+  height: 10px;
+  margin-left: auto;
+}
+
+.pc-repo-filter-row--skel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  padding: 4px 2px;
+  pointer-events: none;
+}
+
+.pc-skel-checkbox {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.pc-skel-filter-row-label {
+  flex: 1;
+  height: 11px;
+  min-width: 48px;
+}
+
+.pc-skel-filter-count {
+  width: 22px;
+  height: 10px;
+  flex-shrink: 0;
+}
+
+/* Question card skeleton — mirrors .pc-q-card layout */
 .pc-q-card--skeleton {
   pointer-events: none;
   cursor: default;
+  min-height: 168px;
+}
+
+.pc-q-card--skeleton.is-list {
+  min-height: 108px;
 }
 
 .pc-q-card--skeleton:hover {
   transform: none;
   box-shadow: var(--pc-shadow-xs);
+}
+
+.pc-skel-pill {
+  width: 72px;
+  height: 20px;
+  border-radius: var(--pc-r-xs);
+  flex-shrink: 0;
+}
+
+.pc-skel-pill.is-tag {
+  width: 44px;
+}
+
+.pc-skel-pill.is-marks {
+  width: 32px;
+}
+
+.pc-skel-pips {
+  width: 48px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.pc-skel-icon-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.pc-skel-body-line {
+  width: 100%;
+  height: 16px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+}
+
+.pc-skel-body-line.is-short {
+  width: 82%;
+}
+
+.pc-skel-body-line.is-hindi {
+  width: 68%;
+  height: 13px;
+  margin-bottom: 0;
+}
+
+.pc-q-card--skeleton.is-list .pc-skel-body-line.is-hindi,
+.pc-q-card--skeleton.is-list .pc-skel-body-line.is-short {
+  display: none;
+}
+
+.pc-skel-foot-chapter {
+  flex: 1;
+  min-width: 120px;
+  height: 12px;
+  max-width: 55%;
+}
+
+.pc-skel-foot-meta {
+  width: 64px;
+  height: 12px;
+  margin-left: auto;
+}
+
+.pc-skel-stream-title {
+  width: 140px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+/* Intelligence sidebar skeleton */
+.pc-skel-intel-title {
+  display: block;
+  width: 75%;
+  height: 20px;
+  margin-top: 8px;
+}
+
+.pc-skel-intel-lead {
+  display: block;
+  width: 92%;
+  height: 12px;
+  margin-top: 10px;
+}
+
+.pc-repo-stat-cell--skel {
+  min-height: 64px;
+}
+
+.pc-skel-stat-label {
+  display: block;
+  width: 70%;
+  height: 10px;
+  margin-bottom: 10px;
+}
+
+.pc-skel-stat-value {
+  display: block;
+  width: 40%;
+  height: 22px;
+}
+
+.pc-repo-lifecycle--skel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.pc-repo-lifecycle-row--skel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.pc-skel-life-label {
+  width: 56px;
+  height: 11px;
+}
+
+.pc-skel-life-value {
+  width: 24px;
+  height: 11px;
 }
 
 .pc-repo-filters--skeleton {

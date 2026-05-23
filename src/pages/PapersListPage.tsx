@@ -1,9 +1,7 @@
 import { Eye, FileText, Plus } from 'lucide-react'
 import { PaperPdfExportLink } from '@/components/print/PaperPdfExportLink'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { FadeIn } from '@/components/motion/FadeIn'
-import { MotionList, MotionListItem } from '@/components/motion/MotionList'
 import { EmptyStatePanel } from '@/components/ui/EmptyStatePanel'
 import { useAuth } from '@/context/AuthContext'
 import { paperListHeading } from '@/lib/paper-builder'
@@ -47,15 +45,19 @@ export function PapersListPage() {
   const [papers, setPapers] = useState<PaperListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const hasLoadedRef = useRef(false)
 
   useEffect(() => {
     if (!user) return
     let cancelled = false
-    setLoading(true)
+    if (!hasLoadedRef.current) setLoading(true)
     setError(null)
     listRecentPapers({ userId: user.uid, isAdmin })
       .then((rows) => {
-        if (!cancelled) setPapers(rows)
+        if (!cancelled) {
+          setPapers(rows)
+          hasLoadedRef.current = true
+        }
       })
       .catch((err) => {
         if (!cancelled) {
@@ -118,8 +120,7 @@ export function PapersListPage() {
             ]}
           />
         ) : (
-          <FadeIn>
-          <MotionList as="ul" className="pc-papers-list">
+          <ul className="pc-papers-list">
             {papers.map((p) => {
               const chip = PAPER_STATUS_CHIP[p.status] ?? PAPER_STATUS_CHIP.draft
               const isApproved = p.status === 'approved'
@@ -127,7 +128,7 @@ export function PapersListPage() {
                 ? `/app/papers/${p.id}/preview?from=library`
                 : `/app/builder/${p.id}`
               return (
-                <MotionListItem key={p.id} as="li">
+                <li key={p.id}>
                   <div
                     className={`pc-papers-row-wrap pc-motion-surface${p.status === 'submitted' ? ' is-submitted' : ''}${isApproved ? ' is-approved' : ''}`}
                   >
@@ -170,11 +171,10 @@ export function PapersListPage() {
                       </div>
                     ) : null}
                   </div>
-                </MotionListItem>
+                </li>
               )
             })}
-          </MotionList>
-          </FadeIn>
+          </ul>
         )}
       </div>
     </div>

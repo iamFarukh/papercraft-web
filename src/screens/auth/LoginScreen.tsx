@@ -1,8 +1,12 @@
 import { FirebaseError } from "firebase/app";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { assertFirebaseConfigured } from "@/lib/firebase";
+import {
+  loadLoginPreferences,
+  saveLoginPreferences,
+} from "@/lib/login-persistence";
 
 function formatAuthError(error: unknown): string {
   if (error instanceof FirebaseError) {
@@ -36,6 +40,12 @@ export function LoginScreen() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    const prefs = loadLoginPreferences();
+    setRemember(prefs.remember);
+    if (prefs.loginId) setEmail(prefs.loginId);
+  }, []);
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
@@ -44,6 +54,7 @@ export function LoginScreen() {
     try {
       assertFirebaseConfigured();
       await login(email, password, remember);
+      saveLoginPreferences(email, remember);
       navigate("/app", { replace: true });
     } catch (err) {
       setError(formatAuthError(err));
@@ -140,9 +151,12 @@ export function LoginScreen() {
                   onChange={(e) => setRemember(e.target.checked)}
                   disabled={submitting}
                 />
-                Remember me
+                Remember me on this device
               </label>
             </div>
+            <p className="pc-login-remember-hint">
+              Saves your login ID on this browser after sign-out. Password is never stored.
+            </p>
 
             <button
               type="submit"

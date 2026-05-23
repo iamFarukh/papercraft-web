@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
@@ -33,18 +34,21 @@ export function QuestionCountProvider({ children }: { children: ReactNode }) {
   const { user, isAdmin, loading: authLoading } = useAuth()
   const [count, setCount] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
+  const hasCountRef = useRef(false)
 
   const refetch = useCallback(async () => {
     if (!user) {
       setCount(null)
       setLoading(false)
+      hasCountRef.current = false
       return
     }
     try {
       const n = await fetchQuestionCount(isAdmin)
       setCount(n)
+      hasCountRef.current = true
     } catch {
-      setCount(null)
+      if (!hasCountRef.current) setCount(null)
     } finally {
       setLoading(false)
     }
@@ -55,10 +59,11 @@ export function QuestionCountProvider({ children }: { children: ReactNode }) {
     if (!user) {
       setCount(null)
       setLoading(false)
+      hasCountRef.current = false
       return
     }
 
-    setLoading(true)
+    if (!hasCountRef.current) setLoading(true)
     void refetch()
 
     const unsub = subscribeQuestionCountRefresh(isAdmin, () => {

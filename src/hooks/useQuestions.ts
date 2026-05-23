@@ -48,6 +48,7 @@ export function useQuestions({
   const [seeding, setSeeding] = useState(false)
   const lastDocRef = useRef<QueryDocumentSnapshot | null>(null)
   const fetchIdRef = useRef(0)
+  const hasLoadedRef = useRef(false)
 
   /** Only refetch when Firestore-relevant filters change (status / role). */
   const queryKey = useMemo(
@@ -61,9 +62,11 @@ export function useQuestions({
       const queryFilters = filtersToQuery(filters, isAdmin)
 
       if (reset) {
-        setLoading(true)
         setError(null)
         lastDocRef.current = null
+        if (!hasLoadedRef.current) {
+          setLoading(true)
+        }
       } else {
         setLoadingMore(true)
       }
@@ -87,7 +90,11 @@ export function useQuestions({
           mapQuestionDoc(id, data),
         )
 
-        setAllLoaded((prev) => (reset ? mapped : [...prev, ...mapped]))
+        setAllLoaded((prev) => {
+          const next = reset ? mapped : [...prev, ...mapped]
+          hasLoadedRef.current = next.length > 0
+          return next
+        })
         lastDocRef.current = page.lastDoc
         setHasMore(page.hasMore)
         setIsEmptyDb(reset && mapped.length === 0 && !page.hasMore)
@@ -98,6 +105,7 @@ export function useQuestions({
         setError(parsed)
         if (reset) {
           setAllLoaded([])
+          hasLoadedRef.current = false
           setIsEmptyDb(false)
         }
       } finally {

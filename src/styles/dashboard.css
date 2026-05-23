@@ -118,6 +118,65 @@
   min-height: 132px;
 }
 
+.pc-metric-card--skeleton {
+  pointer-events: none;
+}
+
+.pc-skel-metric-label {
+  width: 58%;
+  height: 11px;
+}
+
+.pc-skel-metric-trend {
+  width: 48px;
+  height: 11px;
+  flex-shrink: 0;
+}
+
+.pc-skel-metric-value {
+  width: 44%;
+  height: 28px;
+  border-radius: 6px;
+}
+
+.pc-skel-metric-unit {
+  width: 28px;
+  height: 14px;
+  border-radius: 4px;
+}
+
+.pc-skel-metric-hint {
+  display: block;
+  width: 78%;
+  height: 11px;
+  margin-top: auto;
+  margin-bottom: 0;
+}
+
+.pc-activity-item--skeleton {
+  pointer-events: none;
+}
+
+.pc-skel-activity-av {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.pc-skel-activity-title {
+  display: block;
+  width: 82%;
+  height: 12px;
+  margin-bottom: 8px;
+}
+
+.pc-skel-activity-meta {
+  display: block;
+  width: 42%;
+  height: 10px;
+}
+
 .pc-metric-card-top {
   display: flex;
   align-items: flex-start;

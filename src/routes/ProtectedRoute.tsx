@@ -4,9 +4,9 @@ import { AuthLoading } from '@/components/auth/AuthLoading'
 import { ProfileSetupRequired } from '@/components/auth/ProfileSetupRequired'
 
 export function ProtectedRoute() {
-  const { user, loading, profile, profileReady } = useAuth()
+  const { user, bootstrapping, profile, profileReady } = useAuth()
 
-  if (loading || (user && !profileReady)) {
+  if (bootstrapping || (user && !profileReady && !profile)) {
     return <AuthLoading />
   }
 

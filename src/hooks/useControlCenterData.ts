@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import {
   type ActivityRow,
@@ -19,13 +19,14 @@ export function useControlCenterData() {
   const [papers, setPapers] = useState<PaperListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const hasDataRef = useRef(false)
 
   useEffect(() => {
     if (!user) return
     let cancelled = false
 
     async function load() {
-      setLoading(true)
+      if (!hasDataRef.current) setLoading(true)
       setError(null)
       try {
         const [count, rows] = await Promise.all([
@@ -35,6 +36,7 @@ export function useControlCenterData() {
         if (cancelled) return
         setQuestionCount(count)
         setPapers(rows)
+        hasDataRef.current = true
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Could not load overview.')

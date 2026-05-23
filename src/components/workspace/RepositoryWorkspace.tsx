@@ -16,7 +16,10 @@ import { FilterPanel } from '@/components/repository/FilterPanel'
 import { QuestionDetailDrawer } from '@/components/repository/QuestionDetailDrawer'
 import { QuestionStream } from '@/components/repository/QuestionStream'
 import { RepositoryToolbar } from '@/components/repository/RepositoryToolbar'
-import { RepositoryToolbarSkeleton } from '@/components/repository/RepositorySkeleton'
+import {
+  FilterPanelSkeleton,
+  RepositoryToolbarSkeleton,
+} from '@/components/repository/RepositorySkeleton'
 import { useQuestions } from '@/hooks/useQuestions'
 import { useTeacherScope } from '@/hooks/useTeacherScope'
 import {
@@ -479,14 +482,7 @@ export function RepositoryWorkspace() {
 
       <div className="pc-repo-panels">
         {loading && !allLoaded.length ? (
-          <aside
-            className="pc-repo-filters pc-scroll pc-repo-filters--skeleton"
-            aria-hidden
-          >
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="pc-skel pc-skel-filter-group" />
-            ))}
-          </aside>
+          <FilterPanelSkeleton />
         ) : (
           <div ref={filtersRef} className="pc-repo-filters-anchor">
             <FilterPanel

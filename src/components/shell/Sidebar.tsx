@@ -2,6 +2,7 @@ import { ChevronDown, LogOut, Settings } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useAuth } from '@/context/AuthContext'
 import { listApprovalQueue } from '@/services/firebase/papers'
 import { ADMIN_NAV } from '@/config/admin-nav'
@@ -24,8 +25,10 @@ export function Sidebar({
   footRole = 'Vice Principal · Admin',
   footInitials = 'AK',
 }: SidebarProps) {
-  const { logout, user, role, isAdmin, profileReady } = useAuth()
+  const { logout, user, profile, isAdmin } = useAuth()
   const [approvalPending, setApprovalPending] = useState(0)
+  const [logoutOpen, setLogoutOpen] = useState(false)
+  const [logoutBusy, setLogoutBusy] = useState(false)
 
   useEffect(() => {
     if (!isAdmin) return
@@ -53,7 +56,7 @@ export function Sidebar({
 
   const displayName =
     user?.displayName || user?.email?.split('@')[0] || footName
-  const displayRole = role === 'admin' ? footRole : 'Teacher'
+  const displayRole = profile?.role === 'teacher' ? 'Teacher' : footRole
   const initials =
     footInitials ||
     displayName
@@ -63,12 +66,19 @@ export function Sidebar({
       .slice(0, 2)
       .toUpperCase()
 
-  async function handleLogout() {
-    await logout()
-    navigate('/login', { replace: true })
+  async function confirmLogout() {
+    setLogoutBusy(true)
+    try {
+      await logout()
+      navigate('/login', { replace: true })
+    } finally {
+      setLogoutBusy(false)
+      setLogoutOpen(false)
+    }
   }
 
   return (
+    <>
     <aside className="pc-sidebar">
       <div className="pc-brand">
         <div className="pc-brand-mark" aria-hidden />
@@ -77,7 +87,7 @@ export function Sidebar({
             Paper<em>Craft</em>
           </div>
           <div className="pc-brand-sub">
-            {profileReady && !isAdmin ? 'Teacher Workspace' : 'Admin Workspace'}
+            {profile?.role === 'teacher' ? 'Teacher Workspace' : 'Admin Workspace'}
           </div>
         </div>
       </div>
@@ -181,7 +191,7 @@ export function Sidebar({
         <button
           type="button"
           className="pc-sidebar-logout"
-          onClick={handleLogout}
+          onClick={() => setLogoutOpen(true)}
           title="Sign out"
         >
           <LogOut size={15} strokeWidth={1.6} />
@@ -196,5 +206,18 @@ export function Sidebar({
         </button>
       </div>
     </aside>
+
+    <ConfirmDialog
+      open={logoutOpen}
+      title="Sign out of PaperCraft?"
+      description="You will return to the sign-in screen. Your saved login ID stays on this device if you use Remember me."
+      confirmLabel="Sign out"
+      cancelLabel="Cancel"
+      tone="danger"
+      busy={logoutBusy}
+      onCancel={() => setLogoutOpen(false)}
+      onConfirm={() => void confirmLogout()}
+    />
+    </>
   )
 }

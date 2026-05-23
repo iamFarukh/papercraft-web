@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
@@ -30,19 +31,22 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
   const [notifications, setNotifications] = useState<NotificationRecord[]>([])
   const [loading, setLoading] = useState(true)
+  const hasRowsRef = useRef(false)
 
   useEffect(() => {
     if (!user?.uid) {
       setNotifications([])
       setLoading(false)
+      hasRowsRef.current = false
       return
     }
 
-    setLoading(true)
+    if (!hasRowsRef.current) setLoading(true)
     const unsub = subscribeNotifications(
       user.uid,
       (rows) => {
         setNotifications(rows)
+        hasRowsRef.current = rows.length > 0
         setLoading(false)
       },
       () => setLoading(false),
