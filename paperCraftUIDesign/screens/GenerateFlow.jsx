@@ -167,17 +167,17 @@ const GenerateFlow = () => {
                       <button className="pc-btn is-sm"><Icon name="sparkles" size={11} />Reset to blueprint</button>
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 14, padding: "4px 4px 0" }}>
-                      <DifficultySlider label="Easy" color="var(--pc-success)" value={28} target={30} />
-                      <DifficultySlider label="Medium" color="var(--pc-primary)" value={44} target={40} />
-                      <DifficultySlider label="Hard" color="var(--pc-warning)" value={22} target={22} />
-                      <DifficultySlider label="HOTS" color="var(--pc-danger)" value={6} target={8} />
+                      <DifficultySlider label="Easy" color="#14B87A" value={28} target={30} />
+                      <DifficultySlider label="Medium" color="#355CFF" value={44} target={40} />
+                      <DifficultySlider label="Hard" color="#E08A1F" value={22} target={22} />
+                      <DifficultySlider label="HOTS" color="#DC4A3D" value={6} target={8} />
                     </div>
                   </div>
                 </div>
 
                 {/* RIGHT — Live preview / blueprint */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-                  <div className="pc-panel pc-panel-pad" style={{ background: "var(--pc-panel-gradient)" }}>
+                  <div className="pc-panel pc-panel-pad" style={{ background: "linear-gradient(180deg, #FFFFFF, #FAFAF7)" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                       <Icon name="target" size={14} style={{ color: "var(--pc-primary)" }} />
                       <h3 className="pc-serif" style={{ fontSize: 16, fontWeight: 500, margin: 0 }}>Blueprint snapshot</h3>
@@ -210,14 +210,14 @@ const GenerateFlow = () => {
                       <svg width="100%" height="100" viewBox="0 0 200 100" preserveAspectRatio="none">
                         <defs>
                           <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0" stopColor="var(--pc-primary)" stopOpacity="0.35"/>
-                            <stop offset="1" stopColor="var(--pc-primary)" stopOpacity="0"/>
+                            <stop offset="0" stopColor="#355CFF" stopOpacity="0.35"/>
+                            <stop offset="1" stopColor="#355CFF" stopOpacity="0"/>
                           </linearGradient>
                         </defs>
                         <path d="M0,70 C30,40 60,55 80,38 C100,22 130,30 160,18 C175,12 190,16 200,12 L200,100 L0,100 Z" fill="url(#g1)" />
-                        <path d="M0,70 C30,40 60,55 80,38 C100,22 130,30 160,18 C175,12 190,16 200,12" fill="none" stroke="var(--pc-primary)" strokeWidth="1.6" />
+                        <path d="M0,70 C30,40 60,55 80,38 C100,22 130,30 160,18 C175,12 190,16 200,12" fill="none" stroke="#355CFF" strokeWidth="1.6" />
                         {/* tick markers */}
-                        {[20, 50, 80, 110, 140, 170].map((x,i) => <circle key={i} cx={x} cy={[50, 47, 36, 25, 22, 17][i]} r="2.5" fill="white" stroke="var(--pc-primary)" strokeWidth="1.4" />)}
+                        {[20, 50, 80, 110, 140, 170].map((x,i) => <circle key={i} cx={x} cy={[50, 47, 36, 25, 22, 17][i]} r="2.5" fill="white" stroke="#355CFF" strokeWidth="1.4" />)}
                       </svg>
                     </div>
                     <div style={{ fontSize: 11.5, color: "var(--pc-ink-3)", lineHeight: 1.5 }}>
@@ -225,14 +225,14 @@ const GenerateFlow = () => {
                     </div>
                   </div>
 
-                  <div className="pc-panel pc-panel-pad" style={{ background: "linear-gradient(180deg, var(--pc-info-panel-from), var(--pc-info-panel-to))", border: "1px solid var(--pc-info-panel-border)" }}>
+                  <div className="pc-panel pc-panel-pad" style={{ background: "linear-gradient(180deg, #F2F5FF, #E7ECFF)", border: "1px solid #C9D4FF" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 6 }}>
-                      <div style={{ width: 20, height: 20, borderRadius: 6, background: "var(--pc-brand-gradient)", color: "white", display: "grid", placeItems: "center" }}>
+                      <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(135deg, #2A47CC, #6789FF)", color: "white", display: "grid", placeItems: "center" }}>
                         <Icon name="sparkles" size={11} />
                       </div>
                       <span style={{ fontSize: 12, fontWeight: 500, color: "var(--pc-primary-ink)" }}>Composer is ready</span>
                     </div>
-                    <p style={{ fontSize: 11.5, color: "var(--pc-info-panel-text)", margin: "0 0 10px", lineHeight: 1.5 }}>
+                    <p style={{ fontSize: 11.5, color: "#3F4F8C", margin: "0 0 10px", lineHeight: 1.5 }}>
                       Skip ahead — Composer will pick balanced questions for these chapters and you can edit anything in the canvas.
                     </p>
                     <button className="pc-btn is-primary" style={{ width: "100%", justifyContent: "center" }}><Icon name="sparkles" size={12} />Auto-generate paper</button>

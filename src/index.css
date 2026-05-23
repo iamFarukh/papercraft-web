@@ -1,7 +1,24 @@
 @import "tailwindcss";
 @import "./styles/theme.css";
+@import "./styles/motion.css";
+@import "./styles/confirm-dialog.css";
 @import "./styles/shell.css";
 @import "./styles/auth.css";
+@import "./styles/dashboard.css";
+@import "./styles/chrome.css";
+@import "./styles/empty-state.css";
+@import "./styles/repository.css";
+@import "./styles/authoring.css";
+@import "./styles/bookmarks.css";
+@import "./styles/toast.css";
+@import "./styles/bulk-import.css";
+@import "./styles/paper-builder.css";
+@import "./styles/papers.css";
+@import "./styles/approvals.css";
+@import "./styles/curriculum.css";
+@import "./styles/teachers.css";
+@import "./styles/notifications.css";
+@import "./styles/paper-print.css";
 
 @layer base {
   html,

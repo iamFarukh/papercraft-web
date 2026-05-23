@@ -118,24 +118,24 @@ const ControlCenter = () => {
                     </div>
                   </div>
                   <div className="pc-pipe">
-                    <PipelineCol name="Draft" count={14} accent="var(--pc-ink-5)" items={[
+                    <PipelineCol name="Draft" count={14} accent="#B7BAC2" items={[
                       { title: "Mathematics · Class X · Half-Yearly", meta: "Set A · 80 marks", av: "is-rose", initials: "PN" },
                       { title: "Science · Class VIII · Unit Test", meta: "Set 1 · 40 marks", av: "is-teal", initials: "RV" },
                     ]} />
-                    <PipelineCol name="Submitted" count={7} accent="var(--pc-primary)" items={[
+                    <PipelineCol name="Submitted" count={7} accent="#355CFF" items={[
                       { title: "Mathematics · Class XII · Pre-Board", meta: "Set A · 80 marks · 2h ago", av: "is-rose", initials: "PN" },
                       { title: "Physics · Class XI · Mid-Term", meta: "Set 2 · 70 marks · 4h ago", av: "is-violet", initials: "SI" },
                       { title: "English · Class IX · Half-Yearly", meta: "Set 1 · 80 marks · today", av: "is-amber", initials: "MD" },
                     ]} />
-                    <PipelineCol name="In Review" count={4} accent="var(--pc-warning)" items={[
+                    <PipelineCol name="In Review" count={4} accent="#E08A1F" items={[
                       { title: "Chemistry · Class XII · Pre-Board", meta: "Set B · being reviewed", av: "is-blue", initials: "AK" },
                       { title: "Hindi · Class X · Half-Yearly", meta: "Revisions requested", av: "is-blue", initials: "AK" },
                     ]} />
-                    <PipelineCol name="Approved" count={9} accent="var(--pc-success)" items={[
+                    <PipelineCol name="Approved" count={9} accent="#14B87A" items={[
                       { title: "Mathematics · Class IX · Half-Yearly", meta: "Approved · yesterday", av: "is-blue", initials: "AK" },
                       { title: "Biology · Class XI · Mid-Term", meta: "Approved · 2 days ago", av: "is-blue", initials: "AK" },
                     ]} />
-                    <PipelineCol name="Locked" count={32} accent="var(--pc-ink)" items={[
+                    <PipelineCol name="Locked" count={32} accent="#15161A" items={[
                       { title: "Mathematics · Class X · Mid-Term", meta: "Locked & exported · printed", av: "is-blue", initials: "AK" },
                     ]} />
                   </div>
@@ -156,12 +156,12 @@ const ControlCenter = () => {
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 28, paddingTop: 8 }}>
                     <div>
                       <div style={{ fontSize: 11, fontWeight: 500, color: "var(--pc-ink-4)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Chapter coverage</div>
-                      <ChapterCoverageBar name="Real Numbers" pct={92} count="48 q" status="var(--pc-success)" />
-                      <ChapterCoverageBar name="Polynomials" pct={78} count="36 q" status="var(--pc-success)" />
-                      <ChapterCoverageBar name="Quadratic Eq." pct={64} count="29 q" status="var(--pc-primary)" />
-                      <ChapterCoverageBar name="Trigonometry" pct={48} count="22 q" status="var(--pc-primary)" />
-                      <ChapterCoverageBar name="Coord. Geometry" pct={31} count="14 q" status="var(--pc-warning)" />
-                      <ChapterCoverageBar name="Statistics" pct={18} count="8 q" status="var(--pc-danger)" />
+                      <ChapterCoverageBar name="Real Numbers" pct={92} count="48 q" status="#14B87A" />
+                      <ChapterCoverageBar name="Polynomials" pct={78} count="36 q" status="#14B87A" />
+                      <ChapterCoverageBar name="Quadratic Eq." pct={64} count="29 q" status="#355CFF" />
+                      <ChapterCoverageBar name="Trigonometry" pct={48} count="22 q" status="#355CFF" />
+                      <ChapterCoverageBar name="Coord. Geometry" pct={31} count="14 q" status="#E08A1F" />
+                      <ChapterCoverageBar name="Statistics" pct={18} count="8 q" status="#DC4A3D" />
                     </div>
                     <div>
                       <div style={{ fontSize: 11, fontWeight: 500, color: "var(--pc-ink-4)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>Difficulty mix · current term</div>
@@ -169,17 +169,17 @@ const ControlCenter = () => {
                       <div style={{ display: "flex", alignItems: "center", gap: 22 }}>
                         <svg width="140" height="140" viewBox="0 0 42 42">
                           <circle cx="21" cy="21" r="15.9" fill="none" stroke="var(--pc-surface-3)" strokeWidth="6"/>
-                          <circle cx="21" cy="21" r="15.9" fill="none" stroke="var(--pc-success)" strokeWidth="6" strokeDasharray="32 100" strokeDashoffset="25" />
-                          <circle cx="21" cy="21" r="15.9" fill="none" stroke="var(--pc-primary)" strokeWidth="6" strokeDasharray="44 100" strokeDashoffset="-7" />
-                          <circle cx="21" cy="21" r="15.9" fill="none" stroke="var(--pc-warning)" strokeWidth="6" strokeDasharray="18 100" strokeDashoffset="-51" />
-                          <circle cx="21" cy="21" r="15.9" fill="none" stroke="var(--pc-danger)" strokeWidth="6" strokeDasharray="6 100" strokeDashoffset="-69" />
-                          <text x="21" y="22" textAnchor="middle" dominantBaseline="middle" fontFamily="Newsreader, serif" fontSize="6.5" fill="var(--pc-ink)">balanced</text>
+                          <circle cx="21" cy="21" r="15.9" fill="none" stroke="#14B87A" strokeWidth="6" strokeDasharray="32 100" strokeDashoffset="25" />
+                          <circle cx="21" cy="21" r="15.9" fill="none" stroke="#355CFF" strokeWidth="6" strokeDasharray="44 100" strokeDashoffset="-7" />
+                          <circle cx="21" cy="21" r="15.9" fill="none" stroke="#E08A1F" strokeWidth="6" strokeDasharray="18 100" strokeDashoffset="-51" />
+                          <circle cx="21" cy="21" r="15.9" fill="none" stroke="#DC4A3D" strokeWidth="6" strokeDasharray="6 100" strokeDashoffset="-69" />
+                          <text x="21" y="22" textAnchor="middle" dominantBaseline="middle" fontFamily="Newsreader, serif" fontSize="6.5" fill="#15161A">balanced</text>
                         </svg>
                         <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 12.5 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 9, height: 9, borderRadius: 2, background: "var(--pc-success)" }} /><span style={{ color: "var(--pc-ink-2)" }}>Easy</span><span className="pc-num" style={{ color: "var(--pc-ink-4)", marginLeft: "auto" }}>32%</span></div>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 9, height: 9, borderRadius: 2, background: "var(--pc-primary)" }} /><span style={{ color: "var(--pc-ink-2)" }}>Medium</span><span className="pc-num" style={{ color: "var(--pc-ink-4)", marginLeft: "auto" }}>44%</span></div>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 9, height: 9, borderRadius: 2, background: "var(--pc-warning)" }} /><span style={{ color: "var(--pc-ink-2)" }}>Hard</span><span className="pc-num" style={{ color: "var(--pc-ink-4)", marginLeft: "auto" }}>18%</span></div>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 9, height: 9, borderRadius: 2, background: "var(--pc-danger)" }} /><span style={{ color: "var(--pc-ink-2)" }}>HOTS</span><span className="pc-num" style={{ color: "var(--pc-ink-4)", marginLeft: "auto" }}>6%</span></div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 9, height: 9, borderRadius: 2, background: "#14B87A" }} /><span style={{ color: "var(--pc-ink-2)" }}>Easy</span><span className="pc-num" style={{ color: "var(--pc-ink-4)", marginLeft: "auto" }}>32%</span></div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 9, height: 9, borderRadius: 2, background: "#355CFF" }} /><span style={{ color: "var(--pc-ink-2)" }}>Medium</span><span className="pc-num" style={{ color: "var(--pc-ink-4)", marginLeft: "auto" }}>44%</span></div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 9, height: 9, borderRadius: 2, background: "#E08A1F" }} /><span style={{ color: "var(--pc-ink-2)" }}>Hard</span><span className="pc-num" style={{ color: "var(--pc-ink-4)", marginLeft: "auto" }}>18%</span></div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 9, height: 9, borderRadius: 2, background: "#DC4A3D" }} /><span style={{ color: "var(--pc-ink-2)" }}>HOTS</span><span className="pc-num" style={{ color: "var(--pc-ink-4)", marginLeft: "auto" }}>6%</span></div>
                         </div>
                       </div>
                     </div>
@@ -190,10 +190,10 @@ const ControlCenter = () => {
               {/* Side col: AI Insights + Feed */}
               <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                 {/* AI Insights */}
-                <div className="pc-panel pc-panel-pad" style={{ background: "var(--pc-panel-gradient)" }}>
+                <div className="pc-panel pc-panel-pad" style={{ background: "linear-gradient(180deg, #FFFFFF 0%, #FAFAF7 100%)" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <div style={{ width: 22, height: 22, borderRadius: 6, background: "var(--pc-brand-gradient)", color: "white", display: "grid", placeItems: "center", boxShadow: "0 2px 6px rgba(53,92,255,0.4)" }}>
+                      <div style={{ width: 22, height: 22, borderRadius: 6, background: "linear-gradient(135deg, #2A47CC, #6789FF)", color: "white", display: "grid", placeItems: "center", boxShadow: "0 2px 6px rgba(53,92,255,0.4)" }}>
                         <Icon name="sparkles" size={12} />
                       </div>
                       <h2 className="pc-serif" style={{ fontSize: 17, fontWeight: 500, margin: 0 }}>Composer Insights</h2>
@@ -205,9 +205,9 @@ const ControlCenter = () => {
                   </p>
                   <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                     {[
-                      { title: "Statistics under-covered in Class X", body: "Only 8 questions across 4 topics. Target ≥ 25 for blueprint balance.", icon: "warn", tone: "var(--pc-warning)" },
-                      { title: "Three near-duplicates in Trigonometry", body: "Q-1042, Q-1058 and Q-2210 share ≥ 86% similarity. Consider merging.", icon: "info", tone: "var(--pc-primary)" },
-                      { title: "HOTS gap across Class XII Physics", body: "Last 4 mid-term papers used the same 6 HOTS items.", icon: "flame", tone: "var(--pc-danger)" },
+                      { title: "Statistics under-covered in Class X", body: "Only 8 questions across 4 topics. Target ≥ 25 for blueprint balance.", icon: "warn", tone: "#E08A1F" },
+                      { title: "Three near-duplicates in Trigonometry", body: "Q-1042, Q-1058 and Q-2210 share ≥ 86% similarity. Consider merging.", icon: "info", tone: "#355CFF" },
+                      { title: "HOTS gap across Class XII Physics", body: "Last 4 mid-term papers used the same 6 HOTS items.", icon: "flame", tone: "#DC4A3D" },
                     ].map((x, i) => (
                       <div key={i} style={{ display: "flex", gap: 11 }}>
                         <div style={{ width: 26, height: 26, borderRadius: 7, background: x.tone + "1F", color: x.tone, display: "grid", placeItems: "center", flexShrink: 0 }}>

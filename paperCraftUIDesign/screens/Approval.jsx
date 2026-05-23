@@ -233,7 +233,7 @@ const Approval = () => {
                     { l: "Solve time within window", ok: true, hint: "est. 168 / 180 min" },
                   ].map(c => (
                     <div key={c.l} style={{ display: "flex", alignItems: "flex-start", gap: 9, padding: "5px 0", borderTop: "1px solid var(--pc-line)" }}>
-                      <span style={{ width: 16, height: 16, borderRadius: 4, background: c.ok ? "var(--pc-success-bg)" : "var(--pc-warning-bg)", color: c.ok ? "var(--pc-success-text)" : "var(--pc-warning-text)", display: "grid", placeItems: "center", flexShrink: 0, marginTop: 2 }}>
+                      <span style={{ width: 16, height: 16, borderRadius: 4, background: c.ok ? "var(--pc-success-bg)" : "var(--pc-warning-bg)", color: c.ok ? "#0E7A52" : "#9A5C0F", display: "grid", placeItems: "center", flexShrink: 0, marginTop: 2 }}>
                         <Icon name={c.ok ? "check" : "warn"} size={10} stroke={2.4} />
                       </span>
                       <div style={{ flex: 1, lineHeight: 1.4 }}>
@@ -245,9 +245,9 @@ const Approval = () => {
                 </div>
 
                 {/* AI review */}
-                <div className="pc-panel" style={{ padding: 14, background: "var(--pc-panel-gradient)" }}>
+                <div className="pc-panel" style={{ padding: 14, background: "linear-gradient(180deg, #FFFFFF, #FAFAF7)" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 6 }}>
-                    <div style={{ width: 20, height: 20, borderRadius: 6, background: "var(--pc-brand-gradient)", color: "white", display: "grid", placeItems: "center" }}>
+                    <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(135deg, #2A47CC, #6789FF)", color: "white", display: "grid", placeItems: "center" }}>
                       <Icon name="sparkles" size={11} />
                     </div>
                     <span style={{ fontSize: 12, fontWeight: 500 }}>AI Review</span>
@@ -258,7 +258,7 @@ const Approval = () => {
                   </p>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     <div style={{ display: "flex", gap: 9 }}>
-                      <span style={{ width: 18, height: 18, borderRadius: 5, background: "var(--pc-danger-bg)", color: "var(--pc-danger-text)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+                      <span style={{ width: 18, height: 18, borderRadius: 5, background: "var(--pc-danger-bg)", color: "#A0312A", display: "grid", placeItems: "center", flexShrink: 0 }}>
                         <Icon name="warn" size={10} />
                       </span>
                       <div style={{ fontSize: 11.5, lineHeight: 1.45 }}>
@@ -270,7 +270,7 @@ const Approval = () => {
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: 9 }}>
-                      <span style={{ width: 18, height: 18, borderRadius: 5, background: "var(--pc-warning-bg)", color: "var(--pc-warning-text)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+                      <span style={{ width: 18, height: 18, borderRadius: 5, background: "var(--pc-warning-bg)", color: "#9A5C0F", display: "grid", placeItems: "center", flexShrink: 0 }}>
                         <Icon name="info" size={10} />
                       </span>
                       <div style={{ fontSize: 11.5, lineHeight: 1.45 }}>

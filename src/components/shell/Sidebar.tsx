@@ -1,5 +1,14 @@
-import { ChevronDown, Settings } from 'lucide-react'
+import { ChevronDown, LogOut, Settings } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { NavLink, useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { useAuth } from '@/context/AuthContext'
+import { listApprovalQueue } from '@/services/firebase/papers'
 import { ADMIN_NAV } from '@/config/admin-nav'
+import { NAV_ROUTES } from '@/config/nav-routes'
+import { useBookmarks } from '@/context/BookmarkContext'
+import { useQuestionCount } from '@/context/QuestionCountContext'
 
 type SidebarProps = {
   activeKey?: string
@@ -10,13 +19,66 @@ type SidebarProps = {
 }
 
 export function Sidebar({
-  activeKey = 'home',
+  activeKey: _activeKey = 'home',
   session = '2025–26 · Term II',
   footName = 'Aarav Kapoor',
   footRole = 'Vice Principal · Admin',
   footInitials = 'AK',
 }: SidebarProps) {
+  const { logout, user, profile, isAdmin } = useAuth()
+  const [approvalPending, setApprovalPending] = useState(0)
+  const [logoutOpen, setLogoutOpen] = useState(false)
+  const [logoutBusy, setLogoutBusy] = useState(false)
+
+  useEffect(() => {
+    if (!isAdmin) return
+    let cancelled = false
+    listApprovalQueue()
+      .then((rows) => {
+        if (!cancelled) {
+          setApprovalPending(rows.filter((r) => r.status === 'submitted').length)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setApprovalPending(0)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [isAdmin])
+  const navigate = useNavigate()
+  const { formattedCount } = useQuestionCount()
+  const { folders } = useBookmarks()
+  const bookmarkedQuestionTotal = folders.reduce(
+    (sum, f) => sum + Math.max(0, f.questionCount),
+    0,
+  )
+
+  const displayName =
+    user?.displayName || user?.email?.split('@')[0] || footName
+  const displayRole = profile?.role === 'teacher' ? 'Teacher' : footRole
+  const initials =
+    footInitials ||
+    displayName
+      .split(' ')
+      .map((w) => w[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase()
+
+  async function confirmLogout() {
+    setLogoutBusy(true)
+    try {
+      await logout()
+      navigate('/login', { replace: true })
+    } finally {
+      setLogoutBusy(false)
+      setLogoutOpen(false)
+    }
+  }
+
   return (
+    <>
     <aside className="pc-sidebar">
       <div className="pc-brand">
         <div className="pc-brand-mark" aria-hidden />
@@ -24,7 +86,9 @@ export function Sidebar({
           <div className="pc-brand-name">
             Paper<em>Craft</em>
           </div>
-          <div className="pc-brand-sub">Admin Workspace</div>
+          <div className="pc-brand-sub">
+            {profile?.role === 'teacher' ? 'Teacher Workspace' : 'Admin Workspace'}
+          </div>
         </div>
       </div>
 
@@ -40,43 +104,120 @@ export function Sidebar({
       </div>
 
       <nav className="pc-nav" aria-label="Main">
-        {ADMIN_NAV.map((group, gi) => (
+        {ADMIN_NAV.map((group, gi) => {
+          const items = group.items.filter((item) => {
+            if (item.key === 'approval' && !isAdmin) return false
+            if (group.section === 'Organization' && !isAdmin) return false
+            return true
+          })
+          if (items.length === 0) return null
+
+          return (
           <div className="pc-nav-group" key={gi}>
             {group.section && (
               <div className="pc-nav-label">{group.section}</div>
             )}
-            {group.items.map((item) => {
+            {items.map((item) => {
               const Icon = item.icon
-              const isActive = activeKey === item.key
+              const to = NAV_ROUTES[item.key] ?? '/app'
+              if (item.disabled) {
+                return (
+                  <div
+                    key={item.key}
+                    className="pc-nav-item is-disabled"
+                    title={`${item.label} (Coming soon)`}
+                  >
+                    <Icon size={15} strokeWidth={1.6} />
+                    <span>{item.label}</span>
+                    {item.badge &&
+                      item.badge !== 'dynamic' &&
+                      item.badge !== 'approvals' && (
+                      <span className="pc-nav-item-badge">{item.badge}</span>
+                    )}
+                  </div>
+                )
+              }
               return (
-                <button
+                <NavLink
                   key={item.key}
-                  type="button"
-                  className={'pc-nav-item' + (isActive ? ' is-active' : '')}
-                  aria-current={isActive ? 'page' : undefined}
+                  to={to}
+                  className={({ isActive }) =>
+                    'pc-nav-item' + (isActive ? ' is-active' : '')
+                  }
+                  end={item.key === 'home'}
+                  style={{ position: 'relative' }}
                 >
-                  <Icon size={15} strokeWidth={1.6} />
-                  <span>{item.label}</span>
-                  {item.badge && (
-                    <span className="pc-nav-item-badge">{item.badge}</span>
+                  {({ isActive }) => (
+                    <>
+                      {isActive && (
+                        <motion.div
+                          layoutId="active-sidebar-indicator"
+                          className="pc-nav-active-bg"
+                          transition={{ type: 'spring', stiffness: 380, damping: 32, mass: 0.85 }}
+                        />
+                      )}
+                      <Icon size={15} strokeWidth={1.6} style={{ position: 'relative', zIndex: 2 }} />
+                      <span style={{ position: 'relative', zIndex: 2 }}>{item.label}</span>
+                      {(item.badge === 'dynamic' ||
+                        (item.key === 'approval' && approvalPending > 0) ||
+                        (item.key === 'bookmarks' && bookmarkedQuestionTotal > 0)) && (
+                        <span
+                          className="pc-nav-item-badge"
+                          style={{ position: 'relative', zIndex: 2 }}
+                        >
+                          {item.key === 'approval'
+                            ? String(approvalPending)
+                            : item.badge === 'dynamic'
+                              ? formattedCount
+                              : String(bookmarkedQuestionTotal)}
+                        </span>
+                      )}
+                    </>
                   )}
-                </button>
+                </NavLink>
               )
             })}
           </div>
-        ))}
+          )
+        })}
       </nav>
 
       <div className="pc-sidebar-foot">
-        <div className="pc-avatar is-blue">{footInitials}</div>
-        <div style={{ lineHeight: 1.2, minWidth: 0 }}>
-          <div className="pc-foot-name">{footName}</div>
-          <div className="pc-foot-role">{footRole}</div>
+        <div className="pc-avatar is-blue">{initials}</div>
+        <div style={{ lineHeight: 1.2, minWidth: 0, flex: 1 }}>
+          <div className="pc-foot-name">{displayName}</div>
+          <div className="pc-foot-role">{displayRole}</div>
         </div>
-        <div style={{ marginLeft: 'auto', color: 'var(--pc-ink-4)' }}>
+        <button
+          type="button"
+          className="pc-sidebar-logout"
+          onClick={() => setLogoutOpen(true)}
+          title="Sign out"
+        >
+          <LogOut size={15} strokeWidth={1.6} />
+        </button>
+        <button
+          type="button"
+          className="pc-sidebar-settings"
+          title="Settings"
+          aria-label="Settings"
+        >
           <Settings size={14} strokeWidth={1.6} />
-        </div>
+        </button>
       </div>
     </aside>
+
+    <ConfirmDialog
+      open={logoutOpen}
+      title="Sign out of PaperCraft?"
+      description="You will return to the sign-in screen. Your saved login ID stays on this device if you use Remember me."
+      confirmLabel="Sign out"
+      cancelLabel="Cancel"
+      tone="danger"
+      busy={logoutBusy}
+      onCancel={() => setLogoutOpen(false)}
+      onConfirm={() => void confirmLogout()}
+    />
+    </>
   )
 }

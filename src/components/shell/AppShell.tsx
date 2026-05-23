@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react'
+import { useTeacherScope } from '@/hooks/useTeacherScope'
+import { AppTabBar } from './AppTabBar'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
 
@@ -15,13 +17,24 @@ export function AppShell({
   crumbs,
   topbarActions,
 }: AppShellProps) {
+  const { isScoped, isActive, hasAssignments, hasFullAccess } = useTeacherScope()
+  const showInactiveBanner = isScoped && (!isActive || (!hasAssignments && !hasFullAccess))
+
   return (
     <div className="pc-screen">
       <div className="pc-shell">
         <Sidebar activeKey={activeNav} />
         <div className="pc-work">
           <Topbar crumbs={crumbs} actions={topbarActions} />
-          {children}
+          {showInactiveBanner ? (
+            <p className="pc-teacher-inactive-banner" role="status">
+              {!isActive
+                ? 'Your account is inactive. Contact the examination office for access.'
+                : 'No class or subject assignments yet. You cannot browse the repository or build papers until an administrator assigns your subjects.'}
+            </p>
+          ) : null}
+          <div className="pc-work-body">{children}</div>
+          <AppTabBar />
         </div>
       </div>
     </div>

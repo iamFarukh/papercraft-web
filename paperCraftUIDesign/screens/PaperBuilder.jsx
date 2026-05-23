@@ -60,9 +60,9 @@ const PaperHeaderClassic = () => (
     <div style={{ display: "flex", justifyContent: "center", marginBottom: 6 }}>
       <div style={{ width: 40, height: 40, position: "relative" }}>
         <svg viewBox="0 0 40 40" width="40" height="40">
-          <path d="M20 2 L34 8 L34 22 C34 30 28 36 20 38 C12 36 6 30 6 22 L6 8 Z" fill="none" stroke="var(--pc-ink)" strokeWidth="1.2"/>
-          <path d="M20 8 L28 11 L28 22 C28 27 24.5 31 20 32.5 C15.5 31 12 27 12 22 L12 11 Z" fill="var(--pc-ink)" opacity="0.06"/>
-          <text x="20" y="24" textAnchor="middle" fontFamily="Newsreader, serif" fontSize="13" fontStyle="italic" fill="var(--pc-ink)">S</text>
+          <path d="M20 2 L34 8 L34 22 C34 30 28 36 20 38 C12 36 6 30 6 22 L6 8 Z" fill="none" stroke="#15161A" strokeWidth="1.2"/>
+          <path d="M20 8 L28 11 L28 22 C28 27 24.5 31 20 32.5 C15.5 31 12 27 12 22 L12 11 Z" fill="#15161A" opacity="0.06"/>
+          <text x="20" y="24" textAnchor="middle" fontFamily="Newsreader, serif" fontSize="13" fontStyle="italic" fill="#15161A">S</text>
         </svg>
       </div>
     </div>
@@ -275,7 +275,7 @@ const PaperBuilder = ({ tweaks }) => {
               {/* AI mini panel */}
               <div style={{ borderTop: "1px solid var(--pc-line)", padding: "12px 14px", background: "var(--pc-surface)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 8 }}>
-                  <div style={{ width: 18, height: 18, borderRadius: 5, background: "var(--pc-brand-gradient)", color: "white", display: "grid", placeItems: "center" }}>
+                  <div style={{ width: 18, height: 18, borderRadius: 5, background: "linear-gradient(135deg, #2A47CC, #6789FF)", color: "white", display: "grid", placeItems: "center" }}>
                     <Icon name="sparkles" size={10} />
                   </div>
                   <span style={{ fontSize: 11, fontWeight: 500, color: "var(--pc-ink)" }}>Composer</span>
@@ -431,10 +431,10 @@ const PaperBuilder = ({ tweaks }) => {
                 <div style={{ fontSize: 11.5, fontWeight: 500, marginBottom: 10 }}>Difficulty distribution</div>
                 <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 70, padding: "0 4px" }}>
                   {[
-                    { l: "Easy", v: 28, target: 30, c: "var(--pc-success)" },
-                    { l: "Med", v: 44, target: 40, c: "var(--pc-primary)" },
-                    { l: "Hard", v: 22, target: 22, c: "var(--pc-warning)" },
-                    { l: "HOTS", v: 6, target: 8, c: "var(--pc-danger)" },
+                    { l: "Easy", v: 28, target: 30, c: "#14B87A" },
+                    { l: "Med", v: 44, target: 40, c: "#355CFF" },
+                    { l: "Hard", v: 22, target: 22, c: "#E08A1F" },
+                    { l: "HOTS", v: 6, target: 8, c: "#DC4A3D" },
                   ].map(d => (
                     <div key={d.l} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
                       <div style={{ position: "relative", width: "100%", height: 56, display: "flex", alignItems: "flex-end" }}>
@@ -450,9 +450,9 @@ const PaperBuilder = ({ tweaks }) => {
               </div>
 
               {/* Suggestions */}
-              <div className="pc-panel" style={{ padding: 14, background: "var(--pc-panel-gradient)" }}>
+              <div className="pc-panel" style={{ padding: 14, background: "linear-gradient(180deg, #FFFFFF, #FAFAF7)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 8 }}>
-                  <div style={{ width: 20, height: 20, borderRadius: 6, background: "var(--pc-brand-gradient)", color: "white", display: "grid", placeItems: "center" }}>
+                  <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(135deg, #2A47CC, #6789FF)", color: "white", display: "grid", placeItems: "center" }}>
                     <Icon name="sparkles" size={11} />
                   </div>
                   <span style={{ fontSize: 12, fontWeight: 500 }}>Quiet suggestions</span>

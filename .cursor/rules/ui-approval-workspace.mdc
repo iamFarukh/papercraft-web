@@ -1,0 +1,36 @@
+---
+description: Approval workspace patterns and paper lifecycle rules
+globs: src/**/*.{tsx,ts}
+alwaysApply: false
+---
+
+# Approval workspace (PaperCraft)
+
+## Routes (admin only)
+
+- `/app/approvals` — queue
+- `/app/approvals/:paperId` — review
+
+Wrap in `AdminRoute`. Teachers must not access approval routes.
+
+## Paper lifecycle
+
+`draft` → `submitted` → `approved`
+
+- **Approve:** `approvePaper()` sets `status`, `approvedAt`, `approvedBy`
+- **Reopen:** `reopenPaperAsDraft()` → `draft` (admin only; submitted or approved)
+- **Read-only builder:** `isReadOnlyPaperBuilder()` — teachers locked on submitted/approved; admins locked only on approved
+
+## Review UI (match `paperCraftUIDesign/screens/Approval.jsx`)
+
+- Single `ApprovalWorkspace` on both routes; left queue always visible on review
+- Grid: `300px | 1fr | 320px` — `ApprovalSubmissionQueue` · `PaperOfficialPreview` · `ApprovalReviewPanel`
+- Left: submission rows (`pc-approval-row`), status tabs All / Submitted / Approved
+- Center: sticky `pc-float` meta strip, A4 preview, `UNDER REVIEW` / `APPROVED` watermark
+- Right: Review tab only — validation checklist + summary + Approve & lock / Reopen
+- Use `EmptyStatePanel` when the queue is empty
+- Top bar: paper title + Approve & lock / Reopen (no Versions, Comment, Request Revisions in 2A)
+
+## Do not add in this module without explicit request
+
+Comments, rejection flows, PDF export, annotations, ticketing UI

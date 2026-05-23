@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-react'
 import {
   Archive,
   BarChart3,
+  Bookmark,
   Check,
   FileText,
   History,
@@ -17,6 +18,7 @@ export type NavItem = {
   label: string
   icon: LucideIcon
   badge?: string
+  disabled?: boolean
 }
 
 export type NavGroup = {
@@ -29,15 +31,16 @@ export const ADMIN_NAV: NavGroup[] = [
     section: null,
     items: [
       { key: 'home', label: 'Control Center', icon: Home },
-      { key: 'feed', label: 'Activity Feed', icon: History, badge: '12' },
+      { key: 'feed', label: 'Activity Feed', icon: History, badge: '12', disabled: true },
     ],
   },
   {
     section: 'Academic',
     items: [
-      { key: 'repo', label: 'Question Repository', icon: Archive, badge: '3.4k' },
+      { key: 'repo', label: 'Question Repository', icon: Archive, badge: 'dynamic' },
+      { key: 'bookmarks', label: 'Bookmarks', icon: Bookmark },
       { key: 'curriculum', label: 'Curriculum', icon: Layers },
-      { key: 'blueprint', label: 'Blueprints', icon: Target },
+      { key: 'blueprint', label: 'Blueprints', icon: Target, disabled: true },
     ],
   },
   {
@@ -45,14 +48,15 @@ export const ADMIN_NAV: NavGroup[] = [
     items: [
       { key: 'papers', label: 'Paper Library', icon: FileText },
       { key: 'builder', label: 'Paper Builder', icon: Pencil },
-      { key: 'approval', label: 'Approvals', icon: Check, badge: '7' },
+      { key: 'approval', label: 'Approvals', icon: Check, badge: 'approvals' },
     ],
   },
   {
     section: 'Organization',
     items: [
       { key: 'teachers', label: 'Teachers', icon: Users },
-      { key: 'analytics', label: 'Analytics', icon: BarChart3 },
+      { key: 'analytics', label: 'Analytics', icon: BarChart3, disabled: true },
     ],
   },
 ]
+

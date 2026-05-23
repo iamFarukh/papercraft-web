@@ -1,0 +1,100 @@
+/* PASS 3D — calm interaction polish (CSS layer; Framer for overlays/pages) */
+
+.pc-page-motion {
+  min-height: 100%;
+  width: 100%;
+}
+
+/* Elevated surfaces — cards, rows, chips */
+.pc-motion-surface {
+  transition:
+    box-shadow var(--pc-motion-fast, 160ms) ease,
+    border-color var(--pc-motion-fast, 160ms) ease,
+    background-color var(--pc-motion-fast, 160ms) ease,
+    transform var(--pc-motion-fast, 160ms) ease;
+}
+
+.pc-motion-surface:hover {
+  box-shadow: var(--pc-shadow-sm);
+}
+
+.pc-motion-surface:active {
+  transform: translateY(0.5px);
+}
+
+.pc-q-card.pc-motion-surface:hover {
+  transform: translateY(-1px);
+}
+
+.pc-q-card.pc-motion-surface:active {
+  transform: translateY(0);
+}
+
+/* Buttons — tap feedback without bounce */
+.pc-btn,
+.pc-icon-btn,
+.pc-pb-toolbar-actions .pc-btn {
+  transition:
+    box-shadow var(--pc-motion-fast, 160ms) ease,
+    background var(--pc-motion-fast, 160ms) ease,
+    border-color var(--pc-motion-fast, 160ms) ease,
+    transform 100ms ease,
+    opacity var(--pc-motion-fast, 160ms) ease;
+}
+
+.pc-btn:active:not(:disabled),
+.pc-icon-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.pc-btn.is-primary:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+/* Chips / tabs */
+.pc-approval-tab,
+.pc-tag {
+  transition:
+    background var(--pc-motion-fast, 160ms) ease,
+    border-color var(--pc-motion-fast, 160ms) ease,
+    color var(--pc-motion-fast, 160ms) ease;
+}
+
+/* Skeleton → content */
+.pc-motion-content-enter {
+  animation: pc-fade-in-soft 0.16s ease forwards;
+}
+
+@keyframes pc-fade-in-soft {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* Restrained shimmer (already on .pc-skel) */
+@media (prefers-reduced-motion: reduce) {
+  .pc-skel {
+    animation: none;
+    background: var(--pc-surface-3);
+  }
+
+  .pc-motion-surface,
+  .pc-motion-surface:hover,
+  .pc-q-card.pc-motion-surface:hover {
+    transform: none;
+    transition: none;
+  }
+
+  .pc-btn:active:not(:disabled),
+  .pc-icon-btn:active:not(:disabled) {
+    transform: none;
+  }
+
+  .pc-motion-content-enter {
+    animation: none;
+  }
+}

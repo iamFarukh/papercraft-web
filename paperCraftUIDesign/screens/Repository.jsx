@@ -119,13 +119,13 @@ const QuestionCard = ({ q, selected, onSelect }) => (
     {/* Body */}
     <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <p className="pc-serif" style={{ fontSize: 15.5, lineHeight: 1.55, color: "var(--pc-ink)", margin: 0, fontWeight: 400, letterSpacing: "-0.005em" }}>
+        <div className="pc-serif" style={{ fontSize: 15.5, lineHeight: 1.55, color: "var(--pc-ink)", margin: 0, fontWeight: 400, letterSpacing: "-0.005em" }}>
           {q.body}
-        </p>
+        </div>
         {q.hindi && (
-          <p style={{ fontSize: 13, color: "var(--pc-ink-3)", margin: "8px 0 0", fontStyle: "normal", lineHeight: 1.55 }} className="pc-serif">
+          <div style={{ fontSize: 13, color: "var(--pc-ink-3)", margin: "8px 0 0", fontStyle: "normal", lineHeight: 1.55 }} className="pc-serif">
             {q.hindi}
-          </p>
+          </div>
         )}
       </div>
     </div>
@@ -250,10 +250,10 @@ const Repository = () => {
                 ))}
               </FilterGroup>
               <FilterGroup label="Difficulty">
-                <FilterCheck label="Easy" count={86} color="var(--pc-success)" checked={filters.difficulty.easy} onChange={() => toggle("difficulty", "easy")} />
-                <FilterCheck label="Medium" count={108} color="var(--pc-primary)" checked={filters.difficulty.medium} onChange={() => toggle("difficulty", "medium")} />
-                <FilterCheck label="Hard" count={42} color="var(--pc-warning)" checked={filters.difficulty.hard} onChange={() => toggle("difficulty", "hard")} />
-                <FilterCheck label="HOTS" count={12} color="var(--pc-danger)" checked={false} onChange={() => {}} />
+                <FilterCheck label="Easy" count={86} color="#14B87A" checked={filters.difficulty.easy} onChange={() => toggle("difficulty", "easy")} />
+                <FilterCheck label="Medium" count={108} color="#355CFF" checked={filters.difficulty.medium} onChange={() => toggle("difficulty", "medium")} />
+                <FilterCheck label="Hard" count={42} color="#E08A1F" checked={filters.difficulty.hard} onChange={() => toggle("difficulty", "hard")} />
+                <FilterCheck label="HOTS" count={12} color="#DC4A3D" checked={false} onChange={() => {}} />
               </FilterGroup>
               <FilterGroup label="Question Type">
                 <FilterCheck label="MCQ" count={142} checked={filters.types.mcq} onChange={() => toggle("types", "mcq")} />
@@ -379,13 +379,13 @@ const Repository = () => {
               </div>
 
               {/* AI suggestion */}
-              <div style={{ background: "linear-gradient(180deg, var(--pc-info-panel-from), var(--pc-info-panel-to))", border: "1px solid var(--pc-info-panel-border)", borderRadius: 10, padding: "11px 13px", display: "flex", gap: 10, alignItems: "flex-start" }}>
-                <div style={{ width: 22, height: 22, borderRadius: 6, background: "var(--pc-brand-gradient)", color: "white", display: "grid", placeItems: "center", flexShrink: 0, boxShadow: "0 2px 6px rgba(53,92,255,0.4)" }}>
+              <div style={{ background: "linear-gradient(180deg, #F1F4FF, #E7ECFF)", border: "1px solid #C9D4FF", borderRadius: 10, padding: "11px 13px", display: "flex", gap: 10, alignItems: "flex-start" }}>
+                <div style={{ width: 22, height: 22, borderRadius: 6, background: "linear-gradient(135deg, #2A47CC, #6789FF)", color: "white", display: "grid", placeItems: "center", flexShrink: 0, boxShadow: "0 2px 6px rgba(53,92,255,0.4)" }}>
                   <Icon name="sparkles" size={11} />
                 </div>
                 <div>
                   <div style={{ fontSize: 12, fontWeight: 500, color: "var(--pc-primary-ink)" }}>Add a Hindi translation</div>
-                  <div style={{ fontSize: 11.5, color: "var(--pc-info-panel-text)", lineHeight: 1.45, marginTop: 2 }}>This question is currently English-only. Generating a bilingual version improves accessibility for ~38% of students.</div>
+                  <div style={{ fontSize: 11.5, color: "#3F4F8C", lineHeight: 1.45, marginTop: 2 }}>This question is currently English-only. Generating a bilingual version improves accessibility for ~38% of students.</div>
                   <button className="pc-btn is-sm" style={{ marginTop: 8 }}>Generate translation</button>
                 </div>
               </div>

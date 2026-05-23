@@ -1,0 +1,67 @@
+.pc-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.pc-confirm-backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: default;
+  background: rgb(20 22 26 / 32%);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.pc-confirm-panel {
+  position: relative;
+  z-index: 1;
+  width: min(400px, 100%);
+  padding: 22px 22px 18px;
+  border-radius: var(--pc-r-lg);
+  border: 1px solid var(--pc-line);
+  background: var(--pc-surface);
+  box-shadow: var(--pc-shadow-lg);
+}
+
+.pc-confirm-title {
+  margin: 0 0 8px;
+  font-family: var(--pc-serif);
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.pc-confirm-desc {
+  margin: 0 0 18px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--pc-ink-3);
+}
+
+.pc-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.pc-btn.is-primary.is-danger-fill {
+  background: var(--pc-danger-text);
+  border-color: rgb(20 22 26 / 12%);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 14%) inset,
+    0 4px 10px -2px rgb(220 74 61 / 35%);
+}
+
+.pc-btn.is-primary.is-danger-fill:hover:not(:disabled) {
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 14%) inset,
+    0 6px 14px -2px rgb(220 74 61 / 42%);
+}

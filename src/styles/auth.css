@@ -20,6 +20,51 @@
   color: var(--pc-ink);
 }
 
+.pc-profile-setup-card {
+  max-width: 440px;
+  padding: 28px 32px;
+  border-radius: var(--pc-r-lg);
+  border: 1px solid var(--pc-line);
+  background: var(--pc-surface);
+  box-shadow: var(--pc-shadow-md);
+  text-align: left;
+}
+
+.pc-profile-setup-kicker {
+  margin: 0 0 8px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pc-ink-4);
+}
+
+.pc-profile-setup-title {
+  margin: 0 0 10px;
+  font-family: var(--pc-serif);
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--pc-ink);
+}
+
+.pc-profile-setup-lead {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--pc-ink-3);
+}
+
+.pc-profile-setup-list {
+  margin: 0 0 20px;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--pc-ink-3);
+}
+
+.pc-profile-setup-list li + li {
+  margin-top: 8px;
+}
+
 .pc-login-page {
   min-height: 100%;
   display: grid;
@@ -196,8 +241,15 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 22px;
+  margin-bottom: 8px;
   gap: 12px;
+}
+
+.pc-login-remember-hint {
+  margin: 0 0 18px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--pc-ink-4);
 }
 
 .pc-login-remember {
