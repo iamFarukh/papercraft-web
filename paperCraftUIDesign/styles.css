@@ -9,7 +9,6 @@
   --pc-primary-600: #2E4FE0;
   --pc-primary-700: #2741B8;
   --pc-primary-ink: #1B2A6B;
-  --pc-primary-light: #5A7BFF;
 
   /* Surfaces */
   --pc-bg: #F5F4EE;          /* warm editorial off-white app bg */
@@ -41,15 +40,6 @@
   --pc-danger-bg: #FBE9E5;
   --pc-info: #355CFF;
   --pc-info-bg: #E7ECFF;
-  --pc-success-text: #0E7A52;
-  --pc-warning-text: #9A5C0F;
-  --pc-danger-text: #A0312A;
-  --pc-info-panel-from: #F2F5FF;
-  --pc-info-panel-to: #E7ECFF;
-  --pc-info-panel-border: #C9D4FF;
-  --pc-info-panel-text: #3F4F8C;
-  --pc-brand-gradient: linear-gradient(135deg, #2A47CC, #6789FF);
-  --pc-panel-gradient: linear-gradient(180deg, var(--pc-surface), var(--pc-surface-2));
 
   /* Type */
   --pc-serif: 'Newsreader', 'Source Serif 4', 'Iowan Old Style', Georgia, serif;
@@ -313,7 +303,6 @@
   cursor: pointer;
   box-shadow: var(--pc-shadow-xs);
   letter-spacing: -0.005em;
-  transition: box-shadow 200ms ease, background 200ms ease, border-color 200ms ease;
 }
 .pc-btn:hover { box-shadow: var(--pc-shadow-sm); }
 .pc-btn.is-primary {
@@ -337,39 +326,6 @@
 }
 .pc-panel-pad { padding: 18px 20px; }
 
-/* Inputs — DESIGN.md §7.5 */
-.pc-input,
-.pc-screen input[type="text"],
-.pc-screen input[type="search"],
-.pc-screen input[type="email"],
-.pc-screen input[type="number"],
-.pc-screen textarea,
-.pc-screen select {
-  height: 32px;
-  min-height: 32px;
-  padding: 0 10px;
-  border-radius: var(--pc-r-sm);
-  background: var(--pc-surface);
-  border: 1px solid var(--pc-line);
-  box-shadow: var(--pc-shadow-xs);
-  font: 400 12.5px var(--pc-sans);
-  color: var(--pc-ink);
-  transition: box-shadow 200ms ease, border-color 200ms ease;
-}
-.pc-screen textarea {
-  height: auto;
-  padding: 8px 10px;
-  line-height: 1.5;
-}
-.pc-input:focus,
-.pc-screen input:focus,
-.pc-screen textarea:focus,
-.pc-screen select:focus {
-  outline: none;
-  border-color: var(--pc-primary);
-  box-shadow: var(--pc-ring-primary);
-}
-
 /* Tags / Chips */
 .pc-tag {
   display: inline-flex; align-items: center; gap: 5px;
@@ -381,9 +337,9 @@
   letter-spacing: 0.005em;
 }
 .pc-tag.is-primary { background: var(--pc-primary-50); color: var(--pc-primary-ink); }
-.pc-tag.is-success { background: var(--pc-success-bg); color: var(--pc-success-text); }
-.pc-tag.is-warning { background: var(--pc-warning-bg); color: var(--pc-warning-text); }
-.pc-tag.is-danger { background: var(--pc-danger-bg); color: var(--pc-danger-text); }
+.pc-tag.is-success { background: var(--pc-success-bg); color: #0E7A52; }
+.pc-tag.is-warning { background: var(--pc-warning-bg); color: #9A5C0F; }
+.pc-tag.is-danger { background: var(--pc-danger-bg); color: #A0312A; }
 .pc-tag.is-outline { background: transparent; border-color: var(--pc-line); color: var(--pc-ink-3); }
 .pc-tag.is-ink { background: #1A1D24; color: #F4F4F0; }
 

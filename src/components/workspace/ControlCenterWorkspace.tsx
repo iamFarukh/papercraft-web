@@ -1,19 +1,24 @@
+import { ActivityFeed } from '@/components/dashboard/ActivityFeed'
+import { ApprovalPipeline } from '@/components/dashboard/ApprovalPipeline'
+import { MetricOverview } from '@/components/dashboard/MetricOverview'
+
 export function ControlCenterWorkspace() {
   return (
     <main
       className="pc-scroll"
       style={{
         flex: 1,
-        padding: '24px 28px 32px',
+        minHeight: 0,
+        padding: '22px 28px 32px',
         background: 'var(--pc-bg)',
       }}
     >
-      <div
+      <header
         style={{
           display: 'flex',
           alignItems: 'flex-end',
           justifyContent: 'space-between',
-          marginBottom: 22,
+          marginBottom: 20,
           gap: 16,
         }}
       >
@@ -39,7 +44,7 @@ export function ControlCenterWorkspace() {
               lineHeight: 1.1,
             }}
           >
-            Academic Control Center
+            Good morning, Aarav.
             <span
               style={{
                 color: 'var(--pc-ink-4)',
@@ -48,76 +53,15 @@ export function ControlCenterWorkspace() {
               }}
             >
               {' '}
-              — visual foundation
+              Seven papers await your review.
             </span>
           </h1>
         </div>
-      </div>
+      </header>
 
-      <div
-        className="pc-panel pc-panel-pad"
-        style={{
-          marginBottom: 20,
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: 20,
-        }}
-      >
-        {['Overview', 'Approvals', 'Coverage', 'Activity'].map((label) => (
-          <div key={label}>
-            <div
-              style={{
-                fontSize: 11,
-                color: 'var(--pc-ink-4)',
-                letterSpacing: '0.04em',
-                textTransform: 'uppercase',
-                fontWeight: 500,
-                marginBottom: 8,
-              }}
-            >
-              {label}
-            </div>
-            <div className="pc-panel-placeholder" style={{ minHeight: 72 }}>
-              —
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1.55fr 1fr',
-          gap: 20,
-        }}
-      >
-        <div className="pc-panel pc-panel-pad">
-          <h2 className="pc-serif" style={{ fontSize: 18, margin: '0 0 14px' }}>
-            Approval Pipeline
-          </h2>
-          <div className="pc-panel-placeholder" style={{ minHeight: 220 }}>
-            Placeholder panel
-          </div>
-        </div>
-
-        <div className="pc-panel pc-panel-pad">
-          <h2 className="pc-serif" style={{ fontSize: 18, margin: '0 0 14px' }}>
-            Academic Health
-          </h2>
-          <div className="pc-panel-placeholder" style={{ minHeight: 220 }}>
-            Placeholder panel
-          </div>
-        </div>
-      </div>
-
-      <div className="pc-panel pc-panel-pad" style={{ marginTop: 20 }}>
-        <h2 className="pc-serif" style={{ fontSize: 18, margin: '0 0 14px' }}>
-          Recent Activity
-        </h2>
-        <div className="pc-panel-placeholder" style={{ minHeight: 120 }}>
-          Placeholder feed
-        </div>
-      </div>
+      <MetricOverview />
+      <ApprovalPipeline />
+      <ActivityFeed />
     </main>
   )
 }

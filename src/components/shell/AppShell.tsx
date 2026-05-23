@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { AppTabBar } from './AppTabBar'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
 
@@ -21,7 +22,8 @@ export function AppShell({
         <Sidebar activeKey={activeNav} />
         <div className="pc-work">
           <Topbar crumbs={crumbs} actions={topbarActions} />
-          {children}
+          <div className="pc-work-body">{children}</div>
+          <AppTabBar />
         </div>
       </div>
     </div>

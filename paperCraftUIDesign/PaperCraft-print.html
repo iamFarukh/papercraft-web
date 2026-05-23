@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>PaperCraft — Print</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Geist:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+<link rel="stylesheet" href="styles.css" />
+
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #efece5;
+    font-family: 'Geist', system-ui, sans-serif;
+    color: #15161A;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Each page is one artboard at natural size. Two physical page sizes
+     (1000-tall and 1100-tall), each landscape, page-broken between. */
+  .page {
+    width: 1440px;
+    margin: 0 auto;
+    background: #F5F4EE;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    overflow: hidden;
+    position: relative;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .page + .page {
+    margin-top: 24px;
+    break-before: page;
+    page-break-before: always;
+  }
+  .page.h-1000 { height: 1000px; }
+  .page.h-1100 { height: 1100px; }
+
+  /* Slug bar above each artboard — hidden in print */
+  .slug {
+    position: absolute;
+    top: -22px;
+    left: 4px;
+    font: 500 11px 'Geist', sans-serif;
+    color: rgba(60,50,40,0.7);
+    letter-spacing: 0.02em;
+  }
+
+  /* On-screen wrapper centers things and adds breathing room */
+  .stack {
+    padding: 60px 24px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 60px;
+  }
+
+  /* === PRINT === */
+  @media print {
+    @page { size: 1440px 1100px; margin: 0; }
+    html, body { background: #FFFFFF; }
+    .stack { padding: 0; gap: 0; }
+    .page {
+      box-shadow: none !important;
+      margin: 0 !important;
+      width: 1440px;
+    }
+    .page.h-1000 { height: 1000px; }
+    .page.h-1100 { height: 1100px; }
+    .page + .page { margin-top: 0; }
+    .slug { display: none; }
+
+    /* belt-and-suspenders: kill all animation/transition for crisp PDF */
+    *, *::before, *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="screens/shared.jsx"></script>
+<script type="text/babel" src="screens/ControlCenter.jsx"></script>
+<script type="text/babel" src="screens/Repository.jsx"></script>
+<script type="text/babel" src="screens/PaperBuilder.jsx"></script>
+<script type="text/babel" src="screens/Approval.jsx"></script>
+<script type="text/babel" src="screens/GenerateFlow.jsx"></script>
+<script type="text/babel" src="screens/Curriculum.jsx"></script>
+
+<script type="text/babel">
+  const PRINT_TWEAKS = { canvas: "bilingual" };
+
+  const PrintDoc = () => (
+    <div className="stack">
+      <div className="page h-1000">
+        <div className="slug">① Academic Control Center · 1440 × 1000</div>
+        <ControlCenter />
+      </div>
+      <div className="page h-1000">
+        <div className="slug">② Question Repository · Workspace · 1440 × 1000</div>
+        <Repository />
+      </div>
+      <div className="page h-1100">
+        <div className="slug">③ Paper Builder · Composition Canvas · 1440 × 1100</div>
+        <PaperBuilder tweaks={PRINT_TWEAKS} />
+      </div>
+      <div className="page h-1100">
+        <div className="slug">④ Approval Workspace · Review Environment · 1440 × 1100</div>
+        <Approval />
+      </div>
+      <div className="page h-1000">
+        <div className="slug">⑤ Generate Paper · Teacher Flow · 1440 × 1000</div>
+        <GenerateFlow />
+      </div>
+      <div className="page h-1000">
+        <div className="slug">⑥ Curriculum Workspace · 1440 × 1000</div>
+        <Curriculum />
+      </div>
+    </div>
+  );
+
+  ReactDOM.createRoot(document.getElementById('root')).render(<PrintDoc />);
+
+  // Auto-print: wait for fonts + a beat for layout to settle, then trigger.
+  (async () => {
+    try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (e) {}
+    // Give Babel-transformed scripts and React render a final tick.
+    await new Promise(r => setTimeout(r, 800));
+    window.print();
+  })();
+</script>
+
+</body>
+</html>

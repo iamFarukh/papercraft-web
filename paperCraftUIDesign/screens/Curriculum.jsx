@@ -173,32 +173,32 @@ const Curriculum = () => {
                   <span style={{ width: 32 }}></span>
                 </div>
 
-                <TreeRow depth={0} type="chapter" name="1 · Real Numbers" expanded badges={[{ label: "complete", tone: "is-success" }]} completion={92} count={48} indicator="var(--pc-success)" />
+                <TreeRow depth={0} type="chapter" name="1 · Real Numbers" expanded badges={[{ label: "complete", tone: "is-success" }]} completion={92} count={48} indicator="#14B87A" />
                 <TreeRow depth={1} type="topic" name="Euclid's division algorithm" completion={100} count={14} />
                 <TreeRow depth={1} type="topic" name="Fundamental theorem of arithmetic" completion={94} count={18} />
                 <TreeRow depth={1} type="topic" name="Irrational numbers · proofs" completion={82} count={10} />
                 <TreeRow depth={1} type="topic" name="Decimal expansions" completion={75} count={6} />
 
-                <TreeRow depth={0} type="chapter" name="2 · Polynomials" expanded={false} completion={78} count={36} indicator="var(--pc-success)" />
-                <TreeRow depth={0} type="chapter" name="3 · Pair of Linear Equations" expanded={false} completion={68} count={28} indicator="var(--pc-primary)" />
+                <TreeRow depth={0} type="chapter" name="2 · Polynomials" expanded={false} completion={78} count={36} indicator="#14B87A" />
+                <TreeRow depth={0} type="chapter" name="3 · Pair of Linear Equations" expanded={false} completion={68} count={28} indicator="#355CFF" />
 
-                <TreeRow depth={0} type="chapter" name="4 · Quadratic Equations" expanded selected badges={[{ label: "focus chapter", tone: "is-warning" }]} completion={64} count={29} indicator="var(--pc-primary)" />
+                <TreeRow depth={0} type="chapter" name="4 · Quadratic Equations" expanded selected badges={[{ label: "focus chapter", tone: "is-warning" }]} completion={64} count={29} indicator="#355CFF" />
                 <TreeRow depth={1} type="topic" name="Introduction · standard form" completion={88} count={6} />
                 <TreeRow depth={1} type="topic" name="Solution by factorisation" completion={84} count={9} />
                 <TreeRow depth={1} type="topic" name="Solution by completing the square" completion={72} count={7} />
                 <TreeRow depth={1} type="topic" name="Discriminant &amp; nature of roots" completion={56} count={4} />
-                <TreeRow depth={1} type="topic" name="Word problems" completion={40} count={3} indicator="var(--pc-warning)" />
+                <TreeRow depth={1} type="topic" name="Word problems" completion={40} count={3} indicator="#E08A1F" />
 
-                <TreeRow depth={0} type="chapter" name="5 · Arithmetic Progressions" expanded={false} completion={62} count={24} indicator="var(--pc-primary)" />
-                <TreeRow depth={0} type="chapter" name="6 · Triangles" expanded={false} completion={58} count={32} indicator="var(--pc-primary)" />
-                <TreeRow depth={0} type="chapter" name="7 · Coordinate Geometry" expanded={false} completion={48} count={14} indicator="var(--pc-primary)" />
-                <TreeRow depth={0} type="chapter" name="8 · Introduction to Trigonometry" expanded={false} completion={44} count={18} indicator="var(--pc-warning)" />
-                <TreeRow depth={0} type="chapter" name="9 · Some Applications of Trigonometry" expanded={false} completion={38} count={12} indicator="var(--pc-warning)" />
-                <TreeRow depth={0} type="chapter" name="10 · Circles" expanded={false} completion={34} count={10} indicator="var(--pc-warning)" />
-                <TreeRow depth={0} type="chapter" name="11 · Areas Related to Circles" expanded={false} completion={28} count={9} indicator="var(--pc-warning)" />
-                <TreeRow depth={0} type="chapter" name="12 · Surface Areas &amp; Volumes" expanded={false} completion={24} count={8} indicator="var(--pc-danger)" />
-                <TreeRow depth={0} type="chapter" name="13 · Statistics" expanded={false} badges={[{ label: "under-covered", tone: "is-danger" }]} completion={18} count={8} indicator="var(--pc-danger)" />
-                <TreeRow depth={0} type="chapter" name="14 · Probability" expanded={false} completion={12} count={6} indicator="var(--pc-danger)" />
+                <TreeRow depth={0} type="chapter" name="5 · Arithmetic Progressions" expanded={false} completion={62} count={24} indicator="#355CFF" />
+                <TreeRow depth={0} type="chapter" name="6 · Triangles" expanded={false} completion={58} count={32} indicator="#355CFF" />
+                <TreeRow depth={0} type="chapter" name="7 · Coordinate Geometry" expanded={false} completion={48} count={14} indicator="#355CFF" />
+                <TreeRow depth={0} type="chapter" name="8 · Introduction to Trigonometry" expanded={false} completion={44} count={18} indicator="#E08A1F" />
+                <TreeRow depth={0} type="chapter" name="9 · Some Applications of Trigonometry" expanded={false} completion={38} count={12} indicator="#E08A1F" />
+                <TreeRow depth={0} type="chapter" name="10 · Circles" expanded={false} completion={34} count={10} indicator="#E08A1F" />
+                <TreeRow depth={0} type="chapter" name="11 · Areas Related to Circles" expanded={false} completion={28} count={9} indicator="#E08A1F" />
+                <TreeRow depth={0} type="chapter" name="12 · Surface Areas &amp; Volumes" expanded={false} completion={24} count={8} indicator="#DC4A3D" />
+                <TreeRow depth={0} type="chapter" name="13 · Statistics" expanded={false} badges={[{ label: "under-covered", tone: "is-danger" }]} completion={18} count={8} indicator="#DC4A3D" />
+                <TreeRow depth={0} type="chapter" name="14 · Probability" expanded={false} completion={12} count={6} indicator="#DC4A3D" />
               </div>
             </section>
 
@@ -241,11 +241,11 @@ const Curriculum = () => {
               <div className="pc-panel" style={{ padding: 14 }}>
                 <div style={{ fontSize: 11.5, fontWeight: 500, marginBottom: 10 }}>Question type mix</div>
                 {[
-                  ["MCQ", 6, 21, "var(--pc-primary)"],
-                  ["Very Short", 4, 14, "var(--pc-primary-light)"],
-                  ["Short Answer", 10, 34, "var(--pc-success)"],
-                  ["Long Answer", 7, 24, "var(--pc-warning)"],
-                  ["Case-Based", 2, 7, "var(--pc-danger)"],
+                  ["MCQ", 6, 21, "#355CFF"],
+                  ["Very Short", 4, 14, "#5A7BFF"],
+                  ["Short Answer", 10, 34, "#14B87A"],
+                  ["Long Answer", 7, 24, "#E08A1F"],
+                  ["Case-Based", 2, 7, "#DC4A3D"],
                 ].map(([l, n, pct, c]) => (
                   <div key={l} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0", fontSize: 11.5 }}>
                     <span style={{ width: 8, height: 8, borderRadius: 2, background: c }} />
@@ -271,9 +271,9 @@ const Curriculum = () => {
                 </div>
               </div>
 
-              <div className="pc-panel" style={{ padding: 14, background: "var(--pc-panel-gradient)" }}>
+              <div className="pc-panel" style={{ padding: 14, background: "linear-gradient(180deg, #FFFFFF, #FAFAF7)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 6 }}>
-                  <div style={{ width: 20, height: 20, borderRadius: 6, background: "var(--pc-brand-gradient)", color: "white", display: "grid", placeItems: "center" }}>
+                  <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(135deg, #2A47CC, #6789FF)", color: "white", display: "grid", placeItems: "center" }}>
                     <Icon name="sparkles" size={11} />
                   </div>
                   <span style={{ fontSize: 12, fontWeight: 500 }}>Composer notes</span>

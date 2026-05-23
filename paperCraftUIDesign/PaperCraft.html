@@ -31,10 +31,12 @@
 <script type="text/babel" src="screens/Approval.jsx"></script>
 <script type="text/babel" src="screens/GenerateFlow.jsx"></script>
 <script type="text/babel" src="screens/Curriculum.jsx"></script>
+<script type="text/babel" src="screens/BulkUpdate.jsx"></script>
+<script type="text/babel" src="screens/BulkUpload.jsx"></script>
 
 <script type="text/babel">
   const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-    "canvas": "bilingual"
+    "canvas": "classic"
   }/*EDITMODE-END*/;
 
   const App = () => {
@@ -64,6 +66,42 @@
             </DCArtboard>
             <DCArtboard id="curriculum" label="⑥ Curriculum Workspace" width={1440} height={1000}>
               <Curriculum />
+            </DCArtboard>
+          </DCSection>
+
+          <DCSection id="bulk" title="Bulk Update · 5-step flow" subtitle="An admin selects 47 questions in the Quadratic Equations chapter and bulk-edits four fields. Each artboard is one step of the wizard — selection → scope → values → preview → done.">
+            <DCArtboard id="bulk-1" label="① Select · 47 questions in Repository" width={1440} height={1000}>
+              <BulkSelectRepo />
+            </DCArtboard>
+            <DCArtboard id="bulk-2" label="② Scope · pick fields to change" width={1440} height={1000}>
+              <BulkScope />
+            </DCArtboard>
+            <DCArtboard id="bulk-3" label="③ Set values · configure each change" width={1440} height={1000}>
+              <BulkValues />
+            </DCArtboard>
+            <DCArtboard id="bulk-4" label="④ Preview · diff + conflicts" width={1440} height={1000}>
+              <BulkPreview />
+            </DCArtboard>
+            <DCArtboard id="bulk-5" label="⑤ Complete · undo + audit" width={1440} height={900}>
+              <BulkComplete />
+            </DCArtboard>
+          </DCSection>
+
+          <DCSection id="csv" title="Bulk CSV Upload · 5-step import" subtitle="A school migrates an RBSE Class VI–VIII Mathematics question bank. 99 rows arrive — 84 valid, 12 warnings, 3 failed — 96 import as Draft. Every step below.">
+            <DCArtboard id="csv-1" label="① Upload · drop zone + template" width={1440} height={1000}>
+              <CsvUpload />
+            </DCArtboard>
+            <DCArtboard id="csv-2" label="② Map columns · CSV → PaperCraft" width={1440} height={1050}>
+              <CsvMap />
+            </DCArtboard>
+            <DCArtboard id="csv-3" label="③ Validate · row-by-row preview" width={1440} height={1100}>
+              <CsvValidate />
+            </DCArtboard>
+            <DCArtboard id="csv-4" label="④ Summary · pre-commit confirmation" width={1440} height={1050}>
+              <CsvSummary />
+            </DCArtboard>
+            <DCArtboard id="csv-5" label="⑤ Complete · imported as Draft" width={1440} height={1100}>
+              <CsvComplete />
             </DCArtboard>
           </DCSection>
         </DesignCanvas>

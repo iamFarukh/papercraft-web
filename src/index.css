@@ -2,6 +2,13 @@
 @import "./styles/theme.css";
 @import "./styles/shell.css";
 @import "./styles/auth.css";
+@import "./styles/dashboard.css";
+@import "./styles/chrome.css";
+@import "./styles/repository.css";
+@import "./styles/authoring.css";
+@import "./styles/bookmarks.css";
+@import "./styles/toast.css";
+@import "./styles/bulk-import.css";
 
 @layer base {
   html,
