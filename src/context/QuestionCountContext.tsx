@@ -31,13 +31,14 @@ function formatCount(n: number): string {
 }
 
 export function QuestionCountProvider({ children }: { children: ReactNode }) {
-  const { user, isAdmin, loading: authLoading } = useAuth()
+  const { user, profile, profileReady, loading: authLoading } = useAuth()
+  const isAdmin = profile?.role === 'admin'
   const [count, setCount] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const hasCountRef = useRef(false)
 
   const refetch = useCallback(async () => {
-    if (!user) {
+    if (!user || !profileReady) {
       setCount(null)
       setLoading(false)
       hasCountRef.current = false
@@ -52,10 +53,10 @@ export function QuestionCountProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false)
     }
-  }, [user, isAdmin])
+  }, [user, profileReady, isAdmin])
 
   useEffect(() => {
-    if (authLoading) return
+    if (authLoading || !profileReady) return
     if (!user) {
       setCount(null)
       setLoading(false)
@@ -70,16 +71,22 @@ export function QuestionCountProvider({ children }: { children: ReactNode }) {
       void refetch()
     })
     return unsub
-  }, [authLoading, user, isAdmin, refetch])
+  }, [authLoading, profileReady, user, isAdmin, refetch])
+
+  const formattedCount = useMemo(() => {
+    if (loading && count === null) return '…'
+    if (count === null) return '—'
+    return formatCount(count)
+  }, [count, loading])
 
   const value = useMemo(
     () => ({
       count,
       loading,
-      formattedCount: count === null ? '—' : formatCount(count),
+      formattedCount,
       refetch,
     }),
-    [count, loading, refetch],
+    [count, loading, formattedCount, refetch],
   )
 
   return (
