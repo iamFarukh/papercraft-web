@@ -2,29 +2,36 @@ import { useEffect, useState } from 'react'
 import {
   emptyComposition,
   sectionsForSetup,
-  setupToPaperMeta,
   type PaperComposition,
   type PaperSetupState,
 } from '@/lib/paper-builder'
-import { hydrateCompositionFromPaper, paperToSetup } from '@/lib/paper-persistence'
+import { resolvePaper } from '@/lib/paper-instance'
+import {
+  hydrateCompositionFromPaper,
+  paperToInstanceLayer,
+  paperToSetup,
+} from '@/lib/paper-persistence'
 import { getPaperById } from '@/services/firebase/papers'
+import { fetchSchoolBranding } from '@/services/firebase/workspace-settings'
+import type { ResolvedPaper } from '@/lib/paper-instance'
 import type { PaperStatus } from '@/types/paper'
 
 export type PaperPrintData = {
   setup: PaperSetupState
   composition: PaperComposition
-  meta: ReturnType<typeof setupToPaperMeta>
+  resolved: ResolvedPaper
   sections: ReturnType<typeof sectionsForSetup>
   status: PaperStatus
 }
 
 export function usePaperPrintData(paperId: string | undefined) {
-  const [phase, setPhase] = useState<'loading' | 'error' | 'ready'>('loading')
+  const [phase, setPhase] = useState<'loading' | 'error' | 'ready'>(
+    paperId ? 'loading' : 'error',
+  )
   const [data, setData] = useState<PaperPrintData | null>(null)
 
   useEffect(() => {
     if (!paperId) {
-      setPhase('error')
       return
     }
 
@@ -39,13 +46,22 @@ export function usePaperPrintData(paperId: string | undefined) {
           return
         }
         const setup = paperToSetup(paper)
+        const instanceLayer = paperToInstanceLayer(paper)
         const { composition } = await hydrateCompositionFromPaper(paper)
         if (cancelled) return
         const sections = sectionsForSetup(setup)
+        const school = await fetchSchoolBranding()
+        const resolved = resolvePaper(
+          setup,
+          sections,
+          composition ?? emptyComposition(),
+          instanceLayer,
+          school,
+        )
         setData({
           setup,
           composition: composition ?? emptyComposition(),
-          meta: setupToPaperMeta(setup),
+          resolved,
           sections,
           status: paper.status ?? 'draft',
         })

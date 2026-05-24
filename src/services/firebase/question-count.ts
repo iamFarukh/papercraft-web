@@ -16,7 +16,11 @@ export async function fetchQuestionCount(isAdmin: boolean): Promise<number> {
   const col = collection(db, COLLECTION)
   const q = isAdmin
     ? query(col)
-    : query(col, where('status', '==', 'published'))
+    : query(
+        col,
+        where('status', '==', 'published'),
+        where('deletedAt', '==', null),
+      )
   const snap = await getCountFromServer(q)
   return snap.data().count
 }
@@ -32,7 +36,11 @@ export function subscribeQuestionCountRefresh(
   const col = collection(db, COLLECTION)
   const q = isAdmin
     ? query(col)
-    : query(col, where('status', '==', 'published'))
+    : query(
+        col,
+        where('status', '==', 'published'),
+        where('deletedAt', '==', null),
+      )
 
   let timer: ReturnType<typeof setTimeout> | undefined
 

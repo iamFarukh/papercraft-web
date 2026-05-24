@@ -102,6 +102,59 @@ export const toolbarTransition: Variants = {
   },
 }
 
+/** Bulk action bar — slides in, no bounce. */
+export const bulkBarReveal: Variants = {
+  hidden: {
+    opacity: 0,
+    height: 0,
+    y: -4,
+  },
+  visible: {
+    opacity: 1,
+    height: 'auto',
+    y: 0,
+    transition: {
+      height: { duration: PC_DURATION.normal, ease: PC_EASE.out },
+      opacity: { duration: PC_DURATION.fast, ease: PC_EASE.out },
+      y: { duration: PC_DURATION.normal, ease: PC_EASE.out },
+    },
+  },
+  exit: {
+    opacity: 0,
+    height: 0,
+    y: -4,
+    transition: {
+      height: { duration: PC_DURATION.fast, ease: PC_EASE.inOut },
+      opacity: { duration: PC_DURATION.fast, ease: PC_EASE.out },
+      y: { duration: PC_DURATION.fast, ease: PC_EASE.out },
+    },
+  },
+}
+
+export const bulkBarActions: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.035,
+      delayChildren: 0.06,
+    },
+  },
+  exit: {
+    opacity: 0,
+    transition: { duration: PC_DURATION.instant },
+  },
+}
+
+export const bulkBarActionItem: Variants = {
+  hidden: { opacity: 0, y: 4 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: PC_DURATION.fast, ease: PC_EASE.out },
+  },
+}
+
 export const subtleScale: Variants = {
   rest: { scale: 1 },
   tap: { scale: 0.98 },
@@ -120,4 +173,109 @@ export const statusMorph: Transition = PC_TRANSITION.status
 export const builderBlockEnter: Transition = {
   duration: PC_DURATION.slow,
   ease: PC_EASE.out,
+}
+
+/** Shared layout transition for repository grid ↔ list morph. */
+export const layoutMorphTransition: Transition = {
+  layout: {
+    type: 'spring',
+    stiffness: 340,
+    damping: 38,
+    mass: 0.88,
+  },
+}
+
+/** English question body — shared element anchor between grid and list. */
+export const repoSharedBodyTransition: Transition = {
+  layout: {
+    type: 'spring',
+    stiffness: 380,
+    damping: 42,
+    mass: 0.75,
+  },
+}
+
+export const layoutMorphContent: Transition = {
+  duration: PC_TRANSITION.layoutMorph.duration,
+  ease: PC_TRANSITION.layoutMorph.ease,
+}
+
+/** Accordion / filter section body — height + opacity, no bounce. */
+export const collapseReveal: Variants = {
+  hidden: {
+    height: 0,
+    opacity: 0,
+  },
+  visible: {
+    height: 'auto',
+    opacity: 1,
+    transition: {
+      height: { duration: PC_DURATION.normal, ease: PC_EASE.out },
+      opacity: { duration: PC_DURATION.fast, ease: PC_EASE.out },
+    },
+  },
+  exit: {
+    height: 0,
+    opacity: 0,
+    transition: {
+      height: { duration: PC_DURATION.fast, ease: PC_EASE.inOut },
+      opacity: { duration: PC_DURATION.instant, ease: PC_EASE.out },
+    },
+  },
+}
+
+/** In-flow dropdown panels (topic picker, menus). */
+export const dropdownReveal: Variants = {
+  hidden: {
+    opacity: 0,
+    height: 0,
+    y: -4,
+  },
+  visible: {
+    opacity: 1,
+    height: 'auto',
+    y: 0,
+    transition: {
+      height: { duration: PC_DURATION.normal, ease: PC_EASE.out },
+      opacity: { duration: PC_DURATION.fast, ease: PC_EASE.out },
+      y: { duration: PC_DURATION.normal, ease: PC_EASE.out },
+    },
+  },
+  exit: {
+    opacity: 0,
+    height: 0,
+    y: -2,
+    transition: {
+      height: { duration: PC_DURATION.fast, ease: PC_EASE.inOut },
+      opacity: { duration: PC_DURATION.instant, ease: PC_EASE.out },
+      y: { duration: PC_DURATION.fast, ease: PC_EASE.out },
+    },
+  },
+}
+
+/** Floating combobox / taxonomy menus (absolute positioned). */
+export const popoverReveal: Variants = {
+  hidden: {
+    opacity: 0,
+    y: -6,
+    scale: 0.98,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: PC_DURATION.normal,
+      ease: PC_EASE.out,
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: -4,
+    scale: 0.99,
+    transition: {
+      duration: PC_DURATION.fast,
+      ease: PC_EASE.out,
+    },
+  },
 }

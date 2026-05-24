@@ -171,11 +171,15 @@ export async function listRecentPapers(opts: {
   })
 }
 
+export function firebaseErrorCode(err: unknown): string {
+  if (err && typeof err === 'object' && 'code' in err) {
+    return String((err as { code: string }).code)
+  }
+  return ''
+}
+
 export function parsePaperError(err: unknown): string {
-  const code =
-    err && typeof err === 'object' && 'code' in err
-      ? String((err as { code: string }).code)
-      : ''
+  const code = firebaseErrorCode(err)
   const message = err instanceof Error ? err.message : ''
   if (code === 'permission-denied') {
     return 'You do not have permission to save this paper.'

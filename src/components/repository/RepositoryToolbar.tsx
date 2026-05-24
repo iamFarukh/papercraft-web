@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { motion, useReducedMotion } from 'framer-motion'
 import { Filter, Grid3x3, List, Search, Trash2, Upload } from 'lucide-react'
+import { layoutMorphTransition } from '@/lib/motion/variants'
 import type { SortKey } from '@/lib/repository-workspace'
 
 type ViewMode = 'card' | 'list'
@@ -51,6 +53,7 @@ export function RepositoryToolbar({
   showTrashMode = false,
 }: RepositoryToolbarProps) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const reduceMotion = useReducedMotion()
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -105,6 +108,12 @@ export function RepositoryToolbar({
       </select>
 
       <div className="pc-repo-view-toggle" role="group" aria-label="View layout">
+        <motion.span
+          className="pc-repo-view-pill"
+          aria-hidden
+          animate={{ x: view === 'card' ? 0 : 36 }}
+          transition={reduceMotion ? { duration: 0 } : layoutMorphTransition.layout}
+        />
         <button
           type="button"
           className={'pc-repo-view-btn' + (view === 'card' ? ' is-active' : '')}

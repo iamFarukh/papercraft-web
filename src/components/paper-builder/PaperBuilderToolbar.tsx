@@ -1,13 +1,13 @@
 import {
   Check,
   Eye,
-  FileDown,
   FileText,
+  ListChecks,
   Loader2,
-  Settings,
+  PenLine,
 } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { SaveStatusMorph } from '@/components/motion/SaveStatusMorph'
-import { PDF_EXPORT_UNAVAILABLE_MSG } from '@/lib/paper-pdf-export'
 import { PAPER_STATUS_CHIP } from '@/lib/paper-status-ui'
 import type { PaperStatus } from '@/types/paper'
 
@@ -15,6 +15,7 @@ export type SaveUiStatus = 'saved' | 'saving' | 'unsaved' | 'error'
 
 type Props = {
   title: string
+  blueprintLabel?: string
   saveStatus: SaveUiStatus
   saveHint: string
   paperStatus?: PaperStatus
@@ -25,12 +26,17 @@ type Props = {
   onSaveDraft: () => void
   onPreview: () => void
   onSubmit: () => void
-  onExport: () => void
-  onSettings: () => void
+  exportSlot?: ReactNode
+  onOpenEditor?: () => void
+  canOpenEditor?: boolean
+  onGenerateDraft?: () => void
+  canGenerateDraft?: boolean
+  generateDraftHint?: string
 }
 
 export function PaperBuilderToolbar({
   title,
+  blueprintLabel,
   saveStatus,
   saveHint,
   paperStatus = 'draft',
@@ -41,8 +47,12 @@ export function PaperBuilderToolbar({
   onSaveDraft,
   onPreview,
   onSubmit,
-  onExport,
-  onSettings,
+  exportSlot,
+  onOpenEditor,
+  canOpenEditor = true,
+  onGenerateDraft,
+  canGenerateDraft = false,
+  generateDraftHint,
 }: Props) {
   const tag = PAPER_STATUS_CHIP[paperStatus] ?? PAPER_STATUS_CHIP.draft
 
@@ -54,6 +64,11 @@ export function PaperBuilderToolbar({
       <div className="pc-pb-toolbar-title">
         <div className="pc-pb-toolbar-title-row">
           <span className="pc-pb-toolbar-name">{title}</span>
+          {blueprintLabel ? (
+            <span className="pc-tag is-outline pc-pb-toolbar-bp" title="Active blueprint">
+              {blueprintLabel}
+            </span>
+          ) : null}
           <span className={`pc-tag ${tag.className}`} style={{ height: 18, fontSize: 10 }}>
             {tag.label}
           </span>
@@ -62,28 +77,43 @@ export function PaperBuilderToolbar({
       </div>
 
       <div className="pc-pb-toolbar-actions">
-        <button type="button" className="pc-btn is-sm" onClick={onSettings}>
-          <Settings size={12} strokeWidth={1.6} />
-          Paper settings
-        </button>
+        {!readOnly && onGenerateDraft ? (
+          <button
+            type="button"
+            className="pc-btn is-sm pc-pb-generate-entry"
+            disabled={!canGenerateDraft}
+            title={
+              canGenerateDraft
+                ? 'Generate a balanced draft from the active blueprint'
+                : generateDraftHint ?? 'Select a blueprint to enable guided generation'
+            }
+            onClick={() => canGenerateDraft && onGenerateDraft()}
+          >
+            <ListChecks size={12} strokeWidth={1.6} />
+            Generate draft
+          </button>
+        ) : null}
+        {!readOnly && onOpenEditor ? (
+          <button
+            type="button"
+            className="pc-btn is-sm pc-pb-editor-entry"
+            disabled={!canOpenEditor}
+            title={
+              canOpenEditor
+                ? 'Open the dedicated examination editor'
+                : 'Save the paper before opening the examination editor'
+            }
+            onClick={() => canOpenEditor && onOpenEditor()}
+          >
+            <PenLine size={12} strokeWidth={1.6} />
+            Examination editor
+          </button>
+        ) : null}
         <button type="button" className="pc-btn is-sm" onClick={onPreview}>
           <Eye size={12} strokeWidth={1.6} />
           Print preview
         </button>
-        <button
-          type="button"
-          className="pc-btn is-sm"
-          disabled={paperStatus !== 'approved'}
-          title={
-            paperStatus === 'approved'
-              ? 'Download official examination PDF'
-              : PDF_EXPORT_UNAVAILABLE_MSG
-          }
-          onClick={onExport}
-        >
-          <FileDown size={12} strokeWidth={1.6} />
-          Export PDF
-        </button>
+        {exportSlot}
         {!readOnly ? (
           <>
             <span className="pc-pb-toolbar-divider" aria-hidden />

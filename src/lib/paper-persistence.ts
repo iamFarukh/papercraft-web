@@ -9,11 +9,14 @@ import {
 } from '@/lib/paper-builder'
 import { createMissingQuestionPlaceholder } from '@/lib/missing-question'
 import { getQuestionsByIds } from '@/services/firebase/questions'
+import { normalizeInstanceLayer } from '@/lib/paper-instance'
+import type { PaperInstanceLayer } from '@/types/paper-instance'
 import type { PaperDocument, PaperSectionSnapshot, SavePaperInput } from '@/types/paper'
 
 export function setupToSaveInput(
   setup: PaperSetupState,
   sections: PaperSectionSnapshot[],
+  instanceLayer?: PaperInstanceLayer,
 ): SavePaperInput {
   return {
     title: setup.examinationName.trim(),
@@ -28,7 +31,15 @@ export function setupToSaveInput(
     structureNotes: setup.structureNotes,
     sectionCount: setup.sectionCount,
     sections,
+    instanceLayer: normalizeInstanceLayer(instanceLayer),
+    blueprintId: setup.blueprintId ?? null,
+    blueprintVersion: setup.blueprintVersion ?? null,
+    blueprintSnapshot: setup.blueprintSnapshot ?? null,
   }
+}
+
+export function paperToInstanceLayer(paper: PaperDocument): PaperInstanceLayer {
+  return normalizeInstanceLayer(paper.instanceLayer)
 }
 
 export function compositionToPaperSections(
@@ -55,6 +66,9 @@ export function paperToSetup(paper: PaperDocument): PaperSetupState {
     sectionCount: paper.sectionCount,
     structureNotes: paper.structureNotes ?? '',
     generalInstructions: paper.instructions,
+    blueprintId: paper.blueprintId ?? null,
+    blueprintVersion: paper.blueprintVersion ?? null,
+    blueprintSnapshot: paper.blueprintSnapshot ?? null,
   }
 }
 
@@ -87,9 +101,11 @@ export function buildCompositionFingerprint(
   setup: PaperSetupState,
   composition: PaperComposition,
   sectionDefs: PaperSectionDef[],
+  instanceLayer?: PaperInstanceLayer,
 ): string {
   return JSON.stringify({
     setup,
+    instanceLayer: normalizeInstanceLayer(instanceLayer),
     sections: sectionDefs.map((s) => ({
       id: s.id,
       ids: composition[s.id].map((q) => q.id),

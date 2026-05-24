@@ -1,5 +1,8 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
-import { Check, ChevronDown, Search } from 'lucide-react'
+import { Check, Search } from 'lucide-react'
+import { AnimatePresence, m } from 'framer-motion'
+import { AnimatedChevron } from '@/components/motion'
+import { dropdownReveal } from '@/lib/motion/variants'
 import type { ChapterTreeNode } from '@/lib/repository-filter-tree'
 import { isFilterOn } from '@/lib/repository-filter-cascade'
 
@@ -73,11 +76,20 @@ export function TopicFilterDropdown({
         aria-controls={listId}
       >
         <span className="pc-repo-topic-filter-summary">{summary}</span>
-        <ChevronDown size={14} strokeWidth={1.6} />
+        <AnimatedChevron open={open} flip className="pc-repo-topic-filter-chevron" />
       </button>
 
-      {open && (
-        <div className="pc-repo-topic-filter-menu" id={listId} role="listbox">
+      <AnimatePresence initial={false}>
+        {open ? (
+          <m.div
+            className="pc-repo-topic-filter-menu"
+            id={listId}
+            role="listbox"
+            variants={dropdownReveal}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+          >
           <div className="pc-repo-topic-filter-search">
             <Search size={13} strokeWidth={1.6} />
             <input
@@ -137,8 +149,9 @@ export function TopicFilterDropdown({
               })
             )}
           </ul>
-        </div>
-      )}
+          </m.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   )
 }

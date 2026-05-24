@@ -4,12 +4,14 @@ export const NAV_ROUTES: Record<string, string> = {
   repo: '/app/repository',
   bookmarks: '/app/bookmarks',
   curriculum: '/app/curriculum',
-  blueprint: '/app/blueprint',
+  blueprint: '/app/blueprints',
   papers: '/app/papers',
   builder: '/app/builder/new',
   approval: '/app/approvals',
   teachers: '/app/teachers',
   analytics: '/app/analytics',
+  profile: '/app/profile',
+  settings: '/app/settings',
 }
 
 export function isRepositoryAuthorPath(pathname: string): boolean {
@@ -22,7 +24,7 @@ export function isRepositoryAuthorPath(pathname: string): boolean {
 
 export function paperPrintPreviewPath(
   paperId: string,
-  from?: 'builder' | 'library' | 'approval',
+  from?: 'builder' | 'library' | 'approval' | 'editor',
 ): string {
   return from
     ? `/app/papers/${paperId}/preview?from=${from}`
@@ -37,7 +39,10 @@ export function navKeyFromPath(pathname: string): string {
   if (pathname.startsWith('/app/papers')) return 'papers'
   if (pathname.startsWith('/app/builder')) return 'builder'
   if (pathname.startsWith('/app/approvals')) return 'approval'
+  if (pathname.startsWith('/app/blueprints')) return 'blueprint'
   if (pathname.startsWith('/app/teachers')) return 'teachers'
+  if (pathname.startsWith('/app/profile')) return 'profile'
+  if (pathname.startsWith('/app/settings')) return 'settings'
   return 'home'
 }
 

@@ -1,6 +1,6 @@
 import { Check, Eye, RotateCcw } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { PaperPdfExportLink } from '@/components/print/PaperPdfExportLink'
+import { PaperExportLink } from '@/components/print/PaperExportLink'
 import { paperPrintPreviewPath } from '@/config/nav-routes'
 import { canApprovePaper, canReopenPaper } from '@/lib/paper-submission'
 import type { PaperSectionDef, PaperStats } from '@/lib/paper-builder'
@@ -166,16 +166,15 @@ export function ApprovalReviewPanel({
                   <Eye size={12} strokeWidth={1.6} />
                   Open official preview
                 </Link>
-                <PaperPdfExportLink
+                <PaperExportLink
                   paperId={paperId}
                   canExport
                   from="approval"
                   className="is-block"
-                  startExport
                 />
               </>
             ) : (
-              <PaperPdfExportLink
+              <PaperExportLink
                 paperId={paperId}
                 canExport={false}
                 from="approval"

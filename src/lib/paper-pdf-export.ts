@@ -1,71 +1,25 @@
 import html2canvas from 'html2canvas'
 import { jsPDF } from 'jspdf'
+import type { ExportProgress, PaperExportFilenameInput } from '@/lib/paper-export-formats'
 import {
   PRINT_PAGE_HEIGHT_PX,
   PRINT_PAGE_WIDTH_PX,
 } from '@/lib/paper-print-layout'
-import type { PaperSetupState } from '@/lib/paper-builder'
 
-export type PaperPdfFilenameInput = {
-  classLabel: string
-  subject: string
-  examType: string
-  year: number
-}
+export type PaperPdfFilenameInput = PaperExportFilenameInput
 
-export type PdfExportProgress = {
-  phase: 'preparing' | 'rendering' | 'assembling' | 'complete' | 'error'
-  currentPage?: number
-  totalPages?: number
-  message?: string
-}
+export type PdfExportProgress = ExportProgress
 
 const A4_WIDTH_MM = 210
 const A4_HEIGHT_MM = 297
 
-function sanitizeFilenamePart(raw: string): string {
-  return (
-    raw
-      .trim()
-      .replace(/[^\w]+/g, '')
-      .replace(/^_+|_+$/g, '') || 'Paper'
-  )
-}
-
-/** Class5, ClassIX, Class10 — from "Class V", "Class IX", etc. */
-export function classSegmentForPdf(classLabel: string): string {
-  const stripped = classLabel.replace(/^Class\s+/i, '').trim()
-  return `Class${sanitizeFilenamePart(stripped)}`
-}
-
-export function examTypeSegmentForPdf(examType: string): string {
-  return sanitizeFilenamePart(examType.replace(/[-\s]+/g, ''))
-}
-
-export function extractExamYear(academicSession: string): number {
-  const match = academicSession.match(/20\d{2}/)
-  if (match) return Number(match[0])
-  return new Date().getFullYear()
-}
-
-export function buildOfficialPdfFilename(input: PaperPdfFilenameInput): string {
-  const parts = [
-    classSegmentForPdf(input.classLabel),
-    sanitizeFilenamePart(input.subject),
-    examTypeSegmentForPdf(input.examType),
-    String(input.year),
-  ]
-  return `${parts.join('_')}.pdf`
-}
-
-export function pdfFilenameFromSetup(setup: PaperSetupState): string {
-  return buildOfficialPdfFilename({
-    classLabel: setup.classLabel,
-    subject: setup.subject,
-    examType: setup.examType,
-    year: extractExamYear(setup.academicSession),
-  })
-}
+export {
+  classSegmentForExport as classSegmentForPdf,
+  examTypeSegmentForExport as examTypeSegmentForPdf,
+  extractExamYear,
+  buildOfficialPdfFilename,
+  exportFilenameFromSetup as pdfFilenameFromSetup,
+} from '@/lib/paper-export-formats'
 
 function findPrintPages(root: HTMLElement): HTMLElement[] {
   const pages = root.querySelectorAll<HTMLElement>('.pc-print-page')
@@ -146,5 +100,4 @@ export async function exportOfficialPrintToPdf(
   })
 }
 
-export const PDF_EXPORT_UNAVAILABLE_MSG =
-  'Official PDF export is available only after this paper is approved.'
+export { EXPORT_UNAVAILABLE_MSG as PDF_EXPORT_UNAVAILABLE_MSG } from '@/lib/paper-export-formats'

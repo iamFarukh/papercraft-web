@@ -2,8 +2,8 @@ import { Search, X } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { BuilderMiniQuestionCard } from './BuilderMiniQuestionCard'
+import { SectionSwitcher } from './SectionSwitcher'
 import {
-  DEFAULT_SECTIONS,
   difficultySummary,
   isCompatibleReplacement,
   questionNumberInPaper,
@@ -12,6 +12,8 @@ import {
   type PaperSectionId,
   type ReplaceTarget,
 } from '@/lib/paper-builder'
+import type { ScoredQuestion } from '@/lib/paper-generation-engine'
+import type { PaperMedium } from '@/lib/paper-medium'
 import type { QuestionRecord } from '@/types/question'
 
 export type BuilderQuickFilters = {
@@ -38,14 +40,20 @@ type Props = {
   usedIds: Set<string>
   loading: boolean
   activeSection: PaperSectionId
+  sections: PaperSectionDef[]
+  composition: PaperComposition
+  onSelectSection: (id: PaperSectionId) => void
   replaceTarget: ReplaceTarget | null
   onCancelReplace: () => void
   onAdd: (question: QuestionRecord) => void
   onReplaceWith: (question: QuestionRecord) => void
+  replacementSuggestions?: ScoredQuestion[]
+  onApplySuggestion?: (question: QuestionRecord) => void
   contextLabel?: string
   compositionForNumbering?: PaperComposition
   sectionsForNumbering?: PaperSectionDef[]
   readOnly?: boolean
+  paperMedium?: PaperMedium
 }
 
 function QuickFilter({
@@ -92,17 +100,23 @@ export function BuilderRepoBrowser({
   usedIds,
   loading,
   activeSection,
+  sections,
+  composition,
+  onSelectSection,
   replaceTarget,
   onCancelReplace,
   onAdd,
   onReplaceWith,
+  replacementSuggestions = [],
+  onApplySuggestion,
   contextLabel,
   compositionForNumbering,
   sectionsForNumbering,
   readOnly = false,
+  paperMedium = 'english',
 }: Props) {
   const listRef = useRef<HTMLDivElement>(null)
-  const activeSectionDef = DEFAULT_SECTIONS.find((s) => s.id === activeSection)
+  const activeSectionDef = sections.find((s) => s.id === activeSection)
 
   const replaceNum =
     replaceTarget && compositionForNumbering && sectionsForNumbering
@@ -168,11 +182,50 @@ export function BuilderRepoBrowser({
               <X size={14} strokeWidth={1.6} />
             </button>
           </div>
-        ) : (
-          <p className="pc-pb-browser-target">
-            Adding to <strong>Section {activeSection}</strong>
-          </p>
-        )}
+        ) : null}
+
+        {replaceTarget && replacementSuggestions.length > 0 ? (
+          <div className="pc-pb-replace-suggestions">
+            <span className="pc-pb-replace-suggestions-label">Suggested replacements</span>
+            <ul className="pc-pb-replace-suggestions-list">
+              {replacementSuggestions.map(({ question, fitnessScore, reasons }) => (
+                <li key={question.id}>
+                  <button
+                    type="button"
+                    className="pc-pb-replace-suggestion"
+                    onClick={() => onApplySuggestion?.(question)}
+                  >
+                    <span className="pc-num pc-pb-replace-suggestion-fit">{fitnessScore}%</span>
+                    <span className="pc-pb-replace-suggestion-ch">{question.chapter}</span>
+                    <span className="pc-pb-replace-suggestion-meta">
+                      {question.marks}m · {reasons[0] ?? question.type}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        {!replaceTarget ? (
+          <>
+            <p className="pc-pb-browser-target">
+              Adding to <strong>Section {activeSection}</strong>
+              {activeSectionDef ? (
+                <span className="pc-pb-browser-target-sub">
+                  {' '}
+                  · {activeSectionDef.name.split(' · ')[0]}
+                </span>
+              ) : null}
+            </p>
+            <SectionSwitcher
+              sections={sections}
+              composition={composition}
+              activeSection={activeSection}
+              onSelect={onSelectSection}
+            />
+          </>
+        ) : null}
 
         <div className="pc-pb-browser-search">
           <Search size={13} strokeWidth={1.6} className="pc-pb-browser-search-icon" />
@@ -257,6 +310,7 @@ export function BuilderRepoBrowser({
               <BuilderMiniQuestionCard
                 key={q.id}
                 question={q}
+                paperMedium={paperMedium}
                 used={used && !compatible}
                 compatible={compatible}
                 replaceMode={!!replaceTarget}

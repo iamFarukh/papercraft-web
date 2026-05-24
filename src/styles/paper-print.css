@@ -87,14 +87,17 @@
   border-color: white;
 }
 
-.pc-pdf-export-wrap {
+.pc-pdf-export-wrap,
+.pc-paper-export-wrap {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 4px;
+  position: relative;
 }
 
-.pc-pdf-export-status {
+.pc-pdf-export-status,
+.pc-paper-export-status {
   margin: 0;
   font-size: 10.5px;
   color: #9aa3b0;
@@ -103,21 +106,87 @@
   line-height: 1.35;
 }
 
-.pc-pdf-export-status.is-success {
+.pc-pdf-export-status.is-success,
+.pc-paper-export-status.is-success {
   color: #8fd4b0;
 }
 
-.pc-pdf-export-status.is-error {
+.pc-pdf-export-status.is-error,
+.pc-paper-export-status.is-error {
   color: #f0a8a8;
 }
 
-.pc-pdf-export-disabled {
+.pc-pdf-export-disabled,
+.pc-paper-export-wrap.is-disabled {
   display: inline-flex;
 }
 
-.pc-pdf-export-disabled button:disabled {
+.pc-pdf-export-disabled button:disabled,
+.pc-paper-export-wrap.is-disabled button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.pc-paper-export-trigger {
+  position: relative;
+}
+
+.pc-paper-export-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pc-paper-export-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  min-width: 168px;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--pc-surface);
+  border: 1px solid var(--pc-line);
+  border-radius: 10px;
+  box-shadow: var(--pc-shadow-lg);
+}
+
+.pc-print-chrome .pc-paper-export-menu {
+  background: #1e2128;
+  border-color: rgb(255 255 255 / 14%);
+}
+
+.pc-paper-export-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
+  font-size: 12px;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.pc-paper-export-item:hover {
+  background: var(--pc-surface-2);
+}
+
+.pc-print-chrome .pc-paper-export-item {
+  color: #e8eaed;
+}
+
+.pc-print-chrome .pc-paper-export-item:hover {
+  background: rgb(255 255 255 / 8%);
+}
+
+.pc-paper-export-item-label {
+  font-weight: 500;
 }
 
 .pc-approval-actions-btns .pc-btn.is-block,
@@ -145,6 +214,45 @@
   background: #2c3038;
 }
 
+/* Hidden measure surface — same renderer as official preview (source of truth for pagination) */
+.pc-print-measure-root {
+  position: fixed;
+  left: -12000px;
+  top: 0;
+  width: var(--pc-print-page-w, 595px);
+  min-height: var(--pc-print-page-h, 842px);
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.pc-print-measure-probe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.pc-print-measure-column {
+  position: absolute;
+  left: 0;
+  top: 900px;
+  width: var(--pc-print-page-w, 595px);
+  box-sizing: border-box;
+  padding:
+    0
+    var(--pc-page-margin-right, 12mm)
+    0
+    var(--pc-page-margin-left, 18mm);
+}
+
+.pc-print-measure-block {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
 /* Document stack */
 .pc-print-doc {
   display: flex;
@@ -153,9 +261,66 @@
   gap: 28px;
 }
 
-.pc-print-doc--embedded {
+.pc-print-doc--embedded,
+.pc-print-doc--builder {
   gap: 20px;
   padding: 0;
+}
+
+.pc-print-page-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+/* Screen-only page break between A4 sheets */
+.pc-print-page-break {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(595px, calc(100% - 32px));
+  margin: 4px auto 16px;
+  color: var(--pc-ink-4);
+}
+
+.pc-print-page-break-line {
+  flex: 1;
+  height: 1px;
+  background: var(--pc-line-2);
+}
+
+.pc-print-page-break-label {
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.pc-print-continued-banner {
+  margin: 0 0 12px;
+  padding: 0;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pc-ink-4);
+}
+
+.pc-print-continued-banner-sub {
+  text-transform: none;
+  font-style: italic;
+  color: var(--pc-ink-3);
+}
+
+.pc-print-end-mark {
+  margin: 28px 0 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--pc-line);
+  text-align: center;
+  font-size: 11px;
+  color: var(--pc-ink-3);
+  font-style: italic;
+  letter-spacing: 0.1em;
 }
 
 .pc-print-doc--embedded .pc-print-page {
@@ -168,8 +333,12 @@
   min-height: var(--pc-print-page-h, 842px);
   height: var(--pc-print-page-h, 842px);
   box-sizing: border-box;
-  padding: 44px 50px 0;
-  background: #fff;
+  padding:
+    var(--pc-page-margin-top, 15mm)
+    var(--pc-page-margin-right, 12mm)
+    var(--pc-page-margin-bottom, 15mm)
+    var(--pc-page-margin-left, 18mm);
+  background: var(--pc-paper, #faf8f2);
   color: var(--pc-ink);
   box-shadow:
     0 1px 0 rgb(20 22 26 / 4%),
@@ -200,15 +369,21 @@
   margin-bottom: 4px;
 }
 
+.pc-print-school-logo {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
 .pc-print-school-name {
-  font-size: 18px;
+  font-size: var(--pc-school-name-size, 18px);
   font-weight: 500;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--pc-school-name-spacing, 0.08em);
   text-transform: uppercase;
 }
 
 .pc-print-school-tag {
-  font-size: 10px;
+  font-size: var(--pc-tagline-size, 8pt);
   color: var(--pc-ink-3);
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -231,7 +406,7 @@
 }
 
 .pc-print-exam-title {
-  font-size: 14px;
+  font-size: var(--pc-exam-title-size, 11pt);
   font-style: italic;
 }
 
@@ -284,6 +459,60 @@
   color: var(--pc-ink);
 }
 
+/* Header size presets */
+.pc-print--header-spacious .pc-print-school-name {
+  font-size: 22px;
+  letter-spacing: 0.1em;
+}
+
+.pc-print--header-spacious .pc-print-school-tag {
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+.pc-print--header-spacious .pc-print-header--full {
+  padding-bottom: 18px;
+}
+
+.pc-print--header-spacious .pc-print-exam-title {
+  font-size: 15px;
+}
+
+.pc-print--header-compact .pc-print-school-mark svg {
+  width: 28px;
+  height: 28px;
+}
+
+.pc-print--header-compact .pc-print-school-name {
+  font-size: 13px;
+  letter-spacing: 0.04em;
+}
+
+.pc-print--header-compact .pc-print-school-tag {
+  display: none;
+}
+
+.pc-print--header-compact .pc-print-header--full {
+  padding-bottom: 8px;
+}
+
+.pc-print--header-compact .pc-print-exam-title-row {
+  margin-top: 6px;
+}
+
+.pc-print--header-compact .pc-print-exam-title {
+  font-size: 12px;
+}
+
+.pc-print--header-compact .pc-print-exam-meta {
+  margin-top: 4px;
+  font-size: 10px;
+}
+
+.pc-print--marks-hidden .pc-print-question-marks {
+  display: none;
+}
+
 /* Instructions */
 .pc-print-instructions {
   margin-top: 14px;
@@ -293,7 +522,7 @@
 }
 
 .pc-print-instructions-title {
-  font-size: 12.5px;
+  font-size: var(--pc-instructions-font-size, 9.5pt);
   font-weight: 500;
   text-align: center;
   margin-bottom: 6px;
@@ -323,13 +552,13 @@
   display: flex;
   align-items: baseline;
   gap: 10px;
-  margin: 16px 0 6px;
+  margin: 0;
   padding-bottom: 6px;
   border-bottom: 1px dashed var(--pc-ink-4);
 }
 
 .pc-print-section-title {
-  font-size: 13px;
+  font-size: var(--pc-section-font-size, 13px);
   font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -352,8 +581,8 @@
 }
 
 .pc-print-section-instructions {
-  margin: 0 0 8px;
-  font-size: 11px;
+  margin: 0 0 var(--pc-instructions-spacing, 2mm);
+  font-size: var(--pc-instructions-font-size, 9.5pt);
   color: var(--pc-ink-3);
   line-height: 1.45;
   font-style: italic;
@@ -366,21 +595,24 @@
 }
 
 .pc-print-question {
-  display: flex;
+  display: grid;
+  grid-template-columns: 26px 1fr auto;
   gap: 10px;
-  align-items: flex-start;
-  padding: 7px 0;
+  align-items: baseline;
+  padding: 1px 0;
   break-inside: avoid;
   page-break-inside: avoid;
 }
 
 .pc-print-question-num {
-  font-size: 12px;
+  font-size: var(--pc-q-font-size, 10pt);
   font-weight: 500;
-  min-width: 22px;
+  min-width: 0;
+  text-align: left;
   text-align: right;
   flex-shrink: 0;
-  padding-top: 1px;
+  line-height: var(--pc-line-height, 1.45);
+  align-self: baseline;
 }
 
 .pc-print-question-body {
@@ -388,18 +620,23 @@
   min-width: 0;
 }
 
+.pc-print-question .pc-print-question-text,
+.pc-print-question .pc-print-question-num {
+  font-size: var(--pc-q-font-size, 12px);
+}
+
 .pc-print-question-text {
   margin: 0;
-  font-size: 12px;
-  line-height: 1.55;
+  line-height: var(--pc-line-height, 1.55);
   color: var(--pc-ink);
 }
 
 .pc-print-question-marks {
-  font-size: 11px;
+  font-size: var(--pc-marks-font-size, 11px);
   color: var(--pc-ink-3);
   flex-shrink: 0;
-  padding-top: 2px;
+  align-self: baseline;
+  font-variant-numeric: lining-nums tabular-nums;
 }
 
 /* Footer — last grid row, always at page bottom */
@@ -417,6 +654,18 @@
   text-transform: uppercase;
 }
 
+.pc-print-footer-right {
+  font-family: var(--pc-sans);
+  font-variant-numeric: lining-nums tabular-nums;
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+.pc-print-section-marks {
+  font-family: var(--pc-sans);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
 /* Hindi / Devanagari typography */
 .pc-print-is-hindi,
 .pc-print-question-text--hi {
@@ -429,12 +678,15 @@
   color: var(--pc-ink-2);
 }
 
+.pc-print-question .pc-print-mcq-grid {
+  font-size: var(--pc-mcq-font-size, 11.5px);
+}
+
 .pc-print-mcq-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 3px 14px;
   margin-top: 6px;
-  font-size: 11.5px;
   color: var(--pc-ink-2);
 }
 
@@ -460,6 +712,18 @@
 .pc-print-preview-tip strong {
   color: #e8eaed;
   font-weight: 500;
+}
+
+.pc-print-preview-session-tip {
+  width: min(595px, calc(100% - 32px));
+  margin: 12px auto 0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid rgb(53 92 255 / 35%);
+  background: rgb(53 92 255 / 12%);
+  color: #dce4ff;
+  font-size: 11.5px;
+  line-height: 1.45;
 }
 
 .pc-print-footer-left {
@@ -499,6 +763,7 @@
     overflow: visible !important;
   }
 
+  .pc-print-page-break,
   .pc-print-chrome,
   .pc-print-preview-tip,
   .pc-sidebar,
@@ -534,7 +799,11 @@
     min-height: 297mm !important;
     max-height: 297mm !important;
     box-shadow: none !important;
-    padding: 12mm 14mm 10mm !important;
+    padding:
+      var(--pc-page-margin-top, 15mm)
+      var(--pc-page-margin-right, 12mm)
+      var(--pc-page-margin-bottom, 15mm)
+      var(--pc-page-margin-left, 18mm) !important;
     margin: 0 !important;
     display: grid !important;
     grid-template-rows: auto 1fr auto !important;

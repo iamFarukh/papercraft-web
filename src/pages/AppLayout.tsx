@@ -13,12 +13,19 @@ const CRUMBS: Record<string, string[]> = {
   bookmarks: ['Academic', 'Bookmarks'],
   bookmarksFolder: ['Academic', 'Bookmarks', 'Folder'],
   builder: ['Academic', 'Paper Builder', 'Compose'],
+  builderEditor: ['Academic', 'Paper Builder', 'Examination editor'],
   builderNew: ['Academic', 'Paper Builder', 'New paper'],
   papers: ['Academic', 'Paper Library', 'Recent papers'],
   approval: ['Papers', 'Approvals'],
   approvalReview: ['Papers', 'Approvals', 'Review'],
   curriculum: ['Academic', 'Curriculum', 'Taxonomy'],
+  blueprint: ['Academic', 'Blueprints'],
+  blueprintNew: ['Academic', 'Blueprints', 'New blueprint'],
+  blueprintDetail: ['Academic', 'Blueprints', 'Detail'],
+  blueprintEdit: ['Academic', 'Blueprints', 'Edit'],
   teachers: ['Organization', 'Teachers'],
+  profile: ['Account', 'My profile'],
+  settings: ['Organization', 'Workspace settings'],
 }
 
 export function AppLayout() {
@@ -30,6 +37,7 @@ export function AppLayout() {
   let crumbKey = activeNav
   if (pathname === '/app/repository/import') crumbKey = 'repoImport'
   else if (pathname.endsWith('/new')) crumbKey = 'repoNew'
+  else if (pathname.match(/\/app\/builder\/[^/]+\/editor$/)) crumbKey = 'builderEditor'
   else if (pathname.includes('/edit')) crumbKey = 'repoEdit'
   else if (pathname.match(/\/app\/bookmarks\/[^/]+/)) crumbKey = 'bookmarksFolder'
   else if (pathname.startsWith('/app/bookmarks')) crumbKey = 'bookmarks'
@@ -37,6 +45,13 @@ export function AppLayout() {
   else if (pathname === '/app/builder/new') crumbKey = 'builderNew'
   else if (pathname.startsWith('/app/builder')) crumbKey = 'builder'
   else if (pathname.match(/\/app\/approvals\/[^/]+/)) crumbKey = 'approvalReview'
+  else if (pathname.startsWith('/app/curriculum')) crumbKey = 'curriculum'
+  else if (pathname === '/app/blueprints/new') crumbKey = 'blueprintNew'
+  else if (pathname.match(/\/app\/blueprints\/[^/]+\/edit$/)) crumbKey = 'blueprintEdit'
+  else if (pathname.match(/\/app\/blueprints\/[^/]+$/)) crumbKey = 'blueprintDetail'
+  else if (pathname.startsWith('/app/blueprints')) crumbKey = 'blueprint'
+  else if (pathname.startsWith('/app/profile')) crumbKey = 'profile'
+  else if (pathname.startsWith('/app/settings')) crumbKey = 'settings'
   else if (pathname.startsWith('/app/teachers')) crumbKey = 'teachers'
   else if (pathname.startsWith('/app/approvals')) crumbKey = 'approval'
 
@@ -48,6 +63,11 @@ export function AppLayout() {
     <Link to="/app/repository" className="pc-btn is-sm is-ghost">
       <ArrowLeft size={14} strokeWidth={1.6} />
       Cancel import
+    </Link>
+  ) : activeNav === 'blueprint' && isAdmin && pathname === '/app/blueprints' ? (
+    <Link to="/app/blueprints/new" className="pc-btn is-primary">
+      <Plus size={14} strokeWidth={1.6} />
+      New blueprint
     </Link>
   ) : activeNav === 'repo' && !isAuthor && isAdmin ? (
     <Link to="/app/repository/new" className="pc-btn is-primary">

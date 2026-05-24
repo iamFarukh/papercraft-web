@@ -1,5 +1,8 @@
 import { Bell, ChevronRight, Search } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
+import { NAV_ROUTES } from '@/config/nav-routes'
+import { useCommandCenter } from '@/context/CommandCenterContext'
 import { useAuth } from '@/context/AuthContext'
 import { useNotifications } from '@/context/NotificationContext'
 import { NotificationPanel } from '@/components/notifications/NotificationPanel'
@@ -11,6 +14,7 @@ type TopbarProps = {
 
 export function Topbar({ crumbs, actions }: TopbarProps) {
   const { user, profile, isAdmin } = useAuth()
+  const { openPalette } = useCommandCenter()
   const { unreadCount } = useNotifications()
   const [panelOpen, setPanelOpen] = useState(false)
 
@@ -43,11 +47,16 @@ export function Topbar({ crumbs, actions }: TopbarProps) {
           ))}
         </div>
 
-        <div className="pc-cmd" role="search">
+        <button
+          type="button"
+          className="pc-cmd"
+          onClick={openPalette}
+          aria-label="Open command center"
+        >
           <Search size={14} strokeWidth={1.6} />
           <span>Search questions, chapters, papers…</span>
           <kbd>⌘K</kbd>
-        </div>
+        </button>
 
         <button
           type="button"
@@ -66,13 +75,21 @@ export function Topbar({ crumbs, actions }: TopbarProps) {
 
         {actions}
 
-        <div className="pc-topbar-profile">
-          <div className="pc-avatar is-blue">{profileInitials || 'PC'}</div>
+        <Link to={NAV_ROUTES.profile} className="pc-topbar-profile">
+          {profile?.photoURL ? (
+            <img
+              src={profile.photoURL}
+              alt=""
+              className="pc-topbar-profile-img"
+            />
+          ) : (
+            <div className="pc-avatar is-blue">{profileInitials || 'PC'}</div>
+          )}
           <div className="pc-topbar-profile-meta">
             <div className="pc-foot-name">{profileName}</div>
             <div className="pc-foot-role">{profileRole}</div>
           </div>
-        </div>
+        </Link>
       </header>
 
       <NotificationPanel open={panelOpen} onClose={() => setPanelOpen(false)} />

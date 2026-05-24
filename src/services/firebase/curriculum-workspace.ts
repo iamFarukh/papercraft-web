@@ -46,6 +46,17 @@ function docStatus(doc: { status?: CurriculumLifecycleStatus }): CurriculumLifec
   return doc.status === 'archived' ? 'archived' : 'active'
 }
 
+function questionsReadableQuery(isAdmin: boolean) {
+  const base = collection(db, 'questions')
+  return isAdmin
+    ? query(base)
+    : query(
+        base,
+        where('status', '==', 'published'),
+        where('deletedAt', '==', null),
+      )
+}
+
 export async function loadCurriculumTree(options?: {
   includeArchived?: boolean
 }): Promise<CurriculumTreeNode[]> {
@@ -282,7 +293,7 @@ export async function computeCurriculumInsights(
   userId: string,
   isAdmin: boolean,
 ): Promise<CurriculumInsights> {
-  const qSnap = await getDocs(collection(db, 'questions'))
+  const qSnap = await getDocs(questionsReadableQuery(isAdmin))
   const questions = qSnap.docs
     .map((d) => mapQuestionDoc(d.id, d.data() as QuestionDocument))
     .filter((q) => !q.isInTrash)
@@ -376,8 +387,9 @@ export async function countLinkedQuestions(
   classNumber: number,
   subjectId?: string,
   chapterId?: string,
+  isAdmin = false,
 ): Promise<number> {
-  const qSnap = await getDocs(collection(db, 'questions'))
+  const qSnap = await getDocs(questionsReadableQuery(isAdmin))
   let count = 0
   for (const d of qSnap.docs) {
     const data = d.data()

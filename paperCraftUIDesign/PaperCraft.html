@@ -35,6 +35,11 @@
 <script type="text/babel" src="screens/BulkUpload.jsx"></script>
 <script type="text/babel" src="screens/RepositoryV2.jsx"></script>
 <script type="text/babel" src="screens/PaperBuilderV2.jsx"></script>
+<script type="text/babel" src="screens/Blueprints.jsx"></script>
+<script type="text/babel" src="screens/Templates.jsx"></script>
+<script type="text/babel" src="screens/PaperEditor.jsx"></script>
+<script type="text/babel" src="screens/PaperEditorScreens.jsx"></script>
+<script type="text/babel" src="screens/AccountScreens.jsx"></script>
 
 <script type="text/babel">
   const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
@@ -133,6 +138,105 @@
             </DCArtboard>
             <DCArtboard id="pb-v2-6" label="⑥ Submit · approval modal" width={1440} height={1500}>
               <PBV2Submit />
+            </DCArtboard>
+          </DCSection>
+
+          <DCSection id="blueprints" title="Blueprints · academic skeletons" subtitle="Blueprints define academic composition — sections, marks, syllabus weighting, difficulty mix. Six screens cover the workspace: library, detail view, and the 4-step authoring wizard.">
+            <DCArtboard id="bp-library" label="① Library · default + custom blueprints" width={1440} height={1180}>
+              <BPLibrary />
+            </DCArtboard>
+            <DCArtboard id="bp-detail" label="② Detail · Half-Yearly · CBSE X · Maths" width={1440} height={1400}>
+              <BPDetail />
+            </DCArtboard>
+            <DCArtboard id="bp-create-1" label="③ Create · Step 1 · Basics" width={1440} height={1000}>
+              <BPCreate1 />
+            </DCArtboard>
+            <DCArtboard id="bp-create-2" label="④ Create · Step 2 · Structure" width={1440} height={1100}>
+              <BPCreate2 />
+            </DCArtboard>
+            <DCArtboard id="bp-create-3" label="⑤ Create · Step 3 · Syllabus weighting" width={1440} height={1200}>
+              <BPCreate3 />
+            </DCArtboard>
+            <DCArtboard id="bp-create-4" label="⑥ Create · Step 4 · Review & save" width={1440} height={1300}>
+              <BPCreate4 />
+            </DCArtboard>
+          </DCSection>
+
+          <DCSection id="templates" title="Templates · visual identity" subtitle="Templates control how a paper looks when printed. Token-driven (logo, color, type, density, watermark) — never a free canvas. Four screens cover library, editor, picker sheet, and a custom template's detail page.">
+            <DCArtboard id="tp-library" label="① Library · default + school templates" width={1440} height={1280}>
+              <TPLibrary />
+            </DCArtboard>
+            <DCArtboard id="tp-editor" label="② Editor · token controls + live A4 preview" width={1440} height={1100}>
+              <TPEditor />
+            </DCArtboard>
+            <DCArtboard id="tp-picker" label="③ Picker · apply template (sheet over Generate flow)" width={1440} height={1000}>
+              <TPPicker />
+            </DCArtboard>
+            <DCArtboard id="tp-detail" label="④ Detail · Saraswati House Brand · custom template" width={1440} height={1200}>
+              <TPDetail />
+            </DCArtboard>
+          </DCSection>
+
+          <DCSection id="editor" title="Examination Editor · Format mode" subtitle="The dedicated editor route where a teacher refines layout, typography, spacing, and per-element overrides before submitting. 3-column workspace · live A4 paper canvas · Standard + Advanced modes · official preview strip. Eight workspace states and five overlay dialogs.">
+            <DCArtboard id="pe-1" label="① Standard mode · nothing selected" width={1440} height={1000}>
+              <PE1_Standard />
+            </DCArtboard>
+            <DCArtboard id="pe-2" label="② Standard · question selected (inline controls)" width={1440} height={1000}>
+              <PE2_QuestionSelected />
+            </DCArtboard>
+            <DCArtboard id="pe-3" label="③ Standard · section selected" width={1440} height={1000}>
+              <PE3_SectionSelected />
+            </DCArtboard>
+            <DCArtboard id="pe-4" label="④ Advanced mode · margin guides + all groups" width={1440} height={1000}>
+              <PE4_Advanced />
+            </DCArtboard>
+            <DCArtboard id="pe-5" label="⑤ Advanced · question selected (floating toolbar + overrides)" width={1440} height={1000}>
+              <PE5_AdvancedQuestionSelected />
+            </DCArtboard>
+            <DCArtboard id="pe-6" label="⑥ Preview surface · clean" width={1440} height={1000}>
+              <PE6_PreviewSurface />
+            </DCArtboard>
+            <DCArtboard id="pe-7" label="⑦ Read-only · approved paper" width={1440} height={1000}>
+              <PE7_ReadOnly />
+            </DCArtboard>
+            <DCArtboard id="pe-8" label="⑧ Print preview · export dropdown open" width={1440} height={1100}>
+              <PE8_PrintPreview />
+            </DCArtboard>
+            <DCArtboard id="pe-9" label="⑨ Dialog · enable Advanced Layout" width={1440} height={1000}>
+              <PE9_AdvancedConfirm />
+            </DCArtboard>
+            <DCArtboard id="pe-10" label="⑩ Toast · Smart fit results (with undo)" width={1440} height={1000}>
+              <PE10_SmartFitToast />
+            </DCArtboard>
+            <DCArtboard id="pe-11" label="⑪ Dialog · reset question overrides" width={1440} height={1000}>
+              <PE11_ResetConfirm />
+            </DCArtboard>
+            <DCArtboard id="pe-12" label="⑫ Dialog · unsaved changes" width={1440} height={1000}>
+              <PE12_UnsavedDialog />
+            </DCArtboard>
+            <DCArtboard id="pe-13" label="⑬ Dialog · switch back to Standard" width={1440} height={1000}>
+              <PE13_SwitchToStandard />
+            </DCArtboard>
+          </DCSection>
+
+          <DCSection id="account" title="Account & Workspace Settings" subtitle="Profile, school identity, teacher management, notifications, preferences and security — the six screens that round out the workspace. Shared left-rail tab structure, one consistent settings page shell.">
+            <DCArtboard id="ac-profile" label="① My Profile" width={1440} height={1300}>
+              <ScreenProfile />
+            </DCArtboard>
+            <DCArtboard id="ac-school" label="② School / Workspace" width={1440} height={1400}>
+              <ScreenSchool />
+            </DCArtboard>
+            <DCArtboard id="ac-teachers" label="③ Teacher Management" width={1440} height={1200}>
+              <ScreenTeachers />
+            </DCArtboard>
+            <DCArtboard id="ac-notify" label="④ Notifications Center" width={1440} height={1200}>
+              <ScreenNotifications />
+            </DCArtboard>
+            <DCArtboard id="ac-prefs" label="⑤ Preferences & Appearance" width={1440} height={1200}>
+              <ScreenPreferences />
+            </DCArtboard>
+            <DCArtboard id="ac-security" label="⑥ Security & Sessions" width={1440} height={1500}>
+              <ScreenSecurity />
             </DCArtboard>
           </DCSection>
         </DesignCanvas>

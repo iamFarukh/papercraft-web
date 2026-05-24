@@ -1,5 +1,9 @@
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
+import {
+  parseProfileSettings,
+  parseProfileTimestamps,
+} from '@/lib/profile-settings-parse'
 import type { UserProfile } from '@/types/user-profile'
 import { normalizeAssignmentScope } from '@/lib/teacher-assignments'
 import type { TeacherAssignment } from '@/types/teacher'
@@ -19,6 +23,12 @@ function parseProfile(uid: string, data: Record<string, unknown>): UserProfile {
     : []
   const assignmentScope = normalizeAssignmentScope(data.assignmentScope, assignments)
 
+  const { joinedAtMs, lastActiveAtMs } = parseProfileTimestamps(data)
+  const photoURL =
+    typeof data.photoURL === 'string' && data.photoURL.trim()
+      ? data.photoURL.trim()
+      : null
+
   return {
     uid,
     email,
@@ -27,6 +37,10 @@ function parseProfile(uid: string, data: Record<string, unknown>): UserProfile {
     active: data.active !== false,
     assignmentScope,
     assignments,
+    photoURL,
+    joinedAtMs,
+    lastActiveAtMs,
+    settings: parseProfileSettings(data),
   }
 }
 

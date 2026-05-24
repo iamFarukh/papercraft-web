@@ -1,11 +1,15 @@
-import { useRef, useState, type MouseEvent } from 'react'
+import { useEffect, useRef, useState, type MouseEvent } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
 import { ChevronDown, MoreHorizontal, Star } from 'lucide-react'
+import { PC_DURATION, PC_EASE, PC_TRANSITION } from '@/lib/motion/tokens'
 import type { QuestionRecord } from '@/types/question'
 import { questionDisplayRef } from '@/lib/question-display'
 import { BookmarkPickerMenu } from '@/components/bookmarks/BookmarkPickerMenu'
 import { QuestionCardMenu } from '@/components/bookmarks/QuestionCardMenu'
 import { useQuestionBookmarkState } from '@/hooks/useQuestionBookmarkState'
 import { DifficultyPips } from './DifficultyPips'
+
+const CARD_LAYOUT = PC_TRANSITION.layoutMorph
 
 function statusTone(status: QuestionRecord['status']): string {
   switch (status) {
@@ -39,7 +43,9 @@ type QuestionCardProps = {
   active?: boolean
   expanded?: boolean
   view?: 'card' | 'list'
-  onSelect: (e: MouseEvent) => void
+  isSwitchingView?: boolean
+  onToggleSelect?: (e: MouseEvent) => void
+  onOpen: () => void
   onToggleExpand: () => void
   isAdmin?: boolean
   showBookmark?: boolean
@@ -51,7 +57,9 @@ export function QuestionCard({
   active = false,
   expanded = false,
   view = 'card',
-  onSelect,
+  isSwitchingView = false,
+  onToggleSelect,
+  onOpen,
   onToggleExpand,
   isAdmin = false,
   showBookmark = true,
@@ -61,43 +69,130 @@ export function QuestionCard({
   const [moreOpen, setMoreOpen] = useState(false)
   const starRef = useRef<HTMLButtonElement>(null)
   const moreRef = useRef<HTMLButtonElement>(null)
+  const ref = useRef<HTMLElement>(null)
+  const [isInViewport, setIsInViewport] = useState(false)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInViewport(entry.isIntersecting)
+      },
+      { rootMargin: '200px' }
+    )
+    observer.observe(el)
+    return () => {
+      if (el) observer.unobserve(el)
+    }
+  }, [])
+
+  const reduceMotion = useReducedMotion()
+  const bulkMode = Boolean(onToggleSelect)
+  const menuOpen = bookmarkOpen || moreOpen
+  const isList = view === 'list'
 
   const className = [
     'pc-q-card',
     'pc-motion-surface',
-    view === 'list' ? 'is-list' : '',
+    isList ? 'is-list' : '',
     selected ? 'is-selected' : '',
     active ? 'is-active' : '',
     expanded ? 'is-expanded' : '',
+    bulkMode ? 'has-bulk-select' : '',
+    isSwitchingView ? 'is-switching' : '',
   ]
     .filter(Boolean)
     .join(' ')
 
-  const menuOpen = bookmarkOpen || moreOpen
+  function openDetails(e: MouseEvent) {
+    e.stopPropagation()
+    if (menuOpen) return
+    onOpen()
+  }
+
+  function handleCardClick(e: MouseEvent) {
+    if (menuOpen) return
+    const target = e.target as HTMLElement
+    if (target.closest('.pc-q-card-select-wrap, button, a, input, [role="menu"]')) {
+      return
+    }
+    onOpen()
+  }
 
   return (
-    <article
+    <motion.article
+      ref={ref}
       className={className}
       tabIndex={0}
-      onClick={(e) => {
-        if (menuOpen) return
-        onSelect(e)
-      }}
+      layout={isInViewport && !reduceMotion}
+      initial={false}
+      transition={{ layout: reduceMotion ? { duration: 0 } : CARD_LAYOUT }}
+      animate={
+        reduceMotion
+          ? undefined
+          : {
+              borderColor: selected
+                ? 'rgba(53, 92, 255, 0.42)'
+                : 'rgba(20, 22, 26, 0.1)',
+              backgroundColor: selected
+                ? 'rgba(53, 92, 255, 0.04)'
+                : 'rgb(255, 255, 255)',
+              boxShadow: selected
+                ? '0 0 0 1px rgba(53, 92, 255, 0.12), 0 2px 8px rgba(20, 22, 26, 0.06)'
+                : '0 1px 2px rgba(20, 22, 26, 0.04)',
+            }
+      }
+      whileTap={!reduceMotion ? { scale: 0.997 } : undefined}
+      onClick={handleCardClick}
       onKeyDown={(e) => {
         if (menuOpen) return
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault()
-          onSelect(e as unknown as MouseEvent)
+          onOpen()
         }
       }}
       aria-selected={selected}
     >
       <header className="pc-q-card-head">
         <div className="pc-q-card-head-left">
-          {selected && <span className="pc-q-card-select-mark" aria-hidden />}
-          <span className="pc-q-card-ref" title={`Document ID: ${q.id}`}>
+          {onToggleSelect ? (
+            <motion.label
+              className="pc-q-card-select-wrap"
+              onClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+              animate={
+                reduceMotion
+                  ? undefined
+                  : {
+                      scale: selected ? 1 : 0.94,
+                      opacity: selected ? 1 : 0.72,
+                    }
+              }
+              transition={{ duration: PC_DURATION.fast, ease: PC_EASE.out }}
+              whileTap={reduceMotion ? undefined : { scale: 0.88 }}
+            >
+              <input
+                type="checkbox"
+                className="pc-q-card-select"
+                checked={selected}
+                aria-label={`Select ${questionDisplayRef(q)}`}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onToggleSelect(e)
+                }}
+                readOnly
+              />
+            </motion.label>
+          ) : null}
+          <button
+            type="button"
+            className="pc-q-card-ref"
+            title={`View details · ${q.id}`}
+            onClick={openDetails}
+          >
             {questionDisplayRef(q)}
-          </span>
+          </button>
           <span className="pc-tag is-ink">{q.type}</span>
           <DifficultyPips level={q.difficulty} />
           <span className="pc-q-card-marks pc-num">{q.marks}m</span>
@@ -175,21 +270,22 @@ export function QuestionCard({
         anchorRect={moreRef.current?.getBoundingClientRect() ?? null}
         onClose={() => setMoreOpen(false)}
         onBookmark={() => setBookmarkOpen(true)}
+        onViewDetails={onOpen}
       />
 
       <div className="pc-q-card-main">
         <div className="pc-q-card-body pc-serif">{q.bodyText}</div>
-        {q.hindi && view !== 'list' && (
+        {q.hindi && !isList ? (
           <p className={'pc-q-card-hindi' + (expanded ? '' : ' is-clamped')}>
             {q.hindi}
           </p>
-        )}
-        {q.hindi && view === 'list' && expanded && (
+        ) : null}
+        {q.hindi && isList && expanded ? (
           <p className="pc-q-card-hindi pc-q-card-hindi--list">{q.hindi}</p>
-        )}
+        ) : null}
       </div>
 
-      {expanded && view !== 'list' && (
+      {expanded && !isList ? (
         <div className="pc-q-card-preview">
           <span className="pc-q-card-preview-label">Quick preview</span>
           <p>
@@ -197,7 +293,7 @@ export function QuestionCard({
             {q.bloomLevel} · ~{q.estimatedMinutes} min · RBSE Term II alignment.
           </p>
         </div>
-      )}
+      ) : null}
 
       <footer className="pc-q-card-foot">
         <span className="pc-q-card-chapter">
@@ -210,6 +306,6 @@ export function QuestionCard({
         <span className="pc-tag is-outline">{q.topic}</span>
         <span className="pc-q-card-meta pc-q-card-meta-end">RBSE aligned</span>
       </footer>
-    </article>
+    </motion.article>
   )
 }
