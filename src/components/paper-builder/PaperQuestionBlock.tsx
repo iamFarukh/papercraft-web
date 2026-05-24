@@ -14,7 +14,7 @@ import {
   type PaperMedium,
 } from '@/lib/paper-builder'
 import { isMissingQuestion } from '@/lib/missing-question'
-import { questionDisplayText } from '@/lib/paper-medium'
+import { PrintQuestionBody } from '@/components/print/PrintQuestionBody'
 import type { QuestionRecord } from '@/types/question'
 
 type Props = {
@@ -61,13 +61,9 @@ export function PaperQuestionBlock({
       <div className="pc-pb-q-block-main">
         <span className="pc-pb-q-block-num pc-serif pc-num">Q{number}.</span>
         <div className="pc-pb-q-block-content">
-          <p
-            className={`pc-pb-q-block-body pc-serif${paperMedium === 'hindi' ? ' pc-print-is-hindi' : ''}`}
-          >
-            {officialPreview || readOnly
-              ? questionDisplayText(question, paperMedium)
-              : question.bodyText}
-          </p>
+          <div className="pc-pb-q-block-body">
+            <PrintQuestionBody question={question} medium={paperMedium} />
+          </div>
           {missing ? (
             <p className="pc-pb-q-block-missing-note">
               Unavailable in the repository — replace or remove before submitting.

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { ExternalLink, Star } from 'lucide-react'
+import { ExternalLink, PanelRightOpen, Star } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 type QuestionCardMenuProps = {
@@ -10,6 +10,7 @@ type QuestionCardMenuProps = {
   isAdmin?: boolean
   onClose: () => void
   onBookmark: () => void
+  onViewDetails?: () => void
 }
 
 export function QuestionCardMenu({
@@ -19,6 +20,7 @@ export function QuestionCardMenu({
   isAdmin = false,
   onClose,
   onBookmark,
+  onViewDetails,
 }: QuestionCardMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -53,6 +55,20 @@ export function QuestionCardMenu({
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
     >
+      {onViewDetails ? (
+        <button
+          type="button"
+          className="pc-bookmark-menu-row"
+          role="menuitem"
+          onClick={() => {
+            onViewDetails()
+            onClose()
+          }}
+        >
+          <PanelRightOpen size={14} strokeWidth={1.6} />
+          <span>View details</span>
+        </button>
+      ) : null}
       <button
         type="button"
         className="pc-bookmark-menu-row"

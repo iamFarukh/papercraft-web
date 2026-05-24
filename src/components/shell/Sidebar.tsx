@@ -196,14 +196,16 @@ export function Sidebar({
         >
           <LogOut size={15} strokeWidth={1.6} />
         </button>
-        <button
-          type="button"
-          className="pc-sidebar-settings"
-          title="Settings"
-          aria-label="Settings"
+        <NavLink
+          to={NAV_ROUTES.profile}
+          className={({ isActive }) =>
+            'pc-sidebar-settings' + (isActive ? ' is-active' : '')
+          }
+          title="My profile"
+          aria-label="My profile"
         >
           <Settings size={14} strokeWidth={1.6} />
-        </button>
+        </NavLink>
       </div>
     </aside>
 

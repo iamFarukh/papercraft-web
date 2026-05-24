@@ -82,6 +82,13 @@ export function getPrintLabels(medium: PaperMedium): PrintLabels {
   return medium === 'hindi' ? LABELS_HI : LABELS_EN
 }
 
+/** English-only chrome for page numbers and marks (always Latin digits). */
+export const PRINT_CHROME_LABELS = {
+  page: 'Page',
+  of: 'of',
+  marksUnit: 'marks',
+} as const
+
 export function questionLanguageOf(q: QuestionRecord): QuestionLanguage {
   if (q.language) return q.language
   const hasEn = Boolean(q.bodyText?.trim())

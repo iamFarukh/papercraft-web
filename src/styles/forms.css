@@ -1,0 +1,39 @@
+/**
+ * Native <select> styling — load last (see index.css).
+ * Chevron inset matches horizontal padding (10px each side).
+ */
+
+:root {
+  --pc-select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2380858F' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  --pc-select-pad-inline: 10px;
+  --pc-select-pad-end: 36px;
+  --pc-select-chevron-inset: 10px;
+}
+
+.pc-screen select:not([multiple]):not([size]) {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-left: var(--pc-select-pad-inline);
+  padding-right: var(--pc-select-pad-end);
+  cursor: pointer;
+  transition:
+    border-color var(--pc-motion-fast, 160ms) ease,
+    box-shadow var(--pc-motion-fast, 160ms) ease,
+    background-color var(--pc-motion-fast, 160ms) ease;
+  background-color: var(--pc-surface);
+  background-repeat: no-repeat;
+  background-position: right var(--pc-select-chevron-inset) center;
+  background-size: 12px 12px;
+  background-image: var(--pc-select-chevron);
+}
+
+/* Preserve tinted states — color only, keep chevron */
+.pc-csv-map-select.is-mapped {
+  background-color: var(--pc-primary-50);
+  color: var(--pc-primary-ink);
+}
+
+.pc-csv-map-select.is-skip {
+  background-color: var(--pc-surface-2);
+}

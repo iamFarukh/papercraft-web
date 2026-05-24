@@ -86,6 +86,7 @@ function buildConstraints(
 
   if (!isAdmin) {
     constraints.push(where('status', '==', 'published'))
+    constraints.push(where('deletedAt', '==', null))
   } else {
     const statuses = active(filters.statuses)
     const allStatusesSelected = statuses.length >= ALL_STATUSES.length
@@ -166,7 +167,11 @@ export async function getQuestions(
         // Last resort: minimal query (empty DB / missing index). Teachers only see published.
         const fallbackConstraints = options.isAdmin
           ? [limit(pageSize + 1)]
-          : [where('status', '==', 'published'), limit(pageSize + 1)]
+          : [
+              where('status', '==', 'published'),
+              where('deletedAt', '==', null),
+              limit(pageSize + 1),
+            ]
         const snap = await withTimeout(
           getDocs(query(collection(db, COLLECTION), ...fallbackConstraints)),
           FETCH_TIMEOUT_MS,
@@ -195,9 +200,11 @@ export async function getQuestionById(id: string): Promise<QuestionDocument | nu
   return snap.data() as QuestionDocument
 }
 
-const IN_QUERY_CHUNK = 30
-
-/** Fetch questions by id (batched `in` queries). Missing ids are omitted. */
+/**
+ * Fetch questions by id. Uses per-document reads so teacher rules
+ * (published-only) work; batched `in` queries are rejected by Firestore
+ * when the query cannot guarantee published-only results.
+ */
 export async function getQuestionsByIds(
   ids: string[],
 ): Promise<Map<string, QuestionDocument>> {
@@ -205,15 +212,18 @@ export async function getQuestionsByIds(
   const map = new Map<string, QuestionDocument>()
   if (unique.length === 0) return map
 
-  for (let i = 0; i < unique.length; i += IN_QUERY_CHUNK) {
-    const chunk = unique.slice(i, i + IN_QUERY_CHUNK)
-    const snap = await getDocs(
-      query(collection(db, COLLECTION), where('__name__', 'in', chunk)),
-    )
-    for (const d of snap.docs) {
-      map.set(d.id, d.data() as QuestionDocument)
-    }
-  }
+  await Promise.all(
+    unique.map(async (id) => {
+      try {
+        const snap = await getDoc(doc(db, COLLECTION, id))
+        if (snap.exists()) {
+          map.set(id, snap.data() as QuestionDocument)
+        }
+      } catch {
+        /* unreadable or missing — caller treats as missing id */
+      }
+    }),
+  )
 
   return map
 }

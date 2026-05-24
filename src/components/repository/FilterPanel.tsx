@@ -1,5 +1,8 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { ChevronDown, ChevronRight, Search } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Search } from 'lucide-react'
+import { AnimatePresence, m, useReducedMotion } from 'framer-motion'
+import { AnimatedChevron, CollapseSection } from '@/components/motion'
+import { collapseReveal } from '@/lib/motion/variants'
 import { TopicFilterDropdown } from '@/components/repository/TopicFilterDropdown'
 import {
   DIFFICULTY_LABELS,
@@ -25,6 +28,7 @@ type FilterRowProps = {
   state?: TriState
   swatch?: string
   indent?: number
+  className?: string
   onToggle: () => void
   /** Click label to focus (e.g. topic picker) without toggling checkbox */
   onActivate?: () => void
@@ -36,6 +40,7 @@ function FilterRow({
   state = 'off',
   swatch,
   indent = 0,
+  className,
   onToggle,
   onActivate,
 }: FilterRowProps) {
@@ -47,9 +52,10 @@ function FilterRow({
       className={
         'pc-repo-filter-row' +
         (checked ? ' is-checked' : '') +
-        (indeterminate ? ' is-indeterminate' : '')
+        (indeterminate ? ' is-indeterminate' : '') +
+        (className ? ` ${className}` : '')
       }
-      style={{ paddingLeft: 6 + indent * 14 }}
+      style={{ paddingLeft: indent > 0 ? 8 + indent * 12 : undefined }}
     >
       <input
         type="checkbox"
@@ -77,40 +83,6 @@ function FilterRow({
         <span className="pc-repo-filter-count pc-num">{count}</span>
       )}
     </label>
-  )
-}
-
-function CollapseSection({
-  title,
-  meta,
-  defaultOpen = true,
-  children,
-}: {
-  title: string
-  meta?: string
-  defaultOpen?: boolean
-  children: ReactNode
-}) {
-  const [open, setOpen] = useState(defaultOpen)
-
-  return (
-    <section className="pc-repo-filter-section">
-      <button
-        type="button"
-        className="pc-repo-filter-section-head"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-      >
-        {open ? (
-          <ChevronDown size={14} strokeWidth={1.6} />
-        ) : (
-          <ChevronRight size={14} strokeWidth={1.6} />
-        )}
-        <span>{title}</span>
-        {meta && <span className="pc-repo-filter-section-meta">{meta}</span>}
-      </button>
-      {open && <div className="pc-repo-filter-section-body">{children}</div>}
-    </section>
   )
 }
 
@@ -155,6 +127,7 @@ export function FilterPanel({
   onChapterBulkToggle,
   onReset,
 }: FilterPanelProps) {
+  const reducedMotion = useReducedMotion()
   const [syllabusSearch, setSyllabusSearch] = useState('')
   const [expandedClasses, setExpandedClasses] = useState<Set<string>>(() => new Set())
   const [topicScope, setTopicScope] = useState<{
@@ -277,23 +250,29 @@ export function FilterPanel({
               const classOpen =
                 expandedClasses.has(cls.classLabel) || search.length > 0
               const clsState = classTriState(cls, filters)
+              const classChecked = clsState === 'on'
 
               return (
-                <div key={cls.key} className="pc-repo-filter-tree-class">
-                  <div className="pc-repo-filter-tree-row">
+                <div
+                  key={cls.key}
+                  className={
+                    'pc-repo-filter-tree-class' +
+                    (classChecked ? ' is-class-on' : '') +
+                    (classOpen ? ' is-open' : '')
+                  }
+                >
+                  <div className="pc-repo-filter-tree-class-head">
                     <button
                       type="button"
                       className="pc-repo-filter-tree-chevron"
                       onClick={() => toggleClassExpand(cls.classLabel)}
                       aria-label={classOpen ? 'Collapse' : 'Expand'}
+                      aria-expanded={classOpen}
                     >
-                      {classOpen ? (
-                        <ChevronDown size={13} strokeWidth={1.6} />
-                      ) : (
-                        <ChevronRight size={13} strokeWidth={1.6} />
-                      )}
+                      <AnimatedChevron open={classOpen} size={13} />
                     </button>
                     <FilterRow
+                      className="pc-repo-filter-tree-class-row"
                       label={cls.classLabel}
                       count={counts.classes[cls.classLabel] ?? cls.count}
                       state={clsState}
@@ -306,43 +285,54 @@ export function FilterPanel({
                     />
                   </div>
 
-                  {classOpen &&
-                    cls.subjects.map((sub) => {
-                      const subState = subjectTriState(sub, filters)
-                      const isTopicTarget =
-                        topicScope?.classLabel === cls.classLabel &&
-                        topicScope?.subject === sub.subject
+                  <AnimatePresence initial={false}>
+                    {classOpen && cls.subjects.length > 0 ? (
+                      <m.div
+                        className="pc-repo-filter-tree-children pc-collapse-body"
+                        variants={collapseReveal}
+                        initial={reducedMotion ? false : 'hidden'}
+                        animate="visible"
+                        exit="exit"
+                      >
+                        {cls.subjects.map((sub) => {
+                          const subState = subjectTriState(sub, filters)
+                          const isTopicTarget =
+                            topicScope?.classLabel === cls.classLabel &&
+                            topicScope?.subject === sub.subject
 
-                      return (
-                        <div
-                          key={sub.key}
-                          className={
-                            'pc-repo-filter-tree-subject' +
-                            (isTopicTarget ? ' is-topic-target' : '')
-                          }
-                        >
-                          <FilterRow
-                            label={sub.subject}
-                            count={counts.subjects[sub.subject] ?? sub.count}
-                            state={subState}
-                            indent={1}
-                            onActivate={() =>
-                              setTopicScope({
-                                classLabel: cls.classLabel,
-                                subject: sub.subject,
-                              })
-                            }
-                            onToggle={() =>
-                              onSyllabusToggle({
-                                level: 'subject',
-                                classLabel: cls.classLabel,
-                                subject: sub.subject,
-                              })
-                            }
-                          />
-                        </div>
-                      )
-                    })}
+                          return (
+                            <div
+                              key={sub.key}
+                              className={
+                                'pc-repo-filter-tree-subject' +
+                                (isTopicTarget ? ' is-topic-target' : '')
+                              }
+                            >
+                              <FilterRow
+                                label={sub.subject}
+                                count={counts.subjects[sub.subject] ?? sub.count}
+                                state={subState}
+                                indent={1}
+                                onActivate={() =>
+                                  setTopicScope({
+                                    classLabel: cls.classLabel,
+                                    subject: sub.subject,
+                                  })
+                                }
+                                onToggle={() =>
+                                  onSyllabusToggle({
+                                    level: 'subject',
+                                    classLabel: cls.classLabel,
+                                    subject: sub.subject,
+                                  })
+                                }
+                              />
+                            </div>
+                          )
+                        })}
+                      </m.div>
+                    ) : null}
+                  </AnimatePresence>
                 </div>
               )
             })}

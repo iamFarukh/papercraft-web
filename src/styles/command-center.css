@@ -1,0 +1,208 @@
+.pc-cmd-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 12vh 16px 24px;
+}
+
+.pc-cmd-overlay .pc-motion-modal-backdrop {
+  background: rgb(20 22 26 / 28%);
+  backdrop-filter: blur(10px) saturate(1.2);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
+}
+
+.pc-cmd-panel {
+  width: min(640px, 100%);
+  max-height: min(72vh, 640px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  border: 1px solid var(--pc-line);
+  background: rgb(255 255 255 / 0.94);
+  box-shadow: var(--pc-shadow-lg), 0 0 0 1px rgb(255 255 255 / 0.6) inset;
+  overflow: hidden;
+}
+
+.pc-cmd-palette {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+.pc-cmd-palette-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--pc-line);
+}
+
+.pc-cmd-palette-icon {
+  color: var(--pc-ink-4);
+  flex-shrink: 0;
+}
+
+.pc-cmd-palette-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 15px;
+  color: var(--pc-ink);
+  outline: none;
+  min-width: 0;
+}
+
+.pc-cmd-palette-input::placeholder {
+  color: var(--pc-ink-4);
+}
+
+.pc-cmd-palette-kbd {
+  font-family: var(--pc-mono);
+  font-size: 10.5px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--pc-surface-3);
+  border: 1px solid var(--pc-line);
+  color: var(--pc-ink-3);
+}
+
+.pc-cmd-palette-results {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px 6px 10px;
+}
+
+.pc-cmd-palette-empty {
+  margin: 24px 12px;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--pc-ink-4);
+}
+
+.pc-cmd-palette-group {
+  margin-bottom: 8px;
+}
+
+.pc-cmd-palette-group-label {
+  padding: 6px 12px 4px;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pc-ink-4);
+}
+
+.pc-cmd-palette-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pc-cmd-palette-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.pc-cmd-palette-row:hover,
+.pc-cmd-palette-row.is-active {
+  background: var(--pc-primary-50, #eef2ff);
+}
+
+.pc-cmd-palette-row-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: var(--pc-surface);
+  border: 1px solid var(--pc-line);
+  display: grid;
+  place-items: center;
+  color: var(--pc-ink-3);
+  flex-shrink: 0;
+}
+
+.pc-cmd-palette-row.is-active .pc-cmd-palette-row-icon {
+  color: var(--pc-primary);
+  border-color: color-mix(in srgb, var(--pc-primary) 25%, var(--pc-line));
+}
+
+.pc-cmd-palette-row-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.pc-cmd-palette-row-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--pc-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pc-cmd-palette-row-sub {
+  font-size: 11.5px;
+  color: var(--pc-ink-4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pc-cmd-palette-row-badge {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--pc-surface-3);
+  border: 1px solid var(--pc-line);
+  color: var(--pc-ink-3);
+}
+
+.pc-cmd-palette-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--pc-line);
+  background: var(--pc-surface-2);
+  font-size: 11px;
+  color: var(--pc-ink-4);
+}
+
+.pc-cmd-palette-foot span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.pc-cmd-palette-foot kbd {
+  font-family: var(--pc-mono);
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--pc-surface-3);
+  border: 1px solid var(--pc-line);
+}
+
+.pc-cmd {
+  cursor: pointer;
+}

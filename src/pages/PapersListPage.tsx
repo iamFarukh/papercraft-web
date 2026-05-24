@@ -1,5 +1,5 @@
 import { Eye, FileText, Plus } from 'lucide-react'
-import { PaperPdfExportLink } from '@/components/print/PaperPdfExportLink'
+import { PaperExportLink } from '@/components/print/PaperExportLink'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { EmptyStatePanel } from '@/components/ui/EmptyStatePanel'
@@ -162,7 +162,7 @@ export function PapersListPage() {
                           <Eye size={12} strokeWidth={1.6} />
                           Open official preview
                         </Link>
-                        <PaperPdfExportLink
+                        <PaperExportLink
                           paperId={p.id}
                           canExport
                           from="library"

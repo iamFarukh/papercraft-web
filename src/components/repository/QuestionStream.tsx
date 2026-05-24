@@ -1,3 +1,4 @@
+
 import type { MouseEvent } from 'react'
 import type { QuestionRecord, RepositoryError } from '@/types/question'
 import { QuestionCard } from './QuestionCard'
@@ -8,6 +9,7 @@ import { RepositoryStreamSkeleton } from './RepositorySkeleton'
 type QuestionStreamProps = {
   questions: QuestionRecord[]
   view: 'card' | 'list'
+  isSwitchingView?: boolean
   loading?: boolean
   loadingMore?: boolean
   error?: RepositoryError | null
@@ -20,7 +22,8 @@ type QuestionStreamProps = {
   hasMore?: boolean
   isAdmin?: boolean
   seeding?: boolean
-  onSelect: (id: string, e: MouseEvent) => void
+  onToggleSelect?: (id: string, e: MouseEvent) => void
+  onOpenQuestion: (id: string) => void
   onToggleExpand: (id: string) => void
   onClearSearch: () => void
   onResetFilters: () => void
@@ -33,6 +36,7 @@ type QuestionStreamProps = {
 export function QuestionStream({
   questions,
   view,
+  isSwitchingView = false,
   loading = false,
   loadingMore = false,
   error = null,
@@ -45,7 +49,8 @@ export function QuestionStream({
   hasMore = false,
   isAdmin = false,
   seeding = false,
-  onSelect,
+  onToggleSelect,
+  onOpenQuestion,
   onToggleExpand,
   onClearSearch,
   onResetFilters,
@@ -107,23 +112,25 @@ export function QuestionStream({
           isAdmin={isAdmin}
         />
       ) : (
-        <div
-          className={'pc-repo-cards' + (view === 'list' ? ' is-list' : '')}
-        >
-          {questions.map((q) => (
-            <QuestionCard
-              key={q.id}
-              question={q}
-              view={view}
-              isAdmin={isAdmin}
-              selected={selectedIds.has(q.id)}
-              active={activeId === q.id}
-              expanded={expandedId === q.id}
-              onSelect={(e) => onSelect(q.id, e)}
-              onToggleExpand={() => onToggleExpand(q.id)}
-            />
-          ))}
-        </div>
+          <div className={'pc-repo-cards' + (view === 'list' ? ' is-list' : '')}>
+            {questions.map((q) => (
+              <QuestionCard
+                key={q.id}
+                question={q}
+                view={view}
+                isSwitchingView={isSwitchingView}
+                isAdmin={isAdmin}
+                selected={selectedIds.has(q.id)}
+                active={activeId === q.id}
+                expanded={expandedId === q.id}
+                onToggleSelect={
+                  onToggleSelect ? (e) => onToggleSelect(q.id, e) : undefined
+                }
+                onOpen={() => onOpenQuestion(q.id)}
+                onToggleExpand={() => onToggleExpand(q.id)}
+              />
+            ))}
+          </div>
       )}
 
       {questions.length > 0 && hasMore && (

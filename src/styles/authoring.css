@@ -131,10 +131,14 @@
   padding: 0 10px;
   border: 1px solid var(--pc-line);
   border-radius: 8px;
-  background: var(--pc-surface);
+  background-color: var(--pc-surface);
   color: var(--pc-ink);
   font-family: inherit;
   font-size: 12.5px;
+}
+
+.pc-author-field select {
+  padding-right: var(--pc-select-pad-end, 36px);
 }
 
 .pc-author-field select:focus,
@@ -384,10 +388,10 @@
 
 .pc-author-mcq-correct select {
   height: 32px;
-  padding: 0 8px;
+  padding: 0 var(--pc-select-pad-end, 36px) 0 var(--pc-select-pad-inline, 10px);
   border-radius: 8px;
   border: 1px solid var(--pc-line);
-  background: var(--pc-surface);
+  background-color: var(--pc-surface);
 }
 
 .pc-author-tf {

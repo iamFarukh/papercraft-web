@@ -1,11 +1,12 @@
 import {
-  computePaperStats,
   flattenPaperQuestions,
   type PaperComposition,
   type PaperSectionDef,
   type PaperSetupState,
 } from '@/lib/paper-builder'
+import { resolvePaper } from '@/lib/paper-instance'
 import { isMissingQuestion } from '@/lib/missing-question'
+import type { PaperInstanceLayer } from '@/types/paper-instance'
 import type { PaperStatus } from '@/types/paper'
 
 export type SubmissionValidationResult =
@@ -16,6 +17,7 @@ export function validatePaperForSubmission(
   setup: PaperSetupState,
   composition: PaperComposition,
   sections: PaperSectionDef[],
+  instanceLayer?: PaperInstanceLayer,
 ): SubmissionValidationResult {
   if (!setup.examinationName.trim()) {
     return { ok: false, message: 'Add an examination title before submitting.' }
@@ -31,7 +33,7 @@ export function validatePaperForSubmission(
       message: `Replace or remove ${missingCount} unavailable question${missingCount === 1 ? '' : 's'} before submitting.`,
     }
   }
-  const stats = computePaperStats(composition, sections)
+  const stats = resolvePaper(setup, sections, composition, instanceLayer ?? {}).stats
   if (stats.questionCount < 1) {
     return { ok: false, message: 'Add at least one question before submitting.' }
   }
