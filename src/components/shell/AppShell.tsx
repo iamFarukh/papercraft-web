@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { CommandPalette } from '@/components/command-center/CommandPalette'
 import { useTeacherScope } from '@/hooks/useTeacherScope'
 import { AppTabBar } from './AppTabBar'
 import { Sidebar } from './Sidebar'
@@ -37,6 +38,7 @@ export function AppShell({
           <AppTabBar />
         </div>
       </div>
+      <CommandPalette />
     </div>
   )
 }

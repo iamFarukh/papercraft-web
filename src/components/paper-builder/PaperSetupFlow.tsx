@@ -1,6 +1,7 @@
-import { ArrowRight, FileText, Layers } from 'lucide-react'
+import { ArrowRight, FileText, Layers, Target } from 'lucide-react'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { BlueprintSetupPicker } from '@/components/paper-builder/BlueprintSetupPicker'
 import { useAuth } from '@/context/AuthContext'
 import { useTeacherScope } from '@/hooks/useTeacherScope'
 import { setupMatchesAssignments } from '@/lib/teacher-assignments'
@@ -24,6 +25,9 @@ import {
   PAPER_MEDIUM_OPTIONS,
   type PaperMedium,
 } from '@/lib/paper-medium'
+import { listBlueprints } from '@/services/firebase/blueprints'
+import type { BlueprintListItem } from '@/types/blueprint'
+import type { PaperInstanceLayer } from '@/types/paper-instance'
 
 function Field({
   label,
@@ -47,7 +51,9 @@ function Field({
 
 export function PaperSetupFlow() {
   const navigate = useNavigate()
-  const { isAdmin } = useAuth()
+  const [searchParams] = useSearchParams()
+  const blueprintParam = searchParams.get('blueprintId')
+  const { isAdmin, user } = useAuth()
   const {
     isScoped,
     hasFullAccess,
@@ -59,6 +65,9 @@ export function PaperSetupFlow() {
     assignmentScope,
   } = useTeacherScope()
   const [setup, setSetup] = useState<PaperSetupState>({ ...DEFAULT_SETUP })
+  const [mode, setMode] = useState<'manual' | 'blueprint'>(blueprintParam ? 'blueprint' : 'manual')
+  const [blueprints, setBlueprints] = useState<BlueprintListItem[]>([])
+  const [blueprintsLoading, setBlueprintsLoading] = useState(false)
   const [curriculumClasses, setCurriculumClasses] = useState<TaxonomyOption[]>([])
   const [curriculumSubjects, setCurriculumSubjects] = useState<TaxonomyOption[]>([])
 
@@ -67,6 +76,19 @@ export function PaperSetupFlow() {
       .then(setCurriculumClasses)
       .catch(() => setCurriculumClasses([]))
   }, [])
+
+  useEffect(() => {
+    if (!user) return
+    setBlueprintsLoading(true)
+    listBlueprints()
+      .then(setBlueprints)
+      .catch(() => setBlueprints([]))
+      .finally(() => setBlueprintsLoading(false))
+  }, [user])
+
+  useEffect(() => {
+    if (blueprintParam) setMode('blueprint')
+  }, [blueprintParam])
 
   const classNumber = useMemo(() => {
     const hit = curriculumClasses.find((c) => c.label === setup.classLabel)
@@ -131,12 +153,23 @@ export function PaperSetupFlow() {
     setSetup((prev) => ({ ...prev, [key]: value }))
   }
 
-  function handleStart() {
+  function handleStart(instanceLayer?: PaperInstanceLayer) {
     if (isScoped && !isActive) return
     if (isScoped && !hasAssignments) return
     if (isScoped && !setupMatchesAssignments(setup, assignments, assignmentScope)) return
     storeSetup(setup)
-    navigate('/app/builder', { state: { setup } })
+    navigate('/app/builder', { state: { setup, instanceLayer } })
+  }
+
+  function handleBlueprintApply(payload: {
+    setup: PaperSetupState
+    instanceLayer: PaperInstanceLayer
+  }) {
+    setSetup(payload.setup)
+    storeSetup(payload.setup)
+    navigate('/app/builder', {
+      state: { setup: payload.setup, instanceLayer: payload.instanceLayer },
+    })
   }
 
   const assignmentOk =
@@ -150,6 +183,21 @@ export function PaperSetupFlow() {
     setup.totalMarks > 0 &&
     setup.durationLabel.trim().length > 0 &&
     (!isScoped || (isActive && hasAssignments && assignmentOk))
+
+  if (mode === 'blueprint') {
+    return (
+      <div className="pc-pb-setup-screen pc-dots">
+        <div className="pc-pb-setup-card pc-pb-setup-card-wide">
+          <BlueprintSetupPicker
+            blueprints={blueprints}
+            loading={blueprintsLoading}
+            onApply={handleBlueprintApply}
+            onCancel={() => setMode('manual')}
+          />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="pc-pb-setup-screen pc-dots">
@@ -431,7 +479,15 @@ export function PaperSetupFlow() {
           ) : (
           <p className="pc-pb-setup-footer-hint">
             <Layers size={14} strokeWidth={1.6} />
-            Or start from a blueprint when blueprints are enabled.
+            Or{' '}
+            <button
+              type="button"
+              className="pc-pb-setup-inline-link"
+              onClick={() => setMode('blueprint')}
+            >
+              start from a blueprint
+            </button>{' '}
+            to pre-configure sections and marks.
           </p>
           )}
           <div className="pc-pb-setup-footer-actions">
@@ -444,9 +500,17 @@ export function PaperSetupFlow() {
             </button>
             <button
               type="button"
+              className="pc-btn"
+              onClick={() => setMode('blueprint')}
+            >
+              <Target size={14} strokeWidth={1.6} />
+              From blueprint
+            </button>
+            <button
+              type="button"
               className="pc-btn is-primary"
               disabled={!canStart}
-              onClick={handleStart}
+              onClick={() => handleStart()}
             >
               Start composing
               <ArrowRight size={14} strokeWidth={1.6} />

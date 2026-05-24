@@ -13,11 +13,19 @@
 @import "./styles/toast.css";
 @import "./styles/bulk-import.css";
 @import "./styles/paper-builder.css";
+@import "./styles/paper-editing.css";
+@import "./styles/paper-format-controls.css";
+@import "./styles/paper-examination-editor.css";
 @import "./styles/papers.css";
 @import "./styles/approvals.css";
 @import "./styles/curriculum.css";
 @import "./styles/teachers.css";
 @import "./styles/notifications.css";
+@import "./styles/blueprints.css";
+@import "./styles/profile.css";
+@import "./styles/settings.css";
+@import "./styles/command-center.css";
+@import "./styles/forms.css";
 @import "./styles/paper-print.css";
 
 @layer base {

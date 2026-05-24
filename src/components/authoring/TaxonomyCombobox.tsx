@@ -1,5 +1,8 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { ChevronDown, Loader2, Plus } from 'lucide-react'
+import { Loader2, Plus } from 'lucide-react'
+import { AnimatePresence, m } from 'framer-motion'
+import { AnimatedChevron } from '@/components/motion'
+import { popoverReveal } from '@/lib/motion/variants'
 import { normalizeDisplayName } from '@/lib/curriculum-normalize'
 import type { CreateTaxonomyResult } from '@/services/firebase/curriculum'
 import type { TaxonomyOption } from '@/types/curriculum'
@@ -121,12 +124,20 @@ export function TaxonomyCombobox({
           {loading || creating ? (
             <Loader2 size={14} style={{ animation: 'pc-author-spin 0.8s linear infinite' }} />
           ) : (
-            <ChevronDown size={14} strokeWidth={1.6} />
+            <AnimatedChevron open={open} flip />
           )}
         </button>
 
-        {open && !disabled && (
-          <ul className="pc-taxonomy-list pc-scroll" role="listbox">
+        <AnimatePresence initial={false}>
+          {open && !disabled ? (
+          <m.ul
+            className="pc-taxonomy-list pc-scroll"
+            role="listbox"
+            variants={popoverReveal}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+          >
             {filtered.length === 0 && !canCreate && (
               <li className="pc-taxonomy-empty">No matches</li>
             )}
@@ -160,8 +171,9 @@ export function TaxonomyCombobox({
                 </button>
               </li>
             )}
-          </ul>
-        )}
+          </m.ul>
+          ) : null}
+        </AnimatePresence>
       </div>
 
       {hint && <p className="pc-taxonomy-hint is-warn">{hint}</p>}

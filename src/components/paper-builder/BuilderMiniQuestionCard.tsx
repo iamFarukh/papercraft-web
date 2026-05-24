@@ -1,10 +1,12 @@
 import { Plus, RefreshCw } from 'lucide-react'
 import { DifficultyPips } from '@/components/repository/DifficultyPips'
 import { shortQuestionId } from '@/lib/paper-builder'
+import { questionDisplayText, type PaperMedium } from '@/lib/paper-medium'
 import type { QuestionRecord } from '@/types/question'
 
 type Props = {
   question: QuestionRecord
+  paperMedium?: PaperMedium
   used: boolean
   compatible?: boolean
   replaceMode?: boolean
@@ -13,6 +15,7 @@ type Props = {
 
 export function BuilderMiniQuestionCard({
   question,
+  paperMedium = 'english',
   used,
   compatible,
   replaceMode,
@@ -48,7 +51,13 @@ export function BuilderMiniQuestionCard({
           <span style={{ color: 'var(--pc-ink-4)' }}>m</span>
         </span>
       </div>
-      <p className="pc-pb-mini-card-body">{question.bodyText}</p>
+      <p
+        className={
+          'pc-pb-mini-card-body' + (paperMedium === 'hindi' ? ' pc-print-is-hindi' : '')
+        }
+      >
+        {questionDisplayText(question, paperMedium)}
+      </p>
       <div className="pc-pb-mini-card-foot">
         <span className="pc-pb-mini-card-type">{question.type}</span>
         <DifficultyPips level={question.difficulty} />

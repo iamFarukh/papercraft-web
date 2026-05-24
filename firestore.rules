@@ -121,5 +121,15 @@ service cloud.firestore {
       allow update: if isAuth() && resource.data.userId == request.auth.uid;
       allow delete: if isAuth() && resource.data.userId == request.auth.uid;
     }
+
+    match /blueprints/{blueprintId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    match /workspace_settings/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
   }
 }

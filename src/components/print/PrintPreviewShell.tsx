@@ -1,7 +1,9 @@
 import { Eye, Printer, X } from 'lucide-react'
 import { useCallback, useEffect, type ReactNode, type RefObject } from 'react'
 import type { PaperSetupState } from '@/lib/paper-builder'
-import { ExportPdfButton, ExportPdfDisabledHint } from '@/components/print/ExportPdfButton'
+import { PaperExportMenu } from '@/components/print/PaperExportMenu'
+import type { ResolvedPaper } from '@/lib/paper-instance'
+import type { PaperExportFormat } from '@/lib/paper-export-formats'
 
 type Props = {
   title: string
@@ -9,9 +11,10 @@ type Props = {
   onExit: () => void
   children: ReactNode
   setup?: PaperSetupState
-  canExportPdf?: boolean
+  resolved?: ResolvedPaper
+  canExport?: boolean
   documentRootRef?: RefObject<HTMLElement | null>
-  autoExportPdf?: boolean
+  autoExportFormat?: PaperExportFormat | null
 }
 
 export function PrintPreviewShell({
@@ -20,9 +23,10 @@ export function PrintPreviewShell({
   onExit,
   children,
   setup,
-  canExportPdf = false,
+  resolved,
+  canExport = false,
   documentRootRef,
-  autoExportPdf = false,
+  autoExportFormat = null,
 }: Props) {
   const handlePrint = useCallback(() => {
     window.print()
@@ -51,16 +55,16 @@ export function PrintPreviewShell({
         </div>
         <span className="pc-print-chrome-paper pc-serif">{title}</span>
         <div className="pc-print-chrome-actions">
-          {setup && documentRootRef && canExportPdf ? (
-            <ExportPdfButton
+          {setup && resolved && documentRootRef ? (
+            <PaperExportMenu
+              mode="direct"
               setup={setup}
-              canExport
+              resolved={resolved}
+              canExport={canExport}
               documentRootRef={documentRootRef}
               variant="chrome"
-              autoStart={autoExportPdf}
+              autoStartFormat={autoExportFormat}
             />
-          ) : setup ? (
-            <ExportPdfDisabledHint />
           ) : null}
           <button type="button" className="pc-btn is-sm pc-print-chrome-print" onClick={handlePrint}>
             <Printer size={12} strokeWidth={1.6} />
@@ -73,16 +77,16 @@ export function PrintPreviewShell({
         </div>
       </header>
       <p className="pc-print-preview-tip">
-        {canExportPdf ? (
+        {canExport ? (
           <>
-            <strong>Official export:</strong> Use <strong>Export PDF</strong> for the
-            examination document file. For paper copies, use <strong>Print</strong> and turn off{' '}
-            <strong>Headers and footers</strong> in the dialog.
+            <strong>Official export:</strong> Choose <strong>PDF</strong> for printing or{' '}
+            <strong>Word (.docx)</strong> to edit in Microsoft Word or Google Docs. For paper
+            copies, use <strong>Print</strong> and turn off <strong>Headers and footers</strong>.
           </>
         ) : (
           <>
-            <strong>Preview only.</strong> PDF export unlocks after approval. To print a draft,
-            use <strong>Print</strong> and disable browser headers and footers.
+            <strong>Preview only.</strong> Export unlocks after approval. To print a draft, use{' '}
+            <strong>Print</strong> and disable browser headers and footers.
           </>
         )}
       </p>

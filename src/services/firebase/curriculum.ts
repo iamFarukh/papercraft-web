@@ -69,11 +69,31 @@ export function subjectIdsForLookup(subjectId: string): string[] {
 
 let seedPromise: Promise<void> | null = null
 
+function isPermissionDenied(err: unknown): boolean {
+  return (
+    !!err &&
+    typeof err === 'object' &&
+    'code' in err &&
+    String((err as { code: string }).code) === 'permission-denied'
+  )
+}
+
 export async function ensureCurriculumSeeded(): Promise<void> {
   if (!seedPromise) {
-    seedPromise = runSeed()
+    seedPromise = runSeed().catch((err) => {
+      /**
+       * Teachers have read-only access and cannot run seed writes.
+       * Ignore permission failures and continue with existing taxonomy docs.
+       */
+      if (isPermissionDenied(err)) return
+      throw err
+    })
   }
-  return seedPromise
+  try {
+    await seedPromise
+  } finally {
+    seedPromise = null
+  }
 }
 
 async function syncRbseCatalog(batch: ReturnType<typeof writeBatch>): Promise<void> {

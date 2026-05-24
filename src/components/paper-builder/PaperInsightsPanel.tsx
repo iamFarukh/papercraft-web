@@ -1,5 +1,7 @@
+import type { ReactNode } from 'react'
 import { DifficultyBalancePie } from './DifficultyBalancePie'
 import type { PaperSectionDef, PaperStats } from '@/lib/paper-builder'
+import type { PaperBlueprintSnapshot } from '@/types/paper'
 import type { PaperStatus } from '@/types/paper'
 
 type Props = {
@@ -8,6 +10,8 @@ type Props = {
   planMinutes: number
   sections: PaperSectionDef[]
   paperStatus?: PaperStatus
+  blueprintSnapshot?: PaperBlueprintSnapshot
+  blueprintMatchSlot?: ReactNode
 }
 
 export function PaperInsightsPanel({
@@ -16,6 +20,8 @@ export function PaperInsightsPanel({
   planMinutes,
   sections,
   paperStatus = 'draft',
+  blueprintSnapshot,
+  blueprintMatchSlot,
 }: Props) {
   const planQ = sections.reduce((s, sec) => s + sec.plannedCount, 0)
   const planMins = planMinutes
@@ -63,6 +69,15 @@ export function PaperInsightsPanel({
         <div className="pc-pb-insight-status-title">{workflowLabel}</div>
         <p className="pc-pb-insight-status-hint">{workflowHint}</p>
       </div>
+
+      {blueprintMatchSlot}
+
+      {blueprintSnapshot ? (
+        <p className="pc-pb-insight-bp-note">
+          Targets from blueprint · {blueprintSnapshot.totalMarks} marks ·{' '}
+          {blueprintSnapshot.sections.length} sections
+        </p>
+      ) : null}
 
       <div className="pc-pb-stat-grid">
         <div className="pc-pb-stat">

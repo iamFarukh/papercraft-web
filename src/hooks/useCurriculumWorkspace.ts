@@ -76,12 +76,13 @@ export function useCurriculumWorkspace() {
         selection.classNumber,
         selection.subjectId,
         selection.chapterId,
+        isAdmin,
       )
       setLinkedQuestions(n)
     } catch {
       setLinkedQuestions(0)
     }
-  }, [selection])
+  }, [selection, isAdmin])
 
   useEffect(() => {
     void refreshLinkedCount()

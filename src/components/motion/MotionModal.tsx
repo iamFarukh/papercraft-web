@@ -1,4 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { createPortal } from 'react-dom'
 import type { ReactNode } from 'react'
 import { modalPop, overlayFade } from '@/lib/motion/variants'
 
@@ -21,7 +22,9 @@ export function MotionModal({
 }: Props) {
   const reduced = useReducedMotion()
 
-  return (
+  if (typeof document === 'undefined') return null
+
+  return createPortal(
     <AnimatePresence>
       {open ? (
         <motion.div
@@ -36,12 +39,12 @@ export function MotionModal({
         >
           <button
             type="button"
-            className="pc-repo-drawer-backdrop"
+            className="pc-motion-modal-backdrop"
             aria-label="Cancel"
             onClick={onBackdropClick}
           />
           <motion.div
-            className={panelClassName}
+            className={`pc-motion-modal-panel ${panelClassName}`}
             variants={modalPop}
             initial={reduced ? false : 'hidden'}
             animate="visible"
@@ -52,6 +55,7 @@ export function MotionModal({
           </motion.div>
         </motion.div>
       ) : null}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   )
 }

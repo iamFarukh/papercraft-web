@@ -10,6 +10,7 @@ import {
   Layers,
   Pencil,
   Target,
+  Settings,
   Users,
 } from 'lucide-react'
 
@@ -40,7 +41,7 @@ export const ADMIN_NAV: NavGroup[] = [
       { key: 'repo', label: 'Question Repository', icon: Archive, badge: 'dynamic' },
       { key: 'bookmarks', label: 'Bookmarks', icon: Bookmark },
       { key: 'curriculum', label: 'Curriculum', icon: Layers },
-      { key: 'blueprint', label: 'Blueprints', icon: Target, disabled: true },
+      { key: 'blueprint', label: 'Blueprints', icon: Target },
     ],
   },
   {
@@ -55,6 +56,7 @@ export const ADMIN_NAV: NavGroup[] = [
     section: 'Organization',
     items: [
       { key: 'teachers', label: 'Teachers', icon: Users },
+      { key: 'settings', label: 'Workspace settings', icon: Settings },
       { key: 'analytics', label: 'Analytics', icon: BarChart3, disabled: true },
     ],
   },

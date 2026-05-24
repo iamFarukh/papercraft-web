@@ -298,7 +298,8 @@
   background: rgb(220 60 60 / 8%);
 }
 
-.pc-sidebar-settings:hover {
+.pc-sidebar-settings:hover,
+.pc-sidebar-settings.is-active {
   color: var(--pc-ink-2);
   background: var(--pc-surface-3);
 }
@@ -380,6 +381,8 @@
 }
 
 .pc-cmd {
+  font: inherit;
+  text-align: left;
   margin-left: auto;
   width: 320px;
   height: 32px;
@@ -447,6 +450,22 @@
   align-items: center;
   gap: 8px;
   padding-left: 4px;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+
+.pc-topbar-profile:hover {
+  background: var(--pc-bg);
+}
+
+.pc-topbar-profile-img {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--pc-line);
 }
 
 .pc-topbar-profile-meta {

@@ -74,6 +74,95 @@
   color: var(--pc-ink);
 }
 
+/* Post-login gate — phones / narrow viewports */
+.pc-mobile-gate {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 20px;
+  background: var(--pc-bg);
+  font-family: var(--pc-sans);
+  color: var(--pc-ink);
+}
+
+.pc-mobile-gate-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 28px 24px 26px;
+  border-radius: var(--pc-r-lg);
+  border: 1px solid var(--pc-line);
+  background: var(--pc-surface);
+  box-shadow: var(--pc-shadow-md);
+  text-align: center;
+}
+
+.pc-mobile-gate-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 14px;
+  border-radius: 12px;
+  background: var(--pc-primary-50);
+  color: var(--pc-primary);
+}
+
+.pc-mobile-gate-kicker {
+  margin: 0 0 6px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pc-ink-4);
+}
+
+.pc-mobile-gate-title {
+  margin: 0 0 12px;
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--pc-ink);
+}
+
+.pc-mobile-gate-lead {
+  margin: 0 0 12px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--pc-ink-3);
+  text-align: left;
+}
+
+.pc-mobile-gate-lead strong {
+  color: var(--pc-ink-2);
+  font-weight: 600;
+}
+
+.pc-mobile-gate-note {
+  margin: 0 0 22px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--pc-surface-2);
+  border: 1px solid var(--pc-line);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--pc-ink-3);
+  text-align: left;
+}
+
+.pc-mobile-gate-card .pc-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.pc-mobile-gate-foot {
+  margin: 14px 0 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--pc-ink-4);
+}
+
 @media (max-width: 900px) {
   .pc-login-page {
     grid-template-columns: 1fr;

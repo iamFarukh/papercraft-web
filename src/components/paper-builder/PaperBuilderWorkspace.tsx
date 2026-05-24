@@ -4,7 +4,12 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useToast } from '@/context/ToastContext'
 import { useQuestions } from '@/hooks/useQuestions'
+import { useSchoolBranding } from '@/hooks/useSchoolBranding'
 import { useTeacherScope } from '@/hooks/useTeacherScope'
+import {
+  defaultPaperInstanceLayer,
+  resolvePaper,
+} from '@/lib/paper-instance'
 import {
   buildCompositionFingerprint,
   compositionToPaperSections,
@@ -17,7 +22,6 @@ import {
 } from '@/lib/repository-workspace'
 import {
   allPaperQuestionIds,
-  computePaperStats,
   emptyComposition,
   moveQuestionInSection,
   sectionsForSetup,
@@ -30,6 +34,7 @@ import {
   type ReplaceTarget,
 } from '@/lib/paper-builder'
 import { questionMatchesPaperMedium } from '@/lib/paper-medium'
+import { getReplacementCandidates } from '@/lib/paper-generation-engine'
 import {
   canReopenPaper,
   canSubmitPaper,
@@ -43,16 +48,21 @@ import {
   submitPaperForApproval,
   updatePaper,
 } from '@/services/firebase/papers'
+import { recordBlueprintUsage } from '@/services/firebase/blueprints'
 import { notifyPaperReopened, notifyPaperSubmitted } from '@/services/firebase/workflow-notifications'
 import type { PaperStatus } from '@/types/paper'
+import type { PaperInstanceLayer } from '@/types/paper-instance'
 import type { QuestionRecord } from '@/types/question'
 import { BuilderRepoBrowser, type BuilderQuickFilters } from './BuilderRepoBrowser'
 import {
   PaperBuilderToolbar,
   type SaveUiStatus,
 } from './PaperBuilderToolbar'
-import { PaperCompositionCanvas } from './PaperCompositionCanvas'
+import { PaperBuilderPaginatedCanvas } from './PaperBuilderPaginatedCanvas'
 import { PaperInsightsPanel } from './PaperInsightsPanel'
+import { BlueprintMatchPanel } from './BlueprintMatchPanel'
+import { PaperGenerationWorkspace } from './PaperGenerationWorkspace'
+import { PaperExportLink } from '@/components/print/PaperExportLink'
 import { PaperApprovedBanner } from './PaperApprovedBanner'
 import { PaperSubmittedBanner } from './PaperSubmittedBanner'
 
@@ -90,6 +100,7 @@ type Props = {
   setup: PaperSetupState
   paperId?: string | null
   initialComposition?: PaperComposition
+  initialInstanceLayer?: PaperInstanceLayer
   initialFingerprint?: string
   missingQuestionIds?: string[]
   initialPaperStatus?: PaperStatus
@@ -99,9 +110,10 @@ type Props = {
 }
 
 export function PaperBuilderWorkspace({
-  setup,
+  setup: setupProp,
   paperId: initialPaperId = null,
   initialComposition,
+  initialInstanceLayer,
   initialFingerprint = '',
   missingQuestionIds = [],
   initialPaperStatus = 'draft',
@@ -111,18 +123,36 @@ export function PaperBuilderWorkspace({
 }: Props) {
   const navigate = useNavigate()
   const { user, isAdmin, profile } = useAuth()
+  const school = useSchoolBranding()
   const { filterQuestions: scopeByAssignment, isScoped } = useTeacherScope()
   const { push: toast } = useToast()
   const workspaceRef = useRef<HTMLDivElement>(null)
-  const sections = useMemo(() => sectionsForSetup(setup), [setup])
-  const meta = useMemo(() => setupToPaperMeta(setup), [setup])
-  const planMinutes = useMemo(() => parseDurationMinutes(setup.durationLabel), [setup.durationLabel])
+  const [setup, setSetup] = useState(setupProp)
+  const [instanceLayer, setInstanceLayer] = useState<PaperInstanceLayer>(
+    () => initialInstanceLayer ?? defaultPaperInstanceLayer(),
+  )
+
+  useEffect(() => {
+    setSetup(setupProp)
+  }, [setupProp])
+
+  useEffect(() => {
+    if (initialInstanceLayer) setInstanceLayer(initialInstanceLayer)
+  }, [initialInstanceLayer])
 
   const [paperId, setPaperId] = useState<string | null>(initialPaperId)
   const [query, setQuery] = useState('')
   const [composition, setComposition] = useState<PaperComposition>(
     () => initialComposition ?? emptyComposition(),
   )
+
+  const sections = useMemo(() => sectionsForSetup(setup), [setup])
+  const resolved = useMemo(
+    () => resolvePaper(setup, sections, composition, instanceLayer, school),
+    [setup, sections, composition, instanceLayer, school],
+  )
+  const meta = resolved.meta
+  const planMinutes = useMemo(() => parseDurationMinutes(setup.durationLabel), [setup.durationLabel])
   const [activeSection, setActiveSection] = useState<PaperSectionId>('A')
   const [replaceTarget, setReplaceTarget] = useState<ReplaceTarget | null>(null)
   const [lastInsertedId, setLastInsertedId] = useState<string | null>(null)
@@ -139,6 +169,8 @@ export function PaperBuilderWorkspace({
   const [approvedAtMs, setApprovedAtMs] = useState<number | null>(initialApprovedAtMs)
   const [submitting, setSubmitting] = useState(false)
   const [reopening, setReopening] = useState(false)
+  const [generationOpen, setGenerationOpen] = useState(false)
+  const blueprintRecordedRef = useRef(false)
 
   const readOnly = isReadOnlyPaperBuilder(paperStatus, isAdmin)
   const [quickFilters, setQuickFilters] = useState<BuilderQuickFilters>(() => ({
@@ -150,8 +182,8 @@ export function PaperBuilderWorkspace({
   }))
 
   const currentFingerprint = useMemo(
-    () => buildCompositionFingerprint(setup, composition, sections),
-    [setup, composition, sections],
+    () => buildCompositionFingerprint(setup, composition, sections, instanceLayer),
+    [setup, composition, sections, instanceLayer],
   )
 
   const repoFilters = useMemo(
@@ -207,10 +239,37 @@ export function PaperBuilderWorkspace({
     () => allPaperQuestionIds(composition, sections),
     [composition, sections],
   )
-  const stats = useMemo(
-    () => computePaperStats(composition, sections),
-    [composition, sections],
-  )
+
+  const sectionBlueprintSnap = useMemo(() => {
+    if (!setup.blueprintSnapshot || !replaceTarget) return undefined
+    return setup.blueprintSnapshot.sections.find(
+      (s) => s.paperSectionId === replaceTarget.sectionId,
+    )
+  }, [setup.blueprintSnapshot, replaceTarget])
+
+  const replacementSuggestions = useMemo(() => {
+    if (!replaceTarget) return []
+    return getReplacementCandidates(
+      replaceTarget.source,
+      scopedPublished,
+      usedIds,
+      setup.classLabel,
+      setup.subject,
+      setup.medium,
+      sectionBlueprintSnap,
+      3,
+    )
+  }, [
+    replaceTarget,
+    scopedPublished,
+    usedIds,
+    setup.classLabel,
+    setup.subject,
+    setup.medium,
+    sectionBlueprintSnap,
+  ])
+
+  const stats = resolved.stats
 
   const saveHint = useMemo(() => {
     if (saveStatus === 'saving') return 'Saving…'
@@ -250,7 +309,7 @@ export function PaperBuilderWorkspace({
     setSaveStatus('saving')
     try {
       const sectionSnapshots = compositionToPaperSections(composition, sections)
-      const input = setupToSaveInput(setup, sectionSnapshots)
+      const input = setupToSaveInput(setup, sectionSnapshots, instanceLayer)
       storeSetup(setup)
 
       if (paperId) {
@@ -258,7 +317,22 @@ export function PaperBuilderWorkspace({
       } else {
         const id = await createPaper(input, user.uid)
         setPaperId(id)
-        navigate(`/app/builder/${id}`, { replace: true })
+        if (setup.blueprintId && !blueprintRecordedRef.current) {
+          blueprintRecordedRef.current = true
+          void recordBlueprintUsage(setup.blueprintId, setup.classLabel).catch(
+            () => undefined,
+          )
+        }
+        navigate(`/app/builder/${id}`, {
+          replace: true,
+          state: {
+            setup,
+            composition,
+            instanceLayer,
+            fingerprint: currentFingerprint,
+            paperStatus: 'draft' as const,
+          },
+        })
       }
 
       setSavedFingerprint(currentFingerprint)
@@ -277,6 +351,7 @@ export function PaperBuilderWorkspace({
     setup,
     paperId,
     currentFingerprint,
+    instanceLayer,
     navigate,
     toast,
   ])
@@ -301,7 +376,12 @@ export function PaperBuilderWorkspace({
       return
     }
 
-    const validation = validatePaperForSubmission(setup, composition, sections)
+    const validation = validatePaperForSubmission(
+      setup,
+      composition,
+      sections,
+      instanceLayer,
+    )
     if (!validation.ok) {
       toast(validation.message, 'info')
       return
@@ -310,7 +390,7 @@ export function PaperBuilderWorkspace({
     setSubmitting(true)
     try {
       const sectionSnapshots = compositionToPaperSections(composition, sections)
-      const input = setupToSaveInput(setup, sectionSnapshots)
+      const input = setupToSaveInput(setup, sectionSnapshots, instanceLayer)
       await submitPaperForApproval(paperId, input, user.uid)
       void notifyPaperSubmitted({
         paperId,
@@ -352,7 +432,7 @@ export function PaperBuilderWorkspace({
     setReopening(true)
     try {
       const sectionSnapshots = compositionToPaperSections(composition, sections)
-      const input = setupToSaveInput(setup, sectionSnapshots)
+      const input = setupToSaveInput(setup, sectionSnapshots, instanceLayer)
       await reopenPaperAsDraft(paperId, input)
       if (paperCreatedBy) {
         void notifyPaperReopened({
@@ -462,6 +542,7 @@ export function PaperBuilderWorkspace({
     >
       <PaperBuilderToolbar
         title={toolbarTitleFromSetup(setup)}
+        blueprintLabel={setup.blueprintSnapshot?.name}
         saveStatus={saveStatus}
         saveHint={saveHintDisplay}
         paperStatus={paperStatus}
@@ -483,20 +564,32 @@ export function PaperBuilderWorkspace({
           navigate(`/app/papers/${paperId}/preview?from=builder`)
         }}
         onSubmit={() => void submitForApproval()}
-        onExport={() => {
+        exportSlot={
+          <PaperExportLink
+            paperId={paperId ?? ''}
+            canExport={paperStatus === 'approved' && Boolean(paperId)}
+            from="builder"
+          />
+        }
+        canOpenEditor={!!paperId}
+        onOpenEditor={() => {
           if (!paperId) {
-            toast('Save the paper before opening export.', 'info')
+            toast('Save the paper before opening the examination editor.', 'info')
             return
           }
-          if (paperStatus !== 'approved') return
-          navigate(`/app/papers/${paperId}/preview?from=builder&export=1`)
+          navigate(`/app/builder/${paperId}/editor`, {
+            state: {
+              setup,
+              composition,
+              instanceLayer,
+              fingerprint: currentFingerprint,
+              paperStatus,
+            },
+          })
         }}
-        onSettings={() =>
-          toast(
-            'Examination details are set when you create a paper. Start a new paper to change class, subject, or marks.',
-            'info',
-          )
-        }
+        onGenerateDraft={() => setGenerationOpen(true)}
+        canGenerateDraft={Boolean(setup.blueprintSnapshot)}
+        generateDraftHint="Start from a blueprint in paper setup to enable guided generation."
       />
 
       {showSubmittedBanner ? (
@@ -577,17 +670,24 @@ export function PaperBuilderWorkspace({
           usedIds={usedIds}
           loading={loading}
           activeSection={activeSection}
+          sections={sections}
+          composition={composition}
+          onSelectSection={setActiveSection}
           replaceTarget={replaceTarget}
           onCancelReplace={() => setReplaceTarget(null)}
           onAdd={addQuestion}
           onReplaceWith={replaceQuestionWith}
+          replacementSuggestions={replacementSuggestions}
+          onApplySuggestion={replaceQuestionWith}
           contextLabel={`${setup.classLabel} · ${setup.subject}`}
           compositionForNumbering={composition}
           sectionsForNumbering={sections}
+          paperMedium={setup.medium}
         />
 
-        <PaperCompositionCanvas
+        <PaperBuilderPaginatedCanvas
           meta={meta}
+          resolved={resolved}
           sections={sections}
           generalInstructions={setup.generalInstructions}
           composition={composition}
@@ -609,8 +709,39 @@ export function PaperBuilderWorkspace({
           planMinutes={planMinutes}
           sections={sections}
           paperStatus={paperStatus}
+          blueprintSnapshot={setup.blueprintSnapshot ?? undefined}
+          blueprintMatchSlot={
+            setup.blueprintSnapshot ? (
+              <BlueprintMatchPanel
+                snapshot={setup.blueprintSnapshot}
+                blueprintName={setup.blueprintSnapshot.name}
+                composition={composition}
+                sections={sections}
+                stats={stats}
+              />
+            ) : undefined
+          }
         />
       </div>
+
+      {setup.blueprintSnapshot ? (
+        <PaperGenerationWorkspace
+          open={generationOpen}
+          onClose={() => setGenerationOpen(false)}
+          snapshot={setup.blueprintSnapshot}
+          sections={sections}
+          composition={composition}
+          pool={scopedPublished}
+          classLabel={setup.classLabel}
+          subject={setup.subject}
+          medium={setup.medium}
+          onApply={(next) => {
+            setComposition(next)
+            setSaveStatus('unsaved')
+            toast('Draft applied — review sections and save when ready.', 'success')
+          }}
+        />
+      ) : null}
     </div>
   )
 }

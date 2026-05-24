@@ -150,6 +150,7 @@ const ADMIN_NAV = [
   { section: "Papers", items: [
     { key: "papers", label: "Paper Library", icon: "file" },
     { key: "builder", label: "Paper Builder", icon: "edit" },
+    { key: "templates", label: "Templates", icon: "palette" },
     { key: "approval", label: "Approvals", icon: "check", badge: "7" },
   ]},
   { section: "Organization", items: [

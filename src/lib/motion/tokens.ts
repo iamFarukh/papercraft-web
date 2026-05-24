@@ -18,4 +18,9 @@ export const PC_TRANSITION = {
   page: { duration: PC_DURATION.normal, ease: PC_EASE.out },
   hover: { duration: PC_DURATION.fast, ease: PC_EASE.out },
   status: { duration: PC_DURATION.instant, ease: PC_EASE.out },
+  /** Grid ↔ list card morph — smooth deceleration, no bounce. */
+  layoutMorph: {
+    duration: 0.38,
+    ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+  },
 } as const

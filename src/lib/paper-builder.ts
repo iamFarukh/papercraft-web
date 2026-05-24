@@ -5,6 +5,8 @@ import type { QuestionRecord } from '@/types/question'
 
 export type { PaperMedium }
 
+import type { PaperBlueprintSnapshot } from '@/types/paper'
+
 export const PAPER_SETUP_STORAGE_KEY = 'pc-paper-builder-setup'
 
 export const EXAM_TYPE_OPTIONS = [
@@ -31,6 +33,10 @@ export type PaperSetupState = {
   sectionCount: 1 | 2 | 3
   structureNotes: string
   generalInstructions: string
+  /** Blueprint linkage — snapshot is immutable after paper creation. */
+  blueprintId?: string | null
+  blueprintVersion?: number | null
+  blueprintSnapshot?: PaperBlueprintSnapshot | null
 }
 
 export type RepositoryContextPreview = {
@@ -52,10 +58,17 @@ export type PaperSectionDef = {
   plannedCount: number
 }
 
+export type SchoolBranding = {
+  schoolName: string
+  schoolTagline: string
+  schoolLogoURL?: string | null
+}
+
 export type PaperMeta = {
   title: string
   schoolName: string
   schoolTagline: string
+  schoolLogoURL?: string | null
   classLabel: string
   subject: string
   medium: PaperMedium
@@ -86,12 +99,16 @@ export const DEFAULT_SETUP: PaperSetupState = {
 
 export const DEFAULT_PAPER_META: PaperMeta = setupToPaperMeta(DEFAULT_SETUP)
 
-export function setupToPaperMeta(setup: PaperSetupState): PaperMeta {
+export function setupToPaperMeta(
+  setup: PaperSetupState,
+  school: SchoolBranding = DEFAULT_SCHOOL,
+): PaperMeta {
   const shortClass = setup.classLabel.replace(/^Class\s+/i, '').trim()
   return {
     title: `${setup.examinationName} · ${setup.academicSession}`,
-    schoolName: DEFAULT_SCHOOL.schoolName,
-    schoolTagline: DEFAULT_SCHOOL.schoolTagline,
+    schoolName: school.schoolName,
+    schoolTagline: school.schoolTagline,
+    schoolLogoURL: school.schoolLogoURL ?? null,
     classLabel: shortClass || setup.classLabel,
     subject: setup.subject,
     medium: setup.medium,
@@ -103,6 +120,21 @@ export function setupToPaperMeta(setup: PaperSetupState): PaperMeta {
 }
 
 export function sectionsForSetup(setup: PaperSetupState): PaperSectionDef[] {
+  if (setup.blueprintSnapshot?.sections?.length) {
+    return setup.blueprintSnapshot.sections.map((section) => ({
+      id: section.paperSectionId as PaperSectionId,
+      letter: section.paperSectionId as PaperSectionId,
+      name: `${section.title} · ${section.marksPerQuestion} mark${section.marksPerQuestion === 1 ? '' : 's'} each`,
+      instructions:
+        section.instructions ??
+        (section.internalChoice?.enabled
+          ? `Internal choice — attempt ${section.internalChoice.attemptCount ?? section.questionCount} of ${section.questionCount}.`
+          : 'All questions in this section are compulsory.'),
+      emptyHint: 'Add questions matching the blueprint section types',
+      marksEach: section.marksPerQuestion,
+      plannedCount: section.questionCount,
+    }))
+  }
   return DEFAULT_SECTIONS.slice(0, setup.sectionCount)
 }
 

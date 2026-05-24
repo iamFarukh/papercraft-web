@@ -1,20 +1,20 @@
 import { Clock, Eye, Loader2, RotateCcw } from 'lucide-react'
-import { PaperPdfExportLink } from '@/components/print/PaperPdfExportLink'
+import { PaperExportLink } from '@/components/print/PaperExportLink'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { EmptyStatePanel } from '@/components/ui/EmptyStatePanel'
 import { PaperOfficialPreview } from '@/components/paper-builder/PaperOfficialPreview'
 import { Check as CheckIcon } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
+import { useSchoolBranding } from '@/hooks/useSchoolBranding'
 import { useToast } from '@/context/ToastContext'
 import {
-  computePaperStats,
   sectionsForSetup,
-  setupToPaperMeta,
   toolbarTitleFromSetup,
   type PaperComposition,
   type PaperSetupState,
 } from '@/lib/paper-builder'
+import { resolvePaper } from '@/lib/paper-instance'
 import {
   DEFAULT_APPROVAL_FILTERS,
   type ApprovalQueueFilters,
@@ -23,6 +23,7 @@ import { teacherAvatarTone, teacherInitials } from '@/lib/approval-ui'
 import {
   compositionToPaperSections,
   hydrateCompositionFromPaper,
+  paperToInstanceLayer,
   paperToSetup,
   setupToSaveInput,
 } from '@/lib/paper-persistence'
@@ -59,6 +60,7 @@ export function ApprovalWorkspace() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { push: toast } = useToast()
+  const school = useSchoolBranding()
 
   const [queueLoading, setQueueLoading] = useState(true)
   const [queueError, setQueueError] = useState<string | null>(null)
@@ -148,14 +150,13 @@ export function ApprovalWorkspace() {
     () => (setup ? sectionsForSetup(setup) : []),
     [setup],
   )
-  const meta = useMemo(() => (setup ? setupToPaperMeta(setup) : null), [setup])
-  const stats = useMemo(
-    () =>
-      composition && sections.length > 0
-        ? computePaperStats(composition, sections)
-        : null,
-    [composition, sections],
-  )
+  const resolved = useMemo(() => {
+    if (!setup || !composition || sections.length === 0) return null
+    const layer = paper ? paperToInstanceLayer(paper) : {}
+    return resolvePaper(setup, sections, composition, layer, school)
+  }, [setup, composition, sections, paper, school])
+  const meta = resolved?.meta ?? null
+  const stats = resolved?.stats ?? null
   const durationMinutes = useMemo(
     () => (setup ? parseDurationMinutes(setup.durationLabel) : 180),
     [setup],
@@ -163,8 +164,13 @@ export function ApprovalWorkspace() {
 
   const persistPayload = useCallback(() => {
     if (!setup || !composition) return null
-    return setupToSaveInput(setup, compositionToPaperSections(composition, sections))
-  }, [setup, composition, sections])
+    const layer = paper ? paperToInstanceLayer(paper) : undefined
+    return setupToSaveInput(
+      setup,
+      compositionToPaperSections(composition, sections),
+      layer,
+    )
+  }, [setup, composition, sections, paper])
 
   const handleApprove = useCallback(async () => {
     if (!activePaperId || !user || !persistPayload()) return
@@ -292,7 +298,7 @@ export function ApprovalWorkspace() {
               </Link>
             ) : null}
             {activePaperId ? (
-              <PaperPdfExportLink
+              <PaperExportLink
                 paperId={activePaperId}
                 canExport={paperStatus === 'approved'}
                 from="approval"
@@ -372,6 +378,7 @@ export function ApprovalWorkspace() {
                   sections={sections}
                   generalInstructions={setup.generalInstructions}
                   composition={composition}
+                  resolved={resolved ?? undefined}
                 />
                 {paperStatus === 'submitted' ? (
                   <div className="pc-approval-watermark" aria-hidden>

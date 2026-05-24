@@ -6,7 +6,8 @@ import {
   useState,
   type MouseEvent,
 } from 'react'
-import { AnimatePresence } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
+import { PC_DURATION, PC_EASE } from '@/lib/motion/tokens'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useToast } from '@/context/ToastContext'
@@ -64,6 +65,8 @@ export function RepositoryWorkspace() {
   const { push: toast } = useToast()
   const filtersRef = useRef<HTMLDivElement>(null)
   const [view, setView] = useState<'card' | 'list'>(loadSavedView)
+  const [isSwitchingView, setIsSwitchingView] = useState(false)
+  const switchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const [showTrash, setShowTrash] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -148,11 +151,28 @@ export function RepositoryWorkspace() {
   )
 
   const handleViewChange = useCallback((next: 'card' | 'list') => {
+    if (next === view) return
+    if (switchTimeoutRef.current) {
+      clearTimeout(switchTimeoutRef.current)
+    }
+    setIsSwitchingView(true)
     setView(next)
     try {
       localStorage.setItem(REPO_VIEW_KEY, next)
     } catch {
       /* private mode */
+    }
+    switchTimeoutRef.current = setTimeout(() => {
+      setIsSwitchingView(false)
+      switchTimeoutRef.current = null
+    }, 380)
+  }, [view])
+
+  useEffect(() => {
+    return () => {
+      if (switchTimeoutRef.current) {
+        clearTimeout(switchTimeoutRef.current)
+      }
     }
   }, [])
 
@@ -203,15 +223,22 @@ export function RepositoryWorkspace() {
     })
   }, [filters])
 
+  const lastSelectedIdRef = useRef<string | null>(null)
+
   useEffect(() => {
     if (filtered.length === 0) {
       setActiveId(null)
+      setSelectedIds(new Set())
       return
     }
-    if (!activeId || !filtered.some((q) => q.id === activeId)) {
-      const first = filtered[0]!.id
-      setActiveId(first)
-      setSelectedIds(new Set([first]))
+    setSelectedIds((prev) => {
+      const visible = new Set(filtered.map((q) => q.id))
+      const next = new Set([...prev].filter((id) => visible.has(id)))
+      return next.size === prev.size ? prev : next
+    })
+    if (activeId && !filtered.some((q) => q.id === activeId)) {
+      setActiveId(null)
+      setDrawerOpen(false)
     }
   }, [filtered, activeId])
 
@@ -245,23 +272,49 @@ export function RepositoryWorkspace() {
     )
   }, [allLoaded, initFiltersFromData, isAdmin])
 
-  const handleSelect = useCallback((id: string, e: MouseEvent) => {
-    const multi = e.metaKey || e.ctrlKey || e.shiftKey
+  const handleToggleSelect = useCallback(
+    (id: string, e: MouseEvent) => {
+      e.stopPropagation()
+      setActionError(null)
 
+      if (e.shiftKey && lastSelectedIdRef.current) {
+        const ids = filtered.map((q) => q.id)
+        const anchor = ids.indexOf(lastSelectedIdRef.current)
+        const target = ids.indexOf(id)
+        if (anchor >= 0 && target >= 0) {
+          const [start, end] =
+            anchor < target ? [anchor, target] : [target, anchor]
+          setSelectedIds((prev) => {
+            const next = new Set(prev)
+            for (let i = start; i <= end; i++) next.add(ids[i]!)
+            return next
+          })
+          lastSelectedIdRef.current = id
+          return
+        }
+      }
+
+      setSelectedIds((prev) => {
+        const next = new Set(prev)
+        if (e.metaKey || e.ctrlKey) {
+          if (next.has(id)) next.delete(id)
+          else next.add(id)
+        } else if (next.has(id)) {
+          next.delete(id)
+        } else {
+          next.add(id)
+        }
+        return next
+      })
+      lastSelectedIdRef.current = id
+    },
+    [filtered],
+  )
+
+  const handleOpenQuestion = useCallback((id: string) => {
     setActiveId(id)
     setDrawerOpen(true)
     setActionError(null)
-    setSelectedIds((prev) => {
-      const next = new Set(prev)
-      if (multi) {
-        if (next.has(id)) next.delete(id)
-        else next.add(id)
-      } else {
-        next.clear()
-        next.add(id)
-      }
-      return next
-    })
   }, [])
 
   const handleCloseDrawer = useCallback(() => {
@@ -460,19 +513,22 @@ export function RepositoryWorkspace() {
         </p>
       )}
 
-      {showBulk && !loading && isAdmin && (
-        <BulkActionBar
-          count={selectedIds.size}
-          disabled={bulkBusy}
-          trashMode={showTrash}
-          onClear={clearSelection}
-          onPublish={showTrash ? undefined : () => handleBulkAction('publish')}
-          onArchive={showTrash ? undefined : () => handleBulkAction('archive')}
-          onLock={showTrash ? undefined : () => handleBulkAction('lock')}
-          onDelete={showTrash ? undefined : handleRequestDelete}
-          onRestore={showTrash ? () => void handleBulkRestore() : undefined}
-        />
-      )}
+      <AnimatePresence initial={false}>
+        {showBulk && !loading && isAdmin ? (
+          <BulkActionBar
+            key="bulk-bar"
+            count={selectedIds.size}
+            disabled={bulkBusy}
+            trashMode={showTrash}
+            onClear={clearSelection}
+            onPublish={showTrash ? undefined : () => handleBulkAction('publish')}
+            onArchive={showTrash ? undefined : () => handleBulkAction('archive')}
+            onLock={showTrash ? undefined : () => handleBulkAction('lock')}
+            onDelete={showTrash ? undefined : handleRequestDelete}
+            onRestore={showTrash ? () => void handleBulkRestore() : undefined}
+          />
+        ) : null}
+      </AnimatePresence>
 
       {actionError && !drawerOpen && (
         <div className="pc-repo-inline-error pc-repo-inline-error--bar" role="alert">
@@ -480,7 +536,11 @@ export function RepositoryWorkspace() {
         </div>
       )}
 
-      <div className="pc-repo-panels">
+      <motion.div
+        className="pc-repo-panels"
+        layout
+        transition={{ layout: { duration: PC_DURATION.normal, ease: PC_EASE.out } }}
+      >
         {loading && !allLoaded.length ? (
           <FilterPanelSkeleton />
         ) : (
@@ -504,6 +564,7 @@ export function RepositoryWorkspace() {
         <QuestionStream
           questions={filtered}
           view={view}
+          isSwitchingView={isSwitchingView}
           loading={loading && !allLoaded.length}
           loadingMore={loadingMore}
           error={error}
@@ -519,7 +580,8 @@ export function RepositoryWorkspace() {
           hasMore={hasMore}
           isAdmin={isAdmin}
           seeding={seeding}
-          onSelect={handleSelect}
+          onToggleSelect={isAdmin ? handleToggleSelect : undefined}
+          onOpenQuestion={handleOpenQuestion}
           onToggleExpand={handleToggleExpand}
           onClearSearch={() => setQuery('')}
           onResetFilters={handleResetFilters}
@@ -529,7 +591,7 @@ export function RepositoryWorkspace() {
           onCreate={isAdmin ? handleNewQuestion : undefined}
         />
 
-      </div>
+      </motion.div>
 
       <AnimatePresence>
         {drawerOpen && selectedQuestion ? (
