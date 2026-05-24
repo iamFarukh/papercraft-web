@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" role="img" aria-label="PaperCraft">
+  <defs>
+    <linearGradient id="pc-mark-bg" x1="24" y1="12" x2="156" y2="168" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2a47cc" />
+      <stop offset="55%" stop-color="#355cff" />
+      <stop offset="100%" stop-color="#6789ff" />
+    </linearGradient>
+  </defs>
+  <rect width="180" height="180" rx="40" fill="url(#pc-mark-bg)" />
+  <rect x="34" y="34" width="112" height="56" rx="6" fill="#fff" fill-opacity="0.92" />
+  <rect x="34" y="124" width="112" height="26" rx="6" fill="#fff" fill-opacity="0.55" />
+</svg>

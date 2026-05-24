@@ -47,7 +47,7 @@ export function Sidebar({
     }
   }, [isAdmin])
   const navigate = useNavigate()
-  const { formattedCount } = useQuestionCount()
+  const { formattedCount, loading: questionCountLoading } = useQuestionCount()
   const { folders } = useBookmarks()
   const bookmarkedQuestionTotal = folders.reduce(
     (sum, f) => sum + Math.max(0, f.questionCount),
@@ -162,8 +162,18 @@ export function Sidebar({
                         (item.key === 'approval' && approvalPending > 0) ||
                         (item.key === 'bookmarks' && bookmarkedQuestionTotal > 0)) && (
                         <span
-                          className="pc-nav-item-badge"
+                          className={
+                            'pc-nav-item-badge' +
+                            (item.badge === 'dynamic' && questionCountLoading
+                              ? ' is-loading'
+                              : '')
+                          }
                           style={{ position: 'relative', zIndex: 2 }}
+                          aria-label={
+                            item.badge === 'dynamic'
+                              ? `Question count ${formattedCount}`
+                              : undefined
+                          }
                         >
                           {item.key === 'approval'
                             ? String(approvalPending)
