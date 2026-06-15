@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from 'react'
 
-export type ToastTone = 'success' | 'info' | 'neutral'
+export type ToastTone = 'success' | 'info' | 'neutral' | 'error'
 
 export type ToastItem = {
   id: string
@@ -59,7 +59,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div
             key={t.id}
             className={'pc-toast is-' + t.tone}
-            role="status"
+            role={t.tone === 'error' ? 'alert' : 'status'}
           >
             <span className="pc-toast-msg">{t.message}</span>
             <button

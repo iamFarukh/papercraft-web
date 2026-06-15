@@ -1,6 +1,6 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { statusMorph } from '@/lib/motion/variants'
-import type { SaveUiStatus } from '@/components/paper-builder/PaperBuilderToolbar'
+import type { SaveUiStatus } from '@/lib/save-confidence'
 
 type Props = {
   saveStatus: SaveUiStatus

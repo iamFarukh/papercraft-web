@@ -1,6 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
+import { useConnectivityState } from '@/context/ConnectivityContext'
 import { useSchoolBranding } from '@/hooks/useSchoolBranding'
+import { useLocalDraftAutosave } from '@/hooks/useLocalDraftAutosave'
+import { useEditorTabLock } from '@/hooks/useEditorTabLock'
 import { useToast } from '@/context/ToastContext'
 import {
   defaultPaperInstanceLayer,
@@ -17,19 +20,18 @@ import {
   type PaperComposition,
   type PaperSetupState,
 } from '@/lib/paper-builder'
+import { isBrowserOnline } from '@/lib/connectivity'
 import { isReadOnlyPaperBuilder } from '@/lib/paper-submission'
+import { saveConfidenceLabel, type ConfidenceSaveStatus } from '@/lib/save-confidence'
 import { parsePaperError, updatePaper } from '@/services/firebase/papers'
 import type { PaperInstanceLayer } from '@/types/paper-instance'
 import type { PaperStatus } from '@/types/paper'
 
-export type EditorSaveStatus = 'saved' | 'saving' | 'unsaved' | 'error'
+export type EditorSaveStatus = ConfidenceSaveStatus
 
-function formatSavedAt(savedAtMs: number | null): string {
-  if (!savedAtMs) return 'Not saved yet'
-  const sec = Math.max(0, Math.floor((Date.now() - savedAtMs) / 1000))
-  if (sec < 8) return 'Saved · just now'
-  if (sec < 60) return `Saved · ${sec}s ago`
-  return `Saved · ${Math.floor(sec / 60)}m ago`
+type EditorDraftPayload = {
+  setup: PaperSetupState
+  instanceLayer: PaperInstanceLayer
 }
 
 type Initial = {
@@ -51,7 +53,9 @@ export function useExaminationEditorSession({
 }: Initial) {
   const { user, isAdmin } = useAuth()
   const { push: toast } = useToast()
+  const { isOnline, justReconnected, clearReconnected } = useConnectivityState()
   const school = useSchoolBranding()
+  const persistRef = useRef<() => Promise<boolean>>(async () => false)
 
   const [setup, setSetup] = useState(initialSetup)
   const [composition] = useState(initialComposition)
@@ -66,7 +70,6 @@ export function useExaminationEditorSession({
   const [saveStatus, setSaveStatus] = useState<EditorSaveStatus>(
     initialSavedFp ? 'saved' : 'unsaved',
   )
-
   const sections = useMemo(() => sectionsForSetup(setup), [setup])
   const resolved = useMemo(
     () => resolvePaper(setup, sections, composition, instanceLayer, school),
@@ -80,12 +83,31 @@ export function useExaminationEditorSession({
 
   const isDirty = currentFingerprint !== savedFingerprint
   const readOnly = isReadOnlyPaperBuilder(paperStatus, isAdmin)
-  const saveHint = formatSavedAt(savedAtMs)
+
+  const draftAutosave = useLocalDraftAutosave<EditorDraftPayload>({
+    scope: 'examination-editor',
+    resourceId: paperId,
+    enabled: !readOnly,
+    fingerprint: currentFingerprint,
+    serverFingerprint: savedFingerprint,
+    payload: { setup, instanceLayer },
+  })
+
+  const { conflict: tabConflict } = useEditorTabLock({
+    kind: 'paper',
+    resourceId: paperId,
+    enabled: !readOnly,
+  })
+
+  const saveHint = useMemo(
+    () => saveConfidenceLabel(saveStatus, { savedAtMs, isDirty }),
+    [saveStatus, savedAtMs, isDirty],
+  )
 
   useEffect(() => {
     if (saveStatus === 'saving') return
     if (isDirty) setSaveStatus('unsaved')
-    else if (saveStatus !== 'error') setSaveStatus('saved')
+    else if (saveStatus !== 'error' && saveStatus !== 'offline') setSaveStatus('saved')
   }, [isDirty, savedFingerprint, saveStatus])
 
   useEffect(() => {
@@ -97,12 +119,26 @@ export function useExaminationEditorSession({
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
   }, [isDirty])
 
+  useEffect(() => {
+    if (!justReconnected) return
+    toast('Connection restored.', 'success')
+    clearReconnected()
+  }, [justReconnected, toast, clearReconnected])
+
   const persist = useCallback(async (): Promise<boolean> => {
     if (!user) {
       toast('Sign in to save', 'info')
       return false
     }
     if (readOnly) return false
+    if (!isBrowserOnline()) {
+      setSaveStatus('offline')
+      toast(
+        'You are offline. Formatting changes are saved on this device and will sync when you reconnect.',
+        'info',
+      )
+      return false
+    }
 
     setSaveStatus('saving')
     try {
@@ -113,14 +149,41 @@ export function useExaminationEditorSession({
       setSavedFingerprint(currentFingerprint)
       setSavedAtMs(Date.now())
       setSaveStatus('saved')
+      draftAutosave.clearOnSync()
       toast('Examination formatting saved', 'success')
       return true
     } catch (err) {
-      setSaveStatus('error')
-      toast(parsePaperError(err), 'info')
+      setSaveStatus(isBrowserOnline() ? 'error' : 'offline')
+      toast(
+        isBrowserOnline()
+          ? parsePaperError(err)
+          : 'You are offline. Your draft is safe on this device.',
+        'info',
+      )
       return false
     }
-  }, [user, readOnly, composition, sections, setup, instanceLayer, paperId, currentFingerprint, toast])
+  }, [
+    user,
+    readOnly,
+    composition,
+    sections,
+    setup,
+    instanceLayer,
+    paperId,
+    currentFingerprint,
+    toast,
+    draftAutosave,
+  ])
+
+  persistRef.current = persist
+
+  useEffect(() => {
+    if (!isOnline || readOnly) return
+    if ((saveStatus === 'offline' || saveStatus === 'error') && isDirty) {
+      setSaveStatus('retrying')
+      void persistRef.current()
+    }
+  }, [isOnline, readOnly, saveStatus, isDirty])
 
   const save = useCallback(async () => {
     await persist()
@@ -155,5 +218,19 @@ export function useExaminationEditorSession({
     persist,
     currentFingerprint,
     savedFingerprint,
+    tabConflict,
+    draftRecovery: {
+      showRecovery: draftAutosave.showRecovery,
+      recoveryLabel: draftAutosave.recoveryLabel,
+      applyRecovery: () => {
+        const recovered = draftAutosave.applyRecovery()
+        if (!recovered) return
+        setSetup(recovered.setup)
+        setInstanceLayer(recovered.instanceLayer)
+        setSaveStatus('unsaved')
+        toast('Recovered your local formatting draft.', 'success')
+      },
+      dismissRecovery: draftAutosave.dismissRecovery,
+    },
   }
 }

@@ -3,7 +3,7 @@ import { useCallback, useEffect, type ReactNode, type RefObject } from 'react'
 import type { PaperSetupState } from '@/lib/paper-builder'
 import { PaperExportMenu } from '@/components/print/PaperExportMenu'
 import type { ResolvedPaper } from '@/lib/paper-instance'
-import type { PaperExportFormat } from '@/lib/paper-export-formats'
+import type { PaperExportFormat, PaperExportKind } from '@/lib/paper-export-formats'
 
 type Props = {
   title: string
@@ -15,6 +15,7 @@ type Props = {
   canExport?: boolean
   documentRootRef?: RefObject<HTMLElement | null>
   autoExportFormat?: PaperExportFormat | null
+  autoExportKind?: PaperExportKind
 }
 
 export function PrintPreviewShell({
@@ -27,6 +28,7 @@ export function PrintPreviewShell({
   canExport = false,
   documentRootRef,
   autoExportFormat = null,
+  autoExportKind = 'paper',
 }: Props) {
   const handlePrint = useCallback(() => {
     window.print()
@@ -64,6 +66,7 @@ export function PrintPreviewShell({
               documentRootRef={documentRootRef}
               variant="chrome"
               autoStartFormat={autoExportFormat}
+              autoStartKind={autoExportKind}
             />
           ) : null}
           <button type="button" className="pc-btn is-sm pc-print-chrome-print" onClick={handlePrint}>

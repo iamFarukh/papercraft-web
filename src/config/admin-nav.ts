@@ -1,11 +1,9 @@
 import type { LucideIcon } from 'lucide-react'
 import {
   Archive,
-  BarChart3,
   Bookmark,
   Check,
   FileText,
-  History,
   Home,
   Layers,
   Pencil,
@@ -32,7 +30,6 @@ export const ADMIN_NAV: NavGroup[] = [
     section: null,
     items: [
       { key: 'home', label: 'Control Center', icon: Home },
-      { key: 'feed', label: 'Activity Feed', icon: History, badge: '12', disabled: true },
     ],
   },
   {
@@ -57,7 +54,6 @@ export const ADMIN_NAV: NavGroup[] = [
     items: [
       { key: 'teachers', label: 'Teachers', icon: Users },
       { key: 'settings', label: 'Workspace settings', icon: Settings },
-      { key: 'analytics', label: 'Analytics', icon: BarChart3, disabled: true },
     ],
   },
 ]

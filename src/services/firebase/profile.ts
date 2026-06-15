@@ -24,6 +24,48 @@ export type ProfileSavePayload = {
   photoURL?: string | null
 }
 
+/** Fields users may self-edit — excludes institutional/admin-only settings. */
+const SELF_EDITABLE_SETTINGS: (keyof ProfileSettings)[] = [
+  'phone',
+  'designation',
+  'bio',
+  'preferredLanguage',
+  'defaultMedium',
+  'preferredSubjects',
+  'preferredBlueprintPresets',
+  'defaultPaperStyle',
+  'questionAuthoringPreference',
+  'workspaceRoleVisibility',
+]
+
+function pickSelfEditableSettings(
+  settings: Partial<ProfileSettings>,
+): Partial<ProfileSettings> {
+  const safe: Partial<ProfileSettings> = {}
+  for (const key of SELF_EDITABLE_SETTINGS) {
+    if (key in settings) {
+      ;(safe as Record<string, unknown>)[key] = settings[key]
+    }
+  }
+  return safe
+}
+
+function isPermissionDenied(err: unknown): boolean {
+  const code =
+    err && typeof err === 'object' && 'code' in err
+      ? String((err as { code: string }).code)
+      : ''
+  return code === 'permission-denied'
+}
+
+export function parseProfileSaveError(err: unknown): string {
+  if (isPermissionDenied(err)) {
+    return 'You no longer have access to update this profile.'
+  }
+  if (err instanceof Error && err.message.trim()) return err.message.trim()
+  return 'Could not save profile changes.'
+}
+
 export async function updateProfileDocument(
   uid: string,
   payload: ProfileSavePayload,
@@ -42,7 +84,7 @@ export async function updateProfileDocument(
   }
 
   if (payload.settings) {
-    patch.settings = payload.settings
+    patch.settings = pickSelfEditableSettings(payload.settings)
   }
 
   await updateDoc(doc(db, 'users', uid), patch)

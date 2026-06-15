@@ -1,6 +1,8 @@
 import type { LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { LottiePlayer } from '@/components/motion/LottiePlayer'
+import { lottiePlacement, type LottieKey } from '@/lib/motion/lottie-assets'
 
 export type EmptyStateAction =
   | {
@@ -32,6 +34,11 @@ type Props = {
   variant?: 'default' | 'error'
   wide?: boolean
   className?: string
+  /**
+   * Optional Lottie placement. When its asset is supplied (and motion is
+   * allowed) it replaces the icon; otherwise the icon shows as the fallback.
+   */
+  lottie?: LottieKey
 }
 
 export function EmptyStatePanel({
@@ -44,7 +51,9 @@ export function EmptyStatePanel({
   variant = 'default',
   wide,
   className = '',
+  lottie,
 }: Props) {
+  const placement = lottie ? lottiePlacement(lottie) : null
   const panelClass = [
     'pc-empty-panel',
     variant === 'error' ? 'is-error' : '',
@@ -56,8 +65,18 @@ export function EmptyStatePanel({
 
   return (
     <div className={panelClass}>
-      <div className="pc-empty-panel__icon" aria-hidden>
-        <Icon size={26} strokeWidth={1.5} />
+      <div className="pc-empty-panel__icon" aria-hidden={!placement?.src}>
+        {placement?.src ? (
+          <LottiePlayer
+            src={placement.src}
+            loop={placement.loop}
+            ariaLabel={placement.label}
+            className="pc-empty-panel__lottie"
+            fallback={<Icon size={26} strokeWidth={1.5} />}
+          />
+        ) : (
+          <Icon size={26} strokeWidth={1.5} />
+        )}
       </div>
       <h2 className="pc-empty-panel__title">{title}</h2>
       <p className="pc-empty-panel__text">{description}</p>

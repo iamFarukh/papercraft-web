@@ -339,6 +339,17 @@ select.pc-profile-input {
   display: grid;
   place-items: center;
   box-shadow: var(--pc-shadow-xs);
+  transition: box-shadow var(--pc-motion-normal) var(--pc-ease-emphasized);
+}
+
+.pc-profile-photo-ring:hover {
+  box-shadow: var(--pc-shadow-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pc-profile-photo-ring {
+    transition: none;
+  }
 }
 
 .pc-profile-photo-img {

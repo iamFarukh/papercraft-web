@@ -9,6 +9,7 @@ import {
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { BookmarksEmptyPanel } from '@/components/bookmarks/BookmarksEmptyPanel'
 import { CreateFolderDialog } from '@/components/bookmarks/CreateFolderDialog'
+import { RichContent } from '@/components/ui/RichContent'
 import { useAuth } from '@/context/AuthContext'
 import { useBookmarks } from '@/context/BookmarkContext'
 import { useToast } from '@/context/ToastContext'
@@ -314,7 +315,7 @@ function FolderDetailView({
                 <span className="pc-bookmarks-row-meta">
                   {q.classLabel} · {q.subject} · {q.chapter}
                 </span>
-                <p className="pc-bookmarks-row-body pc-serif">{q.bodyText}</p>
+                <RichContent className="pc-bookmarks-row-body pc-serif" html={q.bodyText} />
               </div>
               <div className="pc-bookmarks-row-actions">
                 <Link

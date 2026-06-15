@@ -1,4 +1,4 @@
-import { ChevronDown, LogOut, Settings } from 'lucide-react'
+import { ChevronDown, ChevronRight, LogOut, Settings } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
@@ -16,6 +16,8 @@ type SidebarProps = {
   footName?: string
   footRole?: string
   footInitials?: string
+  collapsed?: boolean
+  onToggleCollapsed?: () => void
 }
 
 export function Sidebar({
@@ -24,6 +26,8 @@ export function Sidebar({
   footName = 'Aarav Kapoor',
   footRole = 'Vice Principal · Admin',
   footInitials = 'AK',
+  collapsed = false,
+  onToggleCollapsed,
 }: SidebarProps) {
   const { logout, user, profile, isAdmin } = useAuth()
   const [approvalPending, setApprovalPending] = useState(0)
@@ -79,25 +83,43 @@ export function Sidebar({
 
   return (
     <>
-    <aside className="pc-sidebar">
+    <aside className={'pc-sidebar' + (collapsed ? ' is-collapsed' : '')}>
       <div className="pc-brand">
         <div className="pc-brand-mark" aria-hidden />
-        <div>
-          <div className="pc-brand-name">
-            Paper<em>Craft</em>
+        {!collapsed ? (
+          <div>
+            <div className="pc-brand-name">
+              Paper<em>Craft</em>
+            </div>
+            <div className="pc-brand-sub">
+              {profile?.role === 'teacher' ? 'Teacher Workspace' : 'Admin Workspace'}
+            </div>
           </div>
-          <div className="pc-brand-sub">
-            {profile?.role === 'teacher' ? 'Teacher Workspace' : 'Admin Workspace'}
-          </div>
-        </div>
+        ) : null}
+        <button
+          type="button"
+          className="pc-sidebar-collapse-btn"
+          onClick={onToggleCollapsed}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          <ChevronRight size={14} strokeWidth={1.9} />
+        </button>
       </div>
 
-      <div className="pc-session-pill" role="button" tabIndex={0}>
+      <div
+        className="pc-session-pill"
+        role="button"
+        tabIndex={0}
+        title={collapsed ? session : undefined}
+      >
         <span className="pc-session-pill-dot" aria-hidden />
-        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
-          <span className="pc-session-pill-label">Session</span>
-          <span className="pc-session-pill-value">{session}</span>
-        </div>
+        {!collapsed ? (
+          <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
+            <span className="pc-session-pill-label">Session</span>
+            <span className="pc-session-pill-value">{session}</span>
+          </div>
+        ) : null}
         <span className="pc-session-pill-chev" aria-hidden>
           <ChevronDown size={14} strokeWidth={1.6} />
         </span>
@@ -120,24 +142,24 @@ export function Sidebar({
             {items.map((item) => {
               const Icon = item.icon
               const to = NAV_ROUTES[item.key] ?? '/app'
-              if (item.disabled) {
-                return (
-                  <div
-                    key={item.key}
-                    className="pc-nav-item is-disabled"
-                    title={`${item.label} (Coming soon)`}
-                  >
-                    <Icon size={15} strokeWidth={1.6} />
-                    <span>{item.label}</span>
-                    {item.badge &&
-                      item.badge !== 'dynamic' &&
-                      item.badge !== 'approvals' && (
-                      <span className="pc-nav-item-badge">{item.badge}</span>
-                    )}
-                  </div>
-                )
-              }
               return (
+                (() => {
+                  const shouldShowCountInTooltip =
+                    item.badge === 'dynamic' ||
+                    (item.key === 'approval' && approvalPending > 0) ||
+                    (item.key === 'bookmarks' && bookmarkedQuestionTotal > 0)
+                  const badgeCount = shouldShowCountInTooltip
+                    ? item.key === 'approval'
+                      ? String(approvalPending)
+                      : item.badge === 'dynamic'
+                        ? formattedCount
+                        : String(bookmarkedQuestionTotal)
+                    : null
+                  const tooltipText =
+                    collapsed && badgeCount !== null
+                      ? `${item.label} (${badgeCount})`
+                      : item.label
+                  return (
                 <NavLink
                   key={item.key}
                   to={to}
@@ -146,6 +168,8 @@ export function Sidebar({
                   }
                   end={item.key === 'home'}
                   style={{ position: 'relative' }}
+                  title={collapsed ? tooltipText : undefined}
+                  data-tooltip={collapsed ? tooltipText : undefined}
                 >
                   {({ isActive }) => (
                     <>
@@ -157,10 +181,13 @@ export function Sidebar({
                         />
                       )}
                       <Icon size={15} strokeWidth={1.6} style={{ position: 'relative', zIndex: 2 }} />
-                      <span style={{ position: 'relative', zIndex: 2 }}>{item.label}</span>
-                      {(item.badge === 'dynamic' ||
-                        (item.key === 'approval' && approvalPending > 0) ||
-                        (item.key === 'bookmarks' && bookmarkedQuestionTotal > 0)) && (
+                      {!collapsed ? (
+                        <span style={{ position: 'relative', zIndex: 2 }}>{item.label}</span>
+                      ) : null}
+                      {!collapsed &&
+                        (item.badge === 'dynamic' ||
+                          (item.key === 'approval' && approvalPending > 0) ||
+                          (item.key === 'bookmarks' && bookmarkedQuestionTotal > 0)) && (
                         <span
                           className={
                             'pc-nav-item-badge' +
@@ -175,16 +202,14 @@ export function Sidebar({
                               : undefined
                           }
                         >
-                          {item.key === 'approval'
-                            ? String(approvalPending)
-                            : item.badge === 'dynamic'
-                              ? formattedCount
-                              : String(bookmarkedQuestionTotal)}
+                          {badgeCount}
                         </span>
                       )}
                     </>
                   )}
                 </NavLink>
+                  )
+                })()
               )
             })}
           </div>
@@ -193,29 +218,36 @@ export function Sidebar({
       </nav>
 
       <div className="pc-sidebar-foot">
-        <div className="pc-avatar is-blue">{initials}</div>
-        <div style={{ lineHeight: 1.2, minWidth: 0, flex: 1 }}>
-          <div className="pc-foot-name">{displayName}</div>
-          <div className="pc-foot-role">{displayRole}</div>
+        <div className="pc-avatar is-blue" title={displayName}>
+          {initials}
         </div>
-        <button
-          type="button"
-          className="pc-sidebar-logout"
-          onClick={() => setLogoutOpen(true)}
-          title="Sign out"
-        >
-          <LogOut size={15} strokeWidth={1.6} />
-        </button>
-        <NavLink
-          to={NAV_ROUTES.profile}
-          className={({ isActive }) =>
-            'pc-sidebar-settings' + (isActive ? ' is-active' : '')
-          }
-          title="My profile"
-          aria-label="My profile"
-        >
-          <Settings size={14} strokeWidth={1.6} />
-        </NavLink>
+        {!collapsed ? (
+          <div style={{ lineHeight: 1.2, minWidth: 0, flex: 1 }}>
+            <div className="pc-foot-name">{displayName}</div>
+            <div className="pc-foot-role">{displayRole}</div>
+          </div>
+        ) : null}
+        <div className="pc-sidebar-foot-actions">
+          <button
+            type="button"
+            className="pc-sidebar-logout"
+            onClick={() => setLogoutOpen(true)}
+            title="Sign out"
+            aria-label="Sign out"
+          >
+            <LogOut size={15} strokeWidth={1.6} />
+          </button>
+          <NavLink
+            to={NAV_ROUTES.profile}
+            className={({ isActive }) =>
+              'pc-sidebar-settings' + (isActive ? ' is-active' : '')
+            }
+            title="My profile"
+            aria-label="My profile"
+          >
+            <Settings size={14} strokeWidth={1.6} />
+          </NavLink>
+        </div>
       </div>
     </aside>
 

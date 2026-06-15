@@ -2,6 +2,7 @@ import { Eye, FileText, Plus } from 'lucide-react'
 import { PaperExportLink } from '@/components/print/PaperExportLink'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { MotionList, MotionListItem } from '@/components/motion/MotionList'
 import { EmptyStatePanel } from '@/components/ui/EmptyStatePanel'
 import { useAuth } from '@/context/AuthContext'
 import { paperListHeading } from '@/lib/paper-builder'
@@ -59,9 +60,9 @@ export function PapersListPage() {
           hasLoadedRef.current = true
         }
       })
-      .catch((err) => {
+      .catch(() => {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Could not load papers.')
+          setError('Could not load papers.')
         }
       })
       .finally(() => {
@@ -95,20 +96,36 @@ export function PapersListPage() {
         </header>
 
         {loading ? (
-          <p className="pc-papers-muted">Loading papers…</p>
+          <ul className="pc-papers-list" aria-busy aria-hidden>
+            {Array.from({ length: 3 }, (_, i) => (
+              <li key={i}>
+                <div className="pc-papers-row-wrap pc-motion-surface">
+                  <div className="pc-papers-row">
+                    <span className="pc-skel pc-skel-activity-av" />
+                    <div className="pc-papers-row-main">
+                      <span className="pc-skel pc-skel-activity-title" />
+                      <span className="pc-skel pc-skel-activity-meta" />
+                    </div>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
         ) : error ? (
           <EmptyStatePanel
             icon={FileText}
             title="Could not load papers"
-            description={error}
-            hint="If this persists, confirm Firestore rules for the papers collection are deployed."
+            description="We could not load the paper library right now."
+            hint="Please try again in a moment."
             variant="error"
+            lottie="loadError"
           />
         ) : papers.length === 0 ? (
           <EmptyStatePanel
             icon={FileText}
             title="No papers yet"
             description="Start with setup, then compose questions from your repository."
+            lottie="emptyPapers"
             steps={PAPER_EMPTY_STEPS}
             actions={[
               {
@@ -120,7 +137,7 @@ export function PapersListPage() {
             ]}
           />
         ) : (
-          <ul className="pc-papers-list">
+          <MotionList as="ul" className="pc-papers-list">
             {papers.map((p) => {
               const chip = PAPER_STATUS_CHIP[p.status] ?? PAPER_STATUS_CHIP.draft
               const isApproved = p.status === 'approved'
@@ -128,7 +145,7 @@ export function PapersListPage() {
                 ? `/app/papers/${p.id}/preview?from=library`
                 : `/app/builder/${p.id}`
               return (
-                <li key={p.id}>
+                <MotionListItem as="li" key={p.id}>
                   <div
                     className={`pc-papers-row-wrap pc-motion-surface${p.status === 'submitted' ? ' is-submitted' : ''}${isApproved ? ' is-approved' : ''}`}
                   >
@@ -171,10 +188,10 @@ export function PapersListPage() {
                       </div>
                     ) : null}
                   </div>
-                </li>
+                </MotionListItem>
               )
             })}
-          </ul>
+          </MotionList>
         )}
       </div>
     </div>

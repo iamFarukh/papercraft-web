@@ -11,7 +11,6 @@ import {
   type ResolvedSectionFormat,
 } from '@/lib/paper-format-config'
 import {
-  computePaperStats,
   DEFAULT_SCHOOL,
   setupToPaperMeta,
   type PaperComposition,

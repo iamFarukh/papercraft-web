@@ -1,4 +1,5 @@
 import { subjectLabelFromId } from '@/config/curriculum'
+import { isRichTextEmpty, normalizeRichValue } from '@/lib/rich-text'
 import type {
   AuthoringQuestionType,
   BloomLevel,
@@ -158,7 +159,7 @@ function resolveAnswer(form: QuestionAuthorForm): string {
   if (form.type === 'true_false') {
     return form.trueFalseAnswer === 'true' ? 'True' : 'False'
   }
-  return form.answer.trim()
+  return normalizeRichValue(form.answer)
 }
 
 export type FormToDocumentOptions = {
@@ -172,10 +173,10 @@ export function formToDocument(
 ): Omit<QuestionDocument, 'createdAt' | 'updatedAt'> {
   const { createdBy, usageCount = 0 } = options
   const tags = parseTags(form.tagsInput)
-  const enStem = form.questionText.trim()
-  const hiStem = form.questionTextHi.trim()
+  const enStem = normalizeRichValue(form.questionText)
+  const hiStem = normalizeRichValue(form.questionTextHi)
 
-  let questionText = enStem
+  let questionText: string
   let questionTextHi: string | undefined
 
   if (form.language === 'hindi') {
@@ -207,10 +208,10 @@ export function formToDocument(
     estimatedMinutes: estimateMinutes(form.marks, form.type),
     language: form.language,
     answer: resolveAnswer(form),
-    solution: form.solution.trim() || undefined,
+    solution: normalizeRichValue(form.solution) || undefined,
     solutionHi:
       form.language === 'bilingual'
-        ? form.solutionHi.trim() || undefined
+        ? normalizeRichValue(form.solutionHi) || undefined
         : undefined,
     usageCount,
     createdBy,
@@ -233,9 +234,9 @@ export function formToDocument(
     }
   }
 
-  if (form.type !== 'mcq' && form.answer.trim()) {
-    doc.answer = form.answer.trim()
-    if (form.answerHi.trim()) doc.answerHi = form.answerHi.trim()
+  if (form.type !== 'mcq' && !isRichTextEmpty(form.answer)) {
+    doc.answer = normalizeRichValue(form.answer)
+    if (!isRichTextEmpty(form.answerHi)) doc.answerHi = normalizeRichValue(form.answerHi)
   }
 
   return doc
@@ -247,15 +248,15 @@ export type AuthorValidation = {
 }
 
 export function validateAuthorForm(form: QuestionAuthorForm): AuthorValidation {
-  if (form.language === 'english' && !form.questionText.trim()) {
+  if (form.language === 'english' && isRichTextEmpty(form.questionText)) {
     return { ok: false, message: 'English question text is required.' }
   }
-  if (form.language === 'hindi' && !form.questionTextHi.trim()) {
+  if (form.language === 'hindi' && isRichTextEmpty(form.questionTextHi)) {
     return { ok: false, message: 'Hindi question text is required.' }
   }
   if (
     form.language === 'bilingual' &&
-    (!form.questionText.trim() || !form.questionTextHi.trim())
+    (isRichTextEmpty(form.questionText) || isRichTextEmpty(form.questionTextHi))
   ) {
     return {
       ok: false,
@@ -300,7 +301,7 @@ export function validateAuthorForm(form: QuestionAuthorForm): AuthorValidation {
     (form.type === 'short' ||
       form.type === 'long' ||
       form.type === 'fill_blank') &&
-    !form.answer.trim()
+    isRichTextEmpty(form.answer)
   ) {
     return { ok: false, message: 'Answer is required for this question type.' }
   }

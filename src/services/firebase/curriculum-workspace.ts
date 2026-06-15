@@ -12,10 +12,7 @@ import type {
   CurriculumInsights,
   CurriculumTreeNode,
 } from '@/lib/curriculum-workspace'
-import {
-  nameKey,
-  validateTaxonomyName,
-} from '@/lib/curriculum-normalize'
+import { validateTaxonomyName } from '@/lib/curriculum-normalize'
 import { db } from '@/lib/firebase'
 import { listRecentPapers } from '@/services/firebase/papers'
 import type { CurriculumNodeType } from '@/lib/curriculum-workspace'

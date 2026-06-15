@@ -50,7 +50,7 @@ export function ExaminationEditorChrome({
   exportSlot,
 }: Props) {
   const tag = PAPER_STATUS_CHIP[paperStatus] ?? PAPER_STATUS_CHIP.draft
-  const savedOk = saveStatus === 'saved' || saveStatus === 'idle'
+  const savedOk = saveStatus === 'saved' && !isDirty
 
   return (
     <header className="pc-ee-chrome">

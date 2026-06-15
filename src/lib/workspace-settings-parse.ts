@@ -12,7 +12,7 @@ import type {
   WorkspacePreferencesSettings,
   WorkspaceSettings,
 } from '@/types/workspace-settings'
-import type { PaperHeaderPreset, PaperMarginPreset } from '@/types/paper-instance'
+import type { PaperMarginPreset } from '@/types/paper-instance'
 
 function str(value: unknown, fallback: string): string {
   return typeof value === 'string' ? value.trim() : fallback

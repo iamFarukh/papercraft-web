@@ -1,11 +1,18 @@
 import { AlertTriangle } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { DraftRecoveryBanner } from '@/components/ui/DraftRecoveryBanner'
 import { useAuth } from '@/context/AuthContext'
+import { useConnectivityState } from '@/context/ConnectivityContext'
 import { useToast } from '@/context/ToastContext'
+import { useEditorTabLock } from '@/hooks/useEditorTabLock'
+import { useLocalDraftAutosave } from '@/hooks/useLocalDraftAutosave'
 import { useQuestions } from '@/hooks/useQuestions'
 import { useSchoolBranding } from '@/hooks/useSchoolBranding'
 import { useTeacherScope } from '@/hooks/useTeacherScope'
+import { isBrowserOnline } from '@/lib/connectivity'
+import { saveConfidenceLabel, type SaveUiStatus } from '@/lib/save-confidence'
+import { readContinuityState, writeContinuityState } from '@/lib/workflow-continuity'
 import {
   defaultPaperInstanceLayer,
   resolvePaper,
@@ -25,7 +32,6 @@ import {
   emptyComposition,
   moveQuestionInSection,
   sectionsForSetup,
-  setupToPaperMeta,
   storeSetup,
   toolbarTitleFromSetup,
   type PaperComposition,
@@ -54,15 +60,14 @@ import type { PaperStatus } from '@/types/paper'
 import type { PaperInstanceLayer } from '@/types/paper-instance'
 import type { QuestionRecord } from '@/types/question'
 import { BuilderRepoBrowser, type BuilderQuickFilters } from './BuilderRepoBrowser'
-import {
-  PaperBuilderToolbar,
-  type SaveUiStatus,
-} from './PaperBuilderToolbar'
+import { PaperBuilderToolbar } from './PaperBuilderToolbar'
 import { PaperBuilderPaginatedCanvas } from './PaperBuilderPaginatedCanvas'
 import { PaperInsightsPanel } from './PaperInsightsPanel'
 import { BlueprintMatchPanel } from './BlueprintMatchPanel'
 import { PaperGenerationWorkspace } from './PaperGenerationWorkspace'
 import { PaperExportLink } from '@/components/print/PaperExportLink'
+import { PrintMeasureSurface } from '@/components/print/PrintMeasureSurface'
+import { useMeasuredPrintLayout } from '@/hooks/useMeasuredPrintLayout'
 import { PaperApprovedBanner } from './PaperApprovedBanner'
 import { PaperSubmittedBanner } from './PaperSubmittedBanner'
 
@@ -80,12 +85,23 @@ function applyBuilderQuickFilters(
   })
 }
 
-function formatSavedAt(savedAtMs: number | null): string {
-  if (!savedAtMs) return 'Saved'
-  const sec = Math.max(0, Math.floor((Date.now() - savedAtMs) / 1000))
-  if (sec < 8) return 'Saved · just now'
-  if (sec < 60) return `Saved · ${sec}s ago`
-  return `Saved · ${Math.floor(sec / 60)}m ago`
+type PaperBuilderDraftPayload = {
+  setup: PaperSetupState
+  composition: PaperComposition
+  instanceLayer: PaperInstanceLayer
+}
+
+type BuilderContinuityState = {
+  activeSection?: PaperSectionId
+  query?: string
+  quickFilters?: BuilderQuickFilters
+  browserScrollTop?: number
+}
+
+type RemovedQuestionSnapshot = {
+  sectionId: PaperSectionId
+  index: number
+  question: QuestionRecord
 }
 
 function parseDurationMinutes(label: string): number {
@@ -121,12 +137,19 @@ export function PaperBuilderWorkspace({
   initialApprovedAtMs = null,
   paperCreatedBy = null,
 }: Props) {
+  const continuityResourceId = initialPaperId ?? 'new'
+  const continuityBoot = readContinuityState<BuilderContinuityState>(
+    'paper-builder',
+    continuityResourceId,
+  )
   const navigate = useNavigate()
   const { user, isAdmin, profile } = useAuth()
   const school = useSchoolBranding()
   const { filterQuestions: scopeByAssignment, isScoped } = useTeacherScope()
   const { push: toast } = useToast()
+  const { isOnline, justReconnected, clearReconnected } = useConnectivityState()
   const workspaceRef = useRef<HTMLDivElement>(null)
+  const persistDraftRef = useRef<() => Promise<boolean>>(async () => false)
   const [setup, setSetup] = useState(setupProp)
   const [instanceLayer, setInstanceLayer] = useState<PaperInstanceLayer>(
     () => initialInstanceLayer ?? defaultPaperInstanceLayer(),
@@ -141,7 +164,7 @@ export function PaperBuilderWorkspace({
   }, [initialInstanceLayer])
 
   const [paperId, setPaperId] = useState<string | null>(initialPaperId)
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState(continuityBoot?.query ?? '')
   const [composition, setComposition] = useState<PaperComposition>(
     () => initialComposition ?? emptyComposition(),
   )
@@ -152,8 +175,11 @@ export function PaperBuilderWorkspace({
     [setup, sections, composition, instanceLayer, school],
   )
   const meta = resolved.meta
+  const builderLayout = useMeasuredPrintLayout(resolved)
   const planMinutes = useMemo(() => parseDurationMinutes(setup.durationLabel), [setup.durationLabel])
-  const [activeSection, setActiveSection] = useState<PaperSectionId>('A')
+  const [activeSection, setActiveSection] = useState<PaperSectionId>(
+    continuityBoot?.activeSection ?? 'A',
+  )
   const [replaceTarget, setReplaceTarget] = useState<ReplaceTarget | null>(null)
   const [lastInsertedId, setLastInsertedId] = useState<string | null>(null)
   const [missingIds] = useState<string[]>(missingQuestionIds)
@@ -170,21 +196,39 @@ export function PaperBuilderWorkspace({
   const [submitting, setSubmitting] = useState(false)
   const [reopening, setReopening] = useState(false)
   const [generationOpen, setGenerationOpen] = useState(false)
+  const [removedQuestion, setRemovedQuestion] = useState<RemovedQuestionSnapshot | null>(null)
   const blueprintRecordedRef = useRef(false)
 
   const readOnly = isReadOnlyPaperBuilder(paperStatus, isAdmin)
   const [quickFilters, setQuickFilters] = useState<BuilderQuickFilters>(() => ({
-    classLabel: setup.classLabel,
-    subject: setup.subject,
-    chapter: null,
-    marksBand: 'any',
-    difficultyBand: 'any',
+    classLabel: continuityBoot?.quickFilters?.classLabel ?? setup.classLabel,
+    subject: continuityBoot?.quickFilters?.subject ?? setup.subject,
+    chapter: continuityBoot?.quickFilters?.chapter ?? null,
+    marksBand: continuityBoot?.quickFilters?.marksBand ?? 'any',
+    difficultyBand: continuityBoot?.quickFilters?.difficultyBand ?? 'any',
   }))
 
   const currentFingerprint = useMemo(
     () => buildCompositionFingerprint(setup, composition, sections, instanceLayer),
     [setup, composition, sections, instanceLayer],
   )
+
+  const draftResourceId = paperId ?? 'new'
+
+  const draftAutosave = useLocalDraftAutosave<PaperBuilderDraftPayload>({
+    scope: 'paper-builder',
+    resourceId: draftResourceId,
+    enabled: !readOnly,
+    fingerprint: currentFingerprint,
+    serverFingerprint: savedFingerprint,
+    payload: { setup, composition, instanceLayer },
+  })
+
+  const { conflict: tabConflict } = useEditorTabLock({
+    kind: 'paper',
+    resourceId: paperId,
+    enabled: Boolean(paperId) && !readOnly,
+  })
 
   const repoFilters = useMemo(
     () => ({
@@ -271,12 +315,27 @@ export function PaperBuilderWorkspace({
 
   const stats = resolved.stats
 
-  const saveHint = useMemo(() => {
-    if (saveStatus === 'saving') return 'Saving…'
-    if (saveStatus === 'error') return 'Save failed — try again'
-    if (saveStatus === 'unsaved') return 'Unsaved changes'
-    return formatSavedAt(savedAtMs)
-  }, [saveStatus, savedAtMs])
+  const isDirty = currentFingerprint !== savedFingerprint
+
+  const saveHint = useMemo(
+    () => saveConfidenceLabel(saveStatus, { savedAtMs, isDirty }),
+    [saveStatus, savedAtMs, isDirty],
+  )
+
+  useEffect(() => {
+    if (!isDirty || readOnly) return
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [isDirty, readOnly])
+
+  useEffect(() => {
+    if (!justReconnected) return
+    toast('Connection restored.', 'success')
+    clearReconnected()
+  }, [justReconnected, toast, clearReconnected])
 
   useEffect(() => {
     if (saveStatus === 'saving') return
@@ -294,6 +353,12 @@ export function PaperBuilderWorkspace({
   }, [lastInsertedId])
 
   useEffect(() => {
+    if (!removedQuestion) return
+    const t = window.setTimeout(() => setRemovedQuestion(null), 6000)
+    return () => window.clearTimeout(t)
+  }, [removedQuestion])
+
+  useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape' && replaceTarget) setReplaceTarget(null)
     }
@@ -301,9 +366,48 @@ export function PaperBuilderWorkspace({
     return () => window.removeEventListener('keydown', onKey)
   }, [replaceTarget])
 
+  useEffect(() => {
+    writeContinuityState(
+      'paper-builder',
+      {
+        activeSection,
+        query,
+        quickFilters,
+      },
+      draftResourceId,
+    )
+  }, [activeSection, query, quickFilters, draftResourceId])
+
+  useEffect(() => {
+    const list = workspaceRef.current?.querySelector<HTMLElement>('.pc-pb-browser-list')
+    if (!list) return
+    if (typeof continuityBoot?.browserScrollTop === 'number') {
+      list.scrollTop = continuityBoot.browserScrollTop
+    }
+    const onScroll = () => {
+      writeContinuityState(
+        'paper-builder',
+        {
+          activeSection,
+          query,
+          quickFilters,
+          browserScrollTop: list.scrollTop,
+        },
+        draftResourceId,
+      )
+    }
+    list.addEventListener('scroll', onScroll)
+    return () => list.removeEventListener('scroll', onScroll)
+  }, [activeSection, query, quickFilters, draftResourceId, continuityBoot?.browserScrollTop])
+
   const persistDraft = useCallback(async (): Promise<boolean> => {
     if (!user) {
       toast('Sign in to save papers', 'info')
+      return false
+    }
+    if (!isBrowserOnline()) {
+      setSaveStatus('offline')
+      toast('You are offline. Changes are saved on this device and will sync when you reconnect.', 'info')
       return false
     }
     setSaveStatus('saving')
@@ -338,10 +442,16 @@ export function PaperBuilderWorkspace({
       setSavedFingerprint(currentFingerprint)
       setSavedAtMs(Date.now())
       setSaveStatus('saved')
+      draftAutosave.clearOnSync()
       return true
     } catch (err) {
-      setSaveStatus('error')
-      toast(parsePaperError(err), 'info')
+      setSaveStatus(isBrowserOnline() ? 'error' : 'offline')
+      toast(
+        isBrowserOnline()
+          ? parsePaperError(err)
+          : 'You are offline. Your draft is safe on this device.',
+        'info',
+      )
       return false
     }
   }, [
@@ -354,7 +464,21 @@ export function PaperBuilderWorkspace({
     instanceLayer,
     navigate,
     toast,
+    draftAutosave,
   ])
+
+  persistDraftRef.current = persistDraft
+
+  useEffect(() => {
+    if (!isOnline || readOnly) return
+    if (
+      (saveStatus === 'offline' || saveStatus === 'error') &&
+      isDirty
+    ) {
+      setSaveStatus('retrying')
+      void persistDraftRef.current()
+    }
+  }, [isOnline, readOnly, saveStatus, isDirty])
 
   const saveDraft = useCallback(async () => {
     if (readOnly) return
@@ -404,7 +528,7 @@ export function PaperBuilderWorkspace({
       setReplaceTarget(null)
       toast('Paper submitted for approval', 'success')
     } catch (err) {
-      toast(parsePaperError(err), 'info')
+      toast(parsePaperError(err), 'error')
     } finally {
       setSubmitting(false)
     }
@@ -446,7 +570,7 @@ export function PaperBuilderWorkspace({
       setSubmittedAtMs(null)
       toast('Paper reopened as draft', 'success')
     } catch (err) {
-      toast(parsePaperError(err), 'info')
+      toast(parsePaperError(err), 'error')
     } finally {
       setReopening(false)
     }
@@ -498,13 +622,31 @@ export function PaperBuilderWorkspace({
     (sectionId: PaperSectionId, questionId: string) => {
       if (readOnly) return
       if (replaceTarget?.questionId === questionId) setReplaceTarget(null)
-      setComposition((prev) => ({
-        ...prev,
-        [sectionId]: prev[sectionId].filter((q) => q.id !== questionId),
-      }))
+      setComposition((prev) => {
+        const index = prev[sectionId].findIndex((q) => q.id === questionId)
+        if (index < 0) return prev
+        const question = prev[sectionId][index]
+        if (!question) return prev
+        setRemovedQuestion({ sectionId, index, question })
+        return {
+          ...prev,
+          [sectionId]: prev[sectionId].filter((q) => q.id !== questionId),
+        }
+      })
     },
     [replaceTarget, readOnly],
   )
+
+  const undoRemoveQuestion = useCallback(() => {
+    if (!removedQuestion) return
+    setComposition((prev) => {
+      const rows = [...prev[removedQuestion.sectionId]]
+      rows.splice(removedQuestion.index, 0, removedQuestion.question)
+      return { ...prev, [removedQuestion.sectionId]: rows }
+    })
+    setRemovedQuestion(null)
+    toast('Question restored.', 'success')
+  }, [removedQuestion, toast])
 
   const moveQuestion = useCallback(
     (sectionId: PaperSectionId, questionId: string, direction: 'up' | 'down') => {
@@ -526,6 +668,16 @@ export function PaperBuilderWorkspace({
       ?.focus()
   }, [])
 
+  const handleRecoverDraft = useCallback(() => {
+    const recovered = draftAutosave.applyRecovery()
+    if (!recovered) return
+    setSetup(recovered.setup)
+    setComposition(recovered.composition)
+    setInstanceLayer(recovered.instanceLayer)
+    setSaveStatus('unsaved')
+    toast('Recovered your local draft.', 'success')
+  }, [draftAutosave, toast])
+
   const showSubmittedBanner = paperStatus === 'submitted'
   const showApprovedBanner = paperStatus === 'approved'
   const saveHintDisplay =
@@ -540,6 +692,42 @@ export function PaperBuilderWorkspace({
       className={`pc-pb-workspace${readOnly ? ' is-read-only' : ''}`}
       ref={workspaceRef}
     >
+      <PrintMeasureSurface
+        resolved={resolved}
+        blocks={builderLayout.blocks}
+        onMeasured={builderLayout.onPrintMeasured}
+      />
+      {draftAutosave.showRecovery && draftAutosave.recoveryLabel ? (
+        <DraftRecoveryBanner
+          savedLabel={draftAutosave.recoveryLabel}
+          onRecover={handleRecoverDraft}
+          onDismiss={draftAutosave.dismissRecovery}
+        />
+      ) : null}
+      {tabConflict ? (
+        <div className="pc-pb-missing-banner" role="status">
+          This paper may be open in another tab. Save here before editing elsewhere to avoid
+          conflicting changes.
+        </div>
+      ) : null}
+      {removedQuestion ? (
+        <div className="pc-recovery-banner" role="status">
+          <div className="pc-recovery-banner-main">
+            <p>
+              Question removed from Section {removedQuestion.sectionId}. You can undo this
+              action for a few seconds.
+            </p>
+          </div>
+          <div className="pc-recovery-banner-actions">
+            <button type="button" className="pc-btn is-sm is-primary" onClick={undoRemoveQuestion}>
+              Undo
+            </button>
+            <button type="button" className="pc-btn is-sm" onClick={() => setRemovedQuestion(null)}>
+              Dismiss
+            </button>
+          </div>
+        </div>
+      ) : null}
       <PaperBuilderToolbar
         title={toolbarTitleFromSetup(setup)}
         blueprintLabel={setup.blueprintSnapshot?.name}
@@ -547,7 +735,7 @@ export function PaperBuilderWorkspace({
         saveHint={saveHintDisplay}
         paperStatus={paperStatus}
         readOnly={readOnly}
-        saveDisabled={saveStatus === 'saved' || readOnly}
+        saveDisabled={(saveStatus === 'saved' && isOnline) || readOnly}
         submitDisabled={
           !canSubmitPaper(paperStatus) ||
           !paperId ||
@@ -688,6 +876,7 @@ export function PaperBuilderWorkspace({
         <PaperBuilderPaginatedCanvas
           meta={meta}
           resolved={resolved}
+          pages={builderLayout.pages}
           sections={sections}
           generalInstructions={setup.generalInstructions}
           composition={composition}

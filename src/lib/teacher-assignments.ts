@@ -107,5 +107,10 @@ export function normalizeAssignmentScope(
 ): TeacherAssignmentScope {
   if (scope === 'full') return 'full'
   if (scope === 'custom') return 'custom'
-  return assignments.length > 0 ? 'custom' : 'custom'
+  /**
+   * Legacy teacher docs were saved without `assignmentScope`.
+   * If there are explicit pairs, treat as custom scope.
+   * If there are no pairs, treat as full-school access (legacy default).
+   */
+  return assignments.length > 0 ? 'custom' : 'full'
 }

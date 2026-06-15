@@ -93,8 +93,8 @@ export function BuilderRepoBrowser({
   onToggleChapter,
   onToggleMarks,
   onToggleDifficulty,
-  classOptions,
-  subjectOptions,
+  classOptions: _classOptions,
+  subjectOptions: _subjectOptions,
   chapterOptions,
   questions,
   usedIds,
@@ -298,7 +298,10 @@ export function BuilderRepoBrowser({
         {loading && questions.length === 0 ? (
           <p className="pc-pb-browser-loading">Loading questions…</p>
         ) : questions.length === 0 ? (
-          <p className="pc-pb-browser-empty">No questions match these filters.</p>
+          <div className="pc-pb-browser-empty">
+            <p>No questions match this selection.</p>
+            <p>Try resetting chapter, marks, or difficulty, or open the full repository.</p>
+          </div>
         ) : (
           questions.map((q) => {
             const compatible = replaceTarget

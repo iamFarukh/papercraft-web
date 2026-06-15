@@ -2,6 +2,13 @@ import type { PaperSetupState } from '@/lib/paper-builder'
 
 export type PaperExportFormat = 'pdf' | 'docx'
 
+/** What to export: the question paper, or its answer key. */
+export type PaperExportKind = 'paper' | 'answer-key'
+
+export function parseExportKindFromQuery(value: string | null): PaperExportKind {
+  return value === 'answer-key' ? 'answer-key' : 'paper'
+}
+
 export type PaperExportFormatMeta = {
   id: PaperExportFormat
   label: string
@@ -75,6 +82,7 @@ export function extractExamYear(academicSession: string): number {
 export function buildExportFilename(
   input: PaperExportFilenameInput,
   format: PaperExportFormat,
+  kind: PaperExportKind = 'paper',
 ): string {
   const meta = PAPER_EXPORT_FORMATS.find((f) => f.id === format)!
   const parts = [
@@ -83,6 +91,7 @@ export function buildExportFilename(
     examTypeSegmentForExport(input.examType),
     String(input.year),
   ]
+  if (kind === 'answer-key') parts.push('AnswerKey')
   return `${parts.join('_')}.${meta.extension}`
 }
 
@@ -93,6 +102,7 @@ export function buildOfficialPdfFilename(input: PaperExportFilenameInput): strin
 export function exportFilenameFromSetup(
   setup: PaperSetupState,
   format: PaperExportFormat,
+  kind: PaperExportKind = 'paper',
 ): string {
   return buildExportFilename(
     {
@@ -102,6 +112,7 @@ export function exportFilenameFromSetup(
       year: extractExamYear(setup.academicSession),
     },
     format,
+    kind,
   )
 }
 

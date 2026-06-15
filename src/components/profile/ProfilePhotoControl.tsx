@@ -1,11 +1,10 @@
 import { Camera, Trash2 } from 'lucide-react'
 import { useRef, useState } from 'react'
-import { m } from 'framer-motion'
 import {
+  parseProfileSaveError,
   removeProfilePhoto,
   uploadProfilePhoto,
 } from '@/services/firebase/profile'
-import { PC_TRANSITION } from '@/lib/motion/tokens'
 
 type Props = {
   uid: string
@@ -40,7 +39,7 @@ export function ProfilePhotoControl({
     try {
       await uploadProfilePhoto(uid, file)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Upload failed.')
+      setError(parseProfileSaveError(err))
     } finally {
       setBusy(false)
     }
@@ -52,7 +51,7 @@ export function ProfilePhotoControl({
     try {
       await removeProfilePhoto(uid)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not remove photo.')
+      setError(parseProfileSaveError(err))
     } finally {
       setBusy(false)
     }
@@ -60,11 +59,7 @@ export function ProfilePhotoControl({
 
   return (
     <div className={`pc-profile-photo is-${size}`}>
-      <m.div
-        className="pc-profile-photo-ring"
-        whileHover={{ boxShadow: 'var(--pc-shadow-sm)' }}
-        transition={PC_TRANSITION.hover}
-      >
+      <div className="pc-profile-photo-ring">
         {photoURL ? (
           <img src={photoURL} alt="" className="pc-profile-photo-img" />
         ) : (
@@ -72,7 +67,7 @@ export function ProfilePhotoControl({
             {initialsFromName(displayName) || 'PC'}
           </span>
         )}
-      </m.div>
+      </div>
 
       <div className="pc-profile-photo-actions">
         <button

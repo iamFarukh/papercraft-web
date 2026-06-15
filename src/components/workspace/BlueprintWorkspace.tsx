@@ -182,7 +182,15 @@ export function BlueprintWorkspace() {
         ) : null}
 
         {loading ? (
-          <p className="pc-bp-muted">Loading blueprints…</p>
+          <MotionList className="pc-bp-grid" aria-busy aria-hidden>
+            {Array.from({ length: 4 }, (_, i) => (
+              <div key={i} className="pc-bp-card pc-panel pc-panel-pad">
+                <span className="pc-skel pc-skel-activity-title" />
+                <span className="pc-skel pc-skel-activity-meta" />
+                <span className="pc-skel pc-skel-activity-meta" />
+              </div>
+            ))}
+          </MotionList>
         ) : error ? (
           <EmptyStatePanel
             icon={Target}
@@ -196,8 +204,8 @@ export function BlueprintWorkspace() {
             title="No blueprints yet"
             description={
               isAdmin
-                ? 'Default examination structures will appear here after seeding.'
-                : 'Your administrator has not published any custom blueprints yet.'
+                ? 'Start with Unit Test or Half-Yearly, then tailor sections for your school policy.'
+                : 'Your administrator has not published custom blueprints yet.'
             }
             actions={
               isAdmin

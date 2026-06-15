@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { updateProfileDocument } from '@/services/firebase/profile'
+import { parseProfileSaveError, updateProfileDocument } from '@/services/firebase/profile'
 import type { ProfileSettings } from '@/types/profile-settings'
 import { DEFAULT_PROFILE_SETTINGS } from '@/types/profile-settings'
 import type { UserProfile } from '@/types/user-profile'
@@ -64,7 +64,7 @@ export function useProfileEditor(profile: UserProfile | null) {
       setSavedAt(Date.now())
       setSaveState('saved')
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Could not save changes.')
+      setSaveError(parseProfileSaveError(err))
       setSaveState('error')
     } finally {
       savingRef.current = false

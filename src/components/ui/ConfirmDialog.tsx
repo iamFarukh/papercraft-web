@@ -1,4 +1,4 @@
-import { motion, useReducedMotion } from 'framer-motion'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { modalPop, overlayFade } from '@/lib/motion/variants'
 import type { ReactNode } from 'react'
 
@@ -27,15 +27,16 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   const reduced = useReducedMotion()
 
-  if (!open) return null
-
   return (
+    <AnimatePresence>
+      {open ? (
     <motion.div
+      key="pc-confirm"
       className="pc-confirm-overlay"
       variants={overlayFade}
       initial={reduced ? false : 'hidden'}
       animate="visible"
-      exit="exit"
+      exit={reduced ? undefined : 'exit'}
       role="dialog"
       aria-modal="true"
       aria-labelledby="pc-confirm-title"
@@ -51,7 +52,7 @@ export function ConfirmDialog({
         variants={modalPop}
         initial={reduced ? false : 'hidden'}
         animate="visible"
-        exit="exit"
+        exit={reduced ? undefined : 'exit'}
         onClick={(e) => e.stopPropagation()}
       >
         <h2 id="pc-confirm-title" className="pc-confirm-title">
@@ -82,5 +83,7 @@ export function ConfirmDialog({
         </div>
       </motion.div>
     </motion.div>
+      ) : null}
+    </AnimatePresence>
   )
 }

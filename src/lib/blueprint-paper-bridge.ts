@@ -12,7 +12,7 @@ import { formatBlueprintDuration } from '@/lib/blueprint-utils'
 import type { BlueprintDocument, BlueprintQuestionType } from '@/types/blueprint'
 import type { PaperBlueprintSnapshot, PaperBlueprintSectionSnapshot } from '@/types/paper'
 import type { PaperInstanceLayer } from '@/types/paper-instance'
-import type { QuestionRecord, QuestionType } from '@/types/question'
+import type { QuestionType } from '@/types/question'
 
 const PAPER_SECTION_IDS: PaperSectionId[] = ['A', 'B', 'C']
 const MAX_BUILDER_SECTIONS = 3
@@ -196,12 +196,6 @@ function questionTypeToBlueprint(type: QuestionType): BlueprintQuestionType | nu
   }
 }
 
-function difficultyBucket(level: QuestionRecord['difficulty']): 'easy' | 'medium' | 'hard' {
-  if (level <= 2) return 'easy'
-  if (level === 3) return 'medium'
-  return 'hard'
-}
-
 export function computeBlueprintMatch(
   snapshot: PaperBlueprintSnapshot,
   composition: PaperComposition,
@@ -213,13 +207,10 @@ export function computeBlueprintMatch(
   const overweight: string[] = []
   const distribution: string[] = []
 
-  let marksScore = 0
-  let questionScore = 0
-  let difficultyScore = 0
   let typeScore = 1
 
   const marksDelta = Math.abs(stats.totalMarks - snapshot.totalMarks)
-  marksScore = Math.max(0, 1 - marksDelta / Math.max(snapshot.totalMarks, 1))
+  const marksScore = Math.max(0, 1 - marksDelta / Math.max(snapshot.totalMarks, 1))
 
   let plannedQuestions = 0
   let actualQuestions = 0
@@ -268,7 +259,7 @@ export function computeBlueprintMatch(
     }
   }
 
-  questionScore =
+  const questionScore =
     plannedQuestions > 0 ? Math.min(1, actualQuestions / plannedQuestions) : 1
 
   const totalQ = Math.max(stats.questionCount, 1)
@@ -280,7 +271,7 @@ export function computeBlueprintMatch(
     Math.abs(actualEasy - target.easy) +
     Math.abs(actualMed - target.medium) +
     Math.abs(actualHard - target.hard)
-  difficultyScore = Math.max(0, 1 - diffDelta / 150)
+  const difficultyScore = Math.max(0, 1 - diffDelta / 150)
 
   if (diffDelta > 25 && stats.questionCount >= 3) {
     distribution.push('Difficulty mix differs from blueprint target')

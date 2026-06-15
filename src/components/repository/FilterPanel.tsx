@@ -14,6 +14,7 @@ import {
   type ClassTreeNode,
 } from '@/lib/repository-filter-tree'
 import {
+  chapterFilterKey,
   classTriState,
   isFilterOn,
   subjectTriState,
@@ -295,7 +296,7 @@ export function FilterPanel({
                         exit="exit"
                       >
                         {cls.subjects.map((sub) => {
-                          const subState = subjectTriState(sub, filters)
+                          const subState = subjectTriState(cls.classLabel, sub, filters)
                           const isTopicTarget =
                             topicScope?.classLabel === cls.classLabel &&
                             topicScope?.subject === sub.subject
@@ -310,7 +311,7 @@ export function FilterPanel({
                             >
                               <FilterRow
                                 label={sub.subject}
-                                count={counts.subjects[sub.subject] ?? sub.count}
+                                count={sub.count}
                                 state={subState}
                                 indent={1}
                                 onActivate={() =>
@@ -348,6 +349,9 @@ export function FilterPanel({
             chapters={topicChapters}
             chapterFilters={filters.chapters}
             counts={counts.chapters}
+            chapterKey={(chapter) =>
+              chapterFilterKey(topicScope.classLabel, topicScope.subject, chapter)
+            }
             onToggleChapter={(chapter) =>
               onSyllabusToggle({
                 level: 'chapter',

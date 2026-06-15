@@ -12,6 +12,7 @@ import {
   X,
 } from 'lucide-react'
 import { BookmarkPickerMenu } from '@/components/bookmarks/BookmarkPickerMenu'
+import { RichContent } from '@/components/ui/RichContent'
 import { useQuestionBookmarkState } from '@/hooks/useQuestionBookmarkState'
 import { Link } from 'react-router-dom'
 import { DifficultyPips } from './DifficultyPips'
@@ -98,8 +99,8 @@ function McqAnswerBlock({ detail }: { detail: QuestionRecord }) {
           >
             <span className="pc-repo-drawer-mcq-key">{k.toUpperCase()}</span>
             <div>
-              {en && <span>{en}</span>}
-              {hi && <span className="pc-repo-drawer-mcq-hi">{hi}</span>}
+              {en && <RichContent as="span" html={en} />}
+              {hi && <RichContent as="span" className="pc-repo-drawer-mcq-hi" html={hi} />}
             </div>
           </li>
         )
@@ -268,10 +269,10 @@ export function QuestionDetailDrawer({
             <h4 className="pc-repo-drawer-section-label">Question</h4>
             <div className="pc-repo-drawer-preview">
               {detail.bodyText && (
-                <p className="pc-repo-drawer-body pc-serif">{detail.bodyText}</p>
+                <RichContent className="pc-repo-drawer-body pc-serif" html={detail.bodyText} />
               )}
               {detail.hindi && (
-                <p className="pc-repo-drawer-hindi pc-serif">{detail.hindi}</p>
+                <RichContent className="pc-repo-drawer-hindi pc-serif" html={detail.hindi} />
               )}
             </div>
             <div className="pc-repo-drawer-meta-row">
@@ -298,13 +299,19 @@ export function QuestionDetailDrawer({
                     <McqAnswerBlock detail={detail} />
                   ) : (
                     <>
-                      <p className="pc-repo-drawer-block-text">
-                        {detail.answer ?? 'Not provided yet.'}
-                      </p>
+                      {detail.answer ? (
+                        <RichContent
+                          className="pc-repo-drawer-block-text"
+                          html={detail.answer}
+                        />
+                      ) : (
+                        <p className="pc-repo-drawer-block-text">Not provided yet.</p>
+                      )}
                       {detail.answerHi && (
-                        <p className="pc-repo-drawer-block-text is-hindi">
-                          {detail.answerHi}
-                        </p>
+                        <RichContent
+                          className="pc-repo-drawer-block-text is-hindi"
+                          html={detail.answerHi}
+                        />
                       )}
                     </>
                   )}
@@ -312,11 +319,12 @@ export function QuestionDetailDrawer({
                 {detail.solution && (
                   <div className="pc-repo-drawer-block">
                     <span className="pc-repo-drawer-block-label">Solution</span>
-                    <p className="pc-repo-drawer-block-text">{detail.solution}</p>
+                    <RichContent className="pc-repo-drawer-block-text" html={detail.solution} />
                     {detail.solutionHi && (
-                      <p className="pc-repo-drawer-block-text is-hindi">
-                        {detail.solutionHi}
-                      </p>
+                      <RichContent
+                        className="pc-repo-drawer-block-text is-hindi"
+                        html={detail.solutionHi}
+                      />
                     )}
                   </div>
                 )}

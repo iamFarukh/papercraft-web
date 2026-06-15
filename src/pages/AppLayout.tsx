@@ -1,7 +1,13 @@
+import { Suspense } from 'react'
+import { AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Plus } from 'lucide-react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { AppShell } from '@/components/shell/AppShell'
+import { PageTransition } from '@/components/motion/PageTransition'
+import { ErrorBoundary } from '@/components/system/ErrorBoundary'
+import { RouteFallback } from '@/components/system/RouteFallback'
 import { isRepositoryAuthorPath, navKeyFromPath } from '@/config/nav-routes'
+import { pageMotionKey } from '@/lib/motion/page-key'
 import { useAuth } from '@/context/AuthContext'
 
 const CRUMBS: Record<string, string[]> = {
@@ -76,9 +82,19 @@ export function AppLayout() {
     </Link>
   ) : undefined
 
+  const motionKey = pageMotionKey(pathname)
+
   return (
     <AppShell activeNav={activeNav} crumbs={crumbs} topbarActions={topbarActions}>
-      <Outlet />
+      <AnimatePresence mode="wait" initial={false}>
+        <PageTransition key={motionKey} motionKey={motionKey}>
+          <ErrorBoundary key={pathname} scopeLabel="this page">
+            <Suspense fallback={<RouteFallback />}>
+              <Outlet />
+            </Suspense>
+          </ErrorBoundary>
+        </PageTransition>
+      </AnimatePresence>
     </AppShell>
   )
 }

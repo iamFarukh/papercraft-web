@@ -3,7 +3,6 @@ import type {
   PaperHeaderPreset,
   PaperLayoutMode,
   PaperMarginPreset,
-  PaperMarksDisplay,
   PaperPrintSettings,
   PaperQuestionInstance,
   PaperSectionInstance,
@@ -111,7 +110,7 @@ export function defaultTypography(
 /** Standard-mode global font slider — questions & MCQ only, not section headers. */
 export function syncQuestionTypographyFromGlobal(
   globalFontSize: number,
-  lineHeight: number,
+  _lineHeight: number,
 ): Pick<
   PaperFormatConfig['typography'],
   'questionFontSize' | 'mcqFontSize' | 'marksFontSize'
@@ -170,7 +169,7 @@ export function normalizeFormatConfig(
   const base = defaultFormatConfig()
   const ps = legacy ?? {}
 
-  let config: PaperFormatConfig = {
+  const config: PaperFormatConfig = {
     ...base,
     ...raw,
     pageMargins: { ...base.pageMargins, ...raw?.pageMargins },
@@ -394,7 +393,7 @@ export function resolveQuestionFormat(
   const legacySpacing = qInst?.spacingMode
   const defaultGap = sectionFmt?.questionSpacing ?? config.spacing.betweenQuestions
   let marginTop = o.marginTop ?? defaultGap
-  let marginBottom = o.marginBottom ?? 0
+  const marginBottom = o.marginBottom ?? 0
   if (o.marginTop == null && legacySpacing === 'compact') marginTop = defaultGap * 0.5
   if (o.marginTop == null && legacySpacing === 'spacious') marginTop = defaultGap * 1.5
 

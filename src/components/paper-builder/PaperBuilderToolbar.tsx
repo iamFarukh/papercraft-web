@@ -9,9 +9,10 @@ import {
 import type { ReactNode } from 'react'
 import { SaveStatusMorph } from '@/components/motion/SaveStatusMorph'
 import { PAPER_STATUS_CHIP } from '@/lib/paper-status-ui'
+import type { SaveUiStatus } from '@/lib/save-confidence'
 import type { PaperStatus } from '@/types/paper'
 
-export type SaveUiStatus = 'saved' | 'saving' | 'unsaved' | 'error'
+export type { SaveUiStatus }
 
 type Props = {
   title: string

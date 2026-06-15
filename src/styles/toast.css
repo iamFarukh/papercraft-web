@@ -36,21 +36,31 @@
 }
 
 .pc-toast.is-success {
-  border-color: rgb(34 197 94 / 35%);
+  border-color: color-mix(in srgb, var(--pc-success) 35%, transparent);
   background: linear-gradient(
     135deg,
     var(--pc-surface) 0%,
-    rgb(34 197 94 / 6%) 100%
+    color-mix(in srgb, var(--pc-success) 8%, var(--pc-surface)) 100%
   );
 }
 
 .pc-toast.is-info {
-  border-color: rgb(53 92 255 / 30%);
+  border-color: color-mix(in srgb, var(--pc-primary) 30%, transparent);
   background: linear-gradient(
     135deg,
     var(--pc-surface) 0%,
-    rgb(53 92 255 / 6%) 100%
+    color-mix(in srgb, var(--pc-primary) 8%, var(--pc-surface)) 100%
   );
+}
+
+.pc-toast.is-error {
+  border-color: color-mix(in srgb, var(--pc-danger) 40%, transparent);
+  background: linear-gradient(
+    135deg,
+    var(--pc-surface) 0%,
+    var(--pc-danger-bg) 100%
+  );
+  color: var(--pc-danger-text);
 }
 
 .pc-toast-msg {

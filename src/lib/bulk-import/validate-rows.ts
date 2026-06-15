@@ -151,7 +151,7 @@ function buildDocument(
 export async function validateImportRows(
   rows: Record<string, string>[],
   mapping: Partial<Record<ImportField, string>>,
-  approvals: CurriculumApprovals,
+  _approvals: CurriculumApprovals,
 ): Promise<ValidatedImportRow[]> {
   await ensureCurriculumSeeded()
 
@@ -263,7 +263,7 @@ export async function validateImportRows(
       continue
     }
 
-    let subject: TaxonomyOption | null = null
+    let subject: TaxonomyOption | null
     const subKey = `${classNumber}|${nameKey(subjectResolve.name || subjectName)}`
 
     if (subjectResolve.catalogId) {

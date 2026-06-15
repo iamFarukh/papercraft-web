@@ -13,4 +13,9 @@ export type PaperPrintPreviewSnapshot = {
 
 export type PaperPrintPreviewLocationState = {
   printSnapshot?: PaperPrintPreviewSnapshot
+  editorContinuity?: {
+    surfaceMode?: 'edit' | 'preview'
+    activePage?: number
+    selection?: unknown
+  }
 }

@@ -8,7 +8,7 @@ import {
   Plus,
   Target,
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   BlueprintDifficultyBar,
@@ -18,8 +18,15 @@ import {
 import { BlueprintStructureViz } from '@/components/blueprints/BlueprintStructureViz'
 import { FadeIn } from '@/components/motion/FadeIn'
 import { EmptyStatePanel } from '@/components/ui/EmptyStatePanel'
+import { DraftRecoveryBanner } from '@/components/ui/DraftRecoveryBanner'
 import { useAuth } from '@/context/AuthContext'
+import { useConnectivityState } from '@/context/ConnectivityContext'
+import { useToast } from '@/context/ToastContext'
+import { useEditorTabLock } from '@/hooks/useEditorTabLock'
+import { useLocalDraftAutosave } from '@/hooks/useLocalDraftAutosave'
 import { buildBlueprintSnapshot, blueprintToPaperBootstrap } from '@/lib/blueprint-paper-bridge'
+import { isBrowserOnline } from '@/lib/connectivity'
+import { saveConfidenceLabel, type ConfidenceSaveStatus } from '@/lib/save-confidence'
 import { storeSetup } from '@/lib/paper-builder'
 import { createEmptyBlueprintDraft } from '@/lib/blueprint-defaults'
 import {
@@ -284,15 +291,44 @@ export function BlueprintBuilderWorkspace({ mode, initialDraft }: BuilderProps) 
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { push: toast } = useToast()
+  const { justReconnected, clearReconnected } = useConnectivityState()
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
   const [draft, setDraft] = useState<BlueprintDraft>(
     initialDraft ?? createEmptyBlueprintDraft(),
   )
+  const [serverFingerprint, setServerFingerprint] = useState('')
   const [loading, setLoading] = useState(mode === 'edit')
   const [error, setError] = useState<string | null>(null)
   const [issues, setIssues] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
+  const [saveStatus, setSaveStatus] = useState<ConfidenceSaveStatus>('saved')
+  const [savedAtMs, setSavedAtMs] = useState<number | null>(null)
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null)
+
+  const draftResourceId = id ?? 'new'
+  const draftFingerprint = useMemo(() => JSON.stringify(draft), [draft])
+  const isDirty = draftFingerprint !== serverFingerprint
+
+  const draftAutosave = useLocalDraftAutosave<BlueprintDraft>({
+    scope: 'blueprint-builder',
+    resourceId: draftResourceId,
+    enabled: !loading && !error,
+    fingerprint: draftFingerprint,
+    serverFingerprint,
+    payload: draft,
+  })
+
+  const { conflict: tabConflict } = useEditorTabLock({
+    kind: 'blueprint',
+    resourceId: id ?? null,
+    enabled: mode === 'edit' && Boolean(id),
+  })
+
+  const saveHint = useMemo(
+    () => saveConfidenceLabel(saveStatus, { savedAtMs, isDirty }),
+    [saveStatus, savedAtMs, isDirty],
+  )
 
   useEffect(() => {
     if (mode !== 'edit' || !id) return
@@ -321,6 +357,22 @@ export function BlueprintBuilderWorkspace({ mode, initialDraft }: BuilderProps) 
           difficultyDistribution: doc.difficultyDistribution,
           chapterCoverage: doc.chapterCoverage,
         })
+        const loaded = JSON.stringify({
+          name: doc.name,
+          examType: doc.examType,
+          description: doc.description,
+          instructions: doc.instructions,
+          recommendedClasses: doc.recommendedClasses,
+          recommendedSubjects: doc.recommendedSubjects,
+          durationMinutes: doc.durationMinutes,
+          totalMarks: doc.totalMarks,
+          sections: doc.sections,
+          difficultyDistribution: doc.difficultyDistribution,
+          chapterCoverage: doc.chapterCoverage,
+        })
+        setServerFingerprint(loaded)
+        setSavedAtMs(Date.now())
+        setSaveStatus('saved')
         setActiveSectionId(doc.sections[0]?.id ?? null)
       })
       .catch((err) => {
@@ -333,6 +385,32 @@ export function BlueprintBuilderWorkspace({ mode, initialDraft }: BuilderProps) 
       cancelled = true
     }
   }, [id, mode])
+
+  useEffect(() => {
+    if (mode === 'create' && initialDraft) {
+      setServerFingerprint(JSON.stringify(initialDraft))
+    }
+  }, [mode, initialDraft])
+
+  useEffect(() => {
+    if (!isDirty) return
+    setSaveStatus('unsaved')
+  }, [isDirty, draftFingerprint])
+
+  useEffect(() => {
+    if (!isDirty) return
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [isDirty])
+
+  useEffect(() => {
+    if (!justReconnected) return
+    toast('Connection restored.', 'success')
+    clearReconnected()
+  }, [justReconnected, toast, clearReconnected])
 
   const updateDraft = useCallback((patch: Partial<BlueprintDraft>) => {
     setDraft((prev) => ({ ...prev, ...patch }))
@@ -394,7 +472,16 @@ export function BlueprintBuilderWorkspace({ mode, initialDraft }: BuilderProps) 
       return
     }
     if (!user) return
+    if (!isBrowserOnline()) {
+      setSaveStatus('offline')
+      toast(
+        'You are offline. Blueprint changes are saved on this device and will sync when you reconnect.',
+        'info',
+      )
+      return
+    }
     setSaving(true)
+    setSaveStatus('saving')
     setError(null)
     try {
       if (mode === 'edit' && id) {
@@ -404,11 +491,24 @@ export function BlueprintBuilderWorkspace({ mode, initialDraft }: BuilderProps) 
         const newId = await createBlueprint(draft, user.uid)
         navigate(`/app/blueprints/${newId}`)
       }
+      setServerFingerprint(draftFingerprint)
+      setSavedAtMs(Date.now())
+      setSaveStatus('saved')
+      draftAutosave.clearOnSync()
     } catch (err) {
+      setSaveStatus(isBrowserOnline() ? 'error' : 'offline')
       setError(parseBlueprintError(err))
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleRecoverDraft = () => {
+    const recovered = draftAutosave.applyRecovery()
+    if (!recovered) return
+    setDraft(recovered)
+    setSaveStatus('unsaved')
+    toast('Recovered your local blueprint draft.', 'success')
   }
 
   const allocated = computeAllocatedMarks(draft.sections)
@@ -428,6 +528,18 @@ export function BlueprintBuilderWorkspace({ mode, initialDraft }: BuilderProps) 
 
   return (
     <div className="pc-bp-builder pc-bp-page">
+      {draftAutosave.showRecovery && draftAutosave.recoveryLabel ? (
+        <DraftRecoveryBanner
+          savedLabel={draftAutosave.recoveryLabel}
+          onRecover={handleRecoverDraft}
+          onDismiss={draftAutosave.dismissRecovery}
+        />
+      ) : null}
+      {tabConflict ? (
+        <div className="pc-pb-missing-banner" role="status">
+          This blueprint may be open in another tab. Save here before editing elsewhere.
+        </div>
+      ) : null}
       <div className="pc-bp-builder-scroll">
         <BlueprintStepStrip step={step} />
 
@@ -463,7 +575,7 @@ export function BlueprintBuilderWorkspace({ mode, initialDraft }: BuilderProps) 
 
       <footer className="pc-bp-builder-foot">
         <span className="pc-bp-builder-foot-hint">
-          Step <span className="pc-num">{step}</span> of 4
+          Step <span className="pc-num">{step}</span> of 4 · {saveHint}
         </span>
         <div className="pc-bp-builder-foot-actions">
           <Link to="/app/blueprints" className="pc-btn is-sm is-ghost">
@@ -646,7 +758,7 @@ function StepStructure({
   activeSectionId,
   marksDelta,
   allocated,
-  onChange,
+  onChange: _onChange,
   onSectionChange,
   onAddSection,
   onRemoveSection,

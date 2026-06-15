@@ -42,6 +42,8 @@
   --pc-danger: #dc4a3d;
   --pc-danger-bg: #fbe9e5;
   --pc-danger-text: #a0312a;
+  /* "Modified / overrides default" indicator — on-brand, replaces legacy violet */
+  --pc-override: var(--pc-warning);
   --pc-info: #355cff;
   --pc-info-bg: #e7ecff;
 
@@ -63,6 +65,13 @@
     0 24px 48px -16px rgb(0 0 0 / 12%), 0 60px 80px -40px rgb(0 0 0 / 14%);
   --pc-ring-primary: 0 0 0 3px rgb(53 92 255 / 18%);
 
+  /* Motion — mirrors src/lib/motion/tokens.ts so CSS + Framer stay in sync */
+  --pc-motion-instant: 120ms;
+  --pc-motion-fast: 160ms;
+  --pc-motion-normal: 200ms;
+  --pc-ease-out: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --pc-ease-emphasized: cubic-bezier(0.22, 1, 0.36, 1);
+
   /* Radius */
   --pc-r-xs: 4px;
   --pc-r-sm: 6px;
@@ -70,4 +79,30 @@
   --pc-r-lg: 14px;
   --pc-r-xl: 20px;
   --pc-r-2xl: 28px;
+}
+
+/*
+ * Global keyboard focus ring (WCAG 2.4.7). :focus-visible only shows for
+ * keyboard users, not mouse clicks. Wrapped in :where() for zero specificity,
+ * so any component that defines its own focus style still wins. The transparent
+ * outline keeps a visible ring under forced-colors / high-contrast mode.
+ */
+:where(
+  a[href],
+  button,
+  input,
+  select,
+  textarea,
+  summary,
+  [tabindex]:not([tabindex='-1']),
+  [role='button'],
+  [role='tab'],
+  [role='menuitem'],
+  [role='checkbox'],
+  [role='switch'],
+  [role='option']
+):focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: var(--pc-ring-primary);
 }

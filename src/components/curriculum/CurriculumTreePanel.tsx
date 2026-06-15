@@ -7,6 +7,7 @@ type Props = {
   selectionId: string | null
   selectionType: string | null
   loading: boolean
+  error?: string | null
   showArchived: boolean
   onToggleArchived: (v: boolean) => void
   onSelect: (node: CurriculumTreeNode) => void
@@ -95,6 +96,7 @@ export function CurriculumTreePanel({
   selectionId,
   selectionType,
   loading,
+  error,
   showArchived,
   onToggleArchived,
   onSelect,
@@ -130,9 +132,22 @@ export function CurriculumTreePanel({
       </label>
 
       {loading ? (
-        <p className="pc-curr-muted">Loading taxonomy…</p>
+        <div className="pc-curr-tree-body" aria-busy aria-hidden>
+          {Array.from({ length: 5 }, (_, i) => (
+            <p key={i} className="pc-curr-muted">
+              <span className="pc-skel pc-skel-activity-title" />
+            </p>
+          ))}
+        </div>
+      ) : error ? (
+        <p className="pc-curr-muted" role="alert">
+          Couldn’t load the curriculum tree. Use Retry above to try again.
+        </p>
       ) : tree.length === 0 ? (
-        <p className="pc-curr-muted">No curriculum entries yet.</p>
+        <p className="pc-curr-muted">
+          No curriculum entries yet. Add Class, Subject, and Chapter to unlock precise
+          filtering in Repository and Builder.
+        </p>
       ) : (
         <div className="pc-curr-tree-body">
           {tree.map((cls) => (

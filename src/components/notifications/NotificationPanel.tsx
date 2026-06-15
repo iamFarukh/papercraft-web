@@ -83,9 +83,25 @@ export function NotificationPanel({ open, onClose }: Props) {
 
       <div className="pc-notify-body pc-scroll">
         {loading ? (
-          <p className="pc-notify-empty">Loading…</p>
+          <ul className="pc-notify-list" aria-busy aria-hidden>
+            {Array.from({ length: 4 }, (_, i) => (
+              <li key={i} className="pc-notify-item is-read">
+                <div className="pc-notify-item-main">
+                  <span className="pc-skel pc-skel-activity-title" />
+                  <span className="pc-skel pc-skel-activity-meta" />
+                </div>
+              </li>
+            ))}
+          </ul>
         ) : notifications.length === 0 ? (
-          <p className="pc-notify-empty">No notifications yet.</p>
+          <div className="pc-notify-empty">
+            <p>No notifications yet.</p>
+            <p>
+              {isAdmin
+                ? 'Submission and approval updates will appear here as teachers work.'
+                : 'Approval and draft return updates will appear here as your papers progress.'}
+            </p>
+          </div>
         ) : (
           <FadeIn>
             {unread.length > 0 ? (

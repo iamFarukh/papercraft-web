@@ -3,6 +3,7 @@ import {
   questionDisplayText,
   type PaperMedium,
 } from '@/lib/paper-medium'
+import { RichContent } from '@/components/ui/RichContent'
 import type { QuestionRecord } from '@/types/question'
 
 type Props = {
@@ -26,13 +27,14 @@ export function PrintQuestionBody({ question, medium }: Props) {
     <div className={isHindi ? 'pc-print-is-hindi' : undefined}>
       {medium === 'bilingual' && question.bodyText?.trim() && question.hindi?.trim() ? (
         <>
-          <p className="pc-print-question-text pc-serif">{question.bodyText.trim()}</p>
-          <p className="pc-print-question-text pc-print-question-text--hi pc-serif">
-            {question.hindi.trim()}
-          </p>
+          <RichContent className="pc-print-question-text pc-serif" html={question.bodyText} />
+          <RichContent
+            className="pc-print-question-text pc-print-question-text--hi pc-serif"
+            html={question.hindi}
+          />
         </>
       ) : (
-        <p className="pc-print-question-text pc-serif">{text}</p>
+        <RichContent className="pc-print-question-text pc-serif" html={text} />
       )}
 
       {isMcq && options ? (
@@ -44,9 +46,13 @@ export function PrintQuestionBody({ question, medium }: Props) {
             return (
               <div key={key} className="pc-print-mcq-opt">
                 <span className="pc-print-mcq-key">({key})</span>{' '}
-                <span>{label}</span>
+                <RichContent as="span" html={label} />
                 {medium === 'bilingual' && hi ? (
-                  <span className="pc-print-mcq-opt-hi pc-print-is-hindi"> / {hi}</span>
+                  <RichContent
+                    as="span"
+                    className="pc-print-mcq-opt-hi pc-print-is-hindi"
+                    html={` / ${hi}`}
+                  />
                 ) : null}
               </div>
             )

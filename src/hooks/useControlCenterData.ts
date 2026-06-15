@@ -7,7 +7,6 @@ import {
   paperToPipelineCard,
   papersToActivityRows,
   PIPELINE_STAGE_CONFIG,
-  type PipelinePaperCard,
 } from '@/lib/control-center'
 import { fetchQuestionCount } from '@/services/firebase/question-count'
 import { listRecentPapers } from '@/services/firebase/papers'

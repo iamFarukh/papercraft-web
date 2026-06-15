@@ -65,9 +65,9 @@ export async function provisionTeacherAuthAccount(
         await signOut(auth)
         return uid
       } catch (linkErr) {
-        throw new Error(parseProvisionAuthError(linkErr))
+        throw new Error(parseProvisionAuthError(linkErr), { cause: linkErr })
       }
     }
-    throw new Error(parseProvisionAuthError(err))
+    throw new Error(parseProvisionAuthError(err), { cause: err })
   }
 }

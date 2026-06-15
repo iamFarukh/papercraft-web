@@ -6,6 +6,7 @@ import {
   ArrowRight,
   Check,
   CheckCircle2,
+  Copy,
   Download,
   FolderOpen,
   GripVertical,
@@ -66,6 +67,190 @@ function rowFilterState(row: ValidatedImportRow): PreviewFilter {
   return 'ready'
 }
 
+type AiPromptConfig = {
+  classLabel: string
+  stream: string
+  subject: string
+  chapter: string
+  topic: string
+  language: 'english' | 'hindi' | 'bilingual'
+  marks: string
+  difficulty: 'easy' | 'medium' | 'hard' | 'mixed'
+  questionTypes: string
+  questionCount: string
+}
+
+const AI_CSV_HEADERS = [
+  'questionTextEn',
+  'questionTextHi',
+  'questionType',
+  'class',
+  'subject',
+  'chapter',
+  'topic',
+  'difficulty',
+  'marks',
+  'optionA',
+  'optionB',
+  'optionC',
+  'optionD',
+  'correctOption',
+  'answer',
+  'solution',
+  'bloomLevel',
+  'estimatedMinutes',
+  'tags',
+] as const
+
+const AI_EXAMPLE_ROWS: string[][] = [
+  [
+    'Add: 3/8 + 1/4. Simplify the answer.',
+    '',
+    'Short Answer',
+    '6',
+    'Mathematics',
+    'Fractions',
+    'Addition',
+    'medium',
+    '2',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '5/8',
+    'Convert 1/4 to 2/8, then add 3/8 + 2/8 = 5/8.',
+    'apply',
+    '3',
+    'rbse,fractions',
+  ],
+  [
+    'Which gas is released at the cathode during electrolysis of water?',
+    'जल के विद्युत अपघटन में कैथोड पर कौन सा गैस निकलता है?',
+    'MCQ',
+    '8',
+    'Science',
+    'Chemical Effects of Electric Current',
+    'Electrolysis',
+    'easy',
+    '1',
+    'Oxygen',
+    'Hydrogen',
+    'Chlorine',
+    'Nitrogen',
+    'b',
+    '',
+    '',
+    'remember',
+    '1',
+    'rbse,science',
+  ],
+  [
+    'Define noun and give two examples.',
+    'संग्या की परिभाषा लिखिए और दो उदाहरण दीजिए।',
+    'Long Answer',
+    '7',
+    'Hindi',
+    'व्याकरण — संज्ञा',
+    'संग्या',
+    'medium',
+    '4',
+    '',
+    '',
+    '',
+    '',
+    '',
+    'नाम वाले शब्द संज्ञा कहलाते हैं।',
+    'किसी व्यक्ति, स्थान, वस्तु या भाव के नाम को संज्ञा कहते हैं।',
+    'understand',
+    '6',
+    'hindi,grammar',
+  ],
+]
+
+function csvEscape(value: string): string {
+  const next = value.replace(/"/g, '""')
+  if (/[",\n]/.test(next)) return `"${next}"`
+  return next
+}
+
+function buildSampleCsvSnippet(): string {
+  const header = AI_CSV_HEADERS.join(',')
+  const rows = AI_EXAMPLE_ROWS.map((row) => row.map(csvEscape).join(',')).join('\n')
+  return `${header}\n${rows}`
+}
+
+function buildFlowAPrompt(config: AiPromptConfig): string {
+  return [
+    'You are preparing an import-ready academic CSV for PaperCraft.',
+    '',
+    'Flow A (sample-assisted): I will upload a sample CSV file.',
+    'Strictly follow the uploaded sample CSV structure.',
+    '',
+    'Non-negotiable rules:',
+    '- Preserve the exact header names from the uploaded sample',
+    '- Preserve the exact column order from the uploaded sample',
+    '- Return only CSV rows that match the uploaded sample format',
+    '- Do not add, remove, or rename columns',
+    '- Output must be valid UTF-8 CSV',
+    '- Escape commas and quotes properly',
+    '- No markdown, no explanations, no bullet points',
+    '- Start directly with the CSV header row',
+    '',
+    'Academic generation configuration:',
+    `- Class: ${config.classLabel}`,
+    `- Stream (optional): ${config.stream || 'not specified'}`,
+    `- Subject: ${config.subject || 'not specified'}`,
+    `- Chapter: ${config.chapter || 'not specified'}`,
+    `- Topic: ${config.topic || 'not specified'}`,
+    `- Language mode: ${config.language}`,
+    `- Marks profile: ${config.marks || 'mixed'}`,
+    `- Difficulty profile: ${config.difficulty}`,
+    `- Question types: ${config.questionTypes || 'mixed'}`,
+    `- Number of questions: ${config.questionCount || '20'}`,
+    '',
+    'Output expectation:',
+    'Your response must begin directly with the CSV header row and contain only CSV.',
+  ].join('\n')
+}
+
+function buildFlowBPrompt(config: AiPromptConfig): string {
+  return [
+    'You are generating an import-ready CSV dataset for PaperCraft.',
+    '',
+    'Return ONLY valid CSV. No markdown. No explanations. No bullet points.',
+    'Your response must begin directly with the CSV header row.',
+    '',
+    `Use EXACTLY this header row in this exact order:`,
+    AI_CSV_HEADERS.join(','),
+    '',
+    'CSV rules:',
+    '- Keep exact header names and exact column order',
+    '- UTF-8 safe text',
+    '- Escape commas and quotes correctly',
+    '- Quote any field when needed',
+    '- For non-MCQ rows, keep optionA/optionB/optionC/optionD/correctOption empty',
+    '- For bilingual mode, fill both questionTextEn and questionTextHi',
+    '- For english mode, keep questionTextHi empty',
+    '- For hindi mode, fill questionTextHi and copy the same text to questionTextEn for compatibility',
+    '',
+    'Academic generation configuration:',
+    `- Class: ${config.classLabel}`,
+    `- Stream (optional): ${config.stream || 'not specified'}`,
+    `- Subject: ${config.subject || 'not specified'}`,
+    `- Chapter: ${config.chapter || 'not specified'}`,
+    `- Topic: ${config.topic || 'not specified'}`,
+    `- Language mode: ${config.language}`,
+    `- Marks profile: ${config.marks || 'mixed'}`,
+    `- Difficulty profile: ${config.difficulty}`,
+    `- Question types: ${config.questionTypes || 'mixed'}`,
+    `- Number of questions: ${config.questionCount || '20'}`,
+    '',
+    'Reference example rows (follow format, do not repeat verbatim unless relevant):',
+    buildSampleCsvSnippet(),
+  ].join('\n')
+}
+
 export function BulkImportWizard() {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -85,6 +270,23 @@ export function BulkImportWizard() {
   const [confirmPublish, setConfirmPublish] = useState(true)
   const [importBatch, setImportBatch] = useState<ImportBatchMeta | null>(null)
   const [rowEdits, setRowEdits] = useState<Record<number, Record<string, string>>>({})
+  const [aiConfig, setAiConfig] = useState<AiPromptConfig>({
+    classLabel: '8',
+    stream: '',
+    subject: 'Science',
+    chapter: '',
+    topic: '',
+    language: 'english',
+    marks: 'mixed',
+    difficulty: 'mixed',
+    questionTypes: 'MCQ, Short Answer',
+    questionCount: '25',
+  })
+  const [copiedPrompt, setCopiedPrompt] = useState<'flowA' | 'flowB' | null>(null)
+  const [pastedCsv, setPastedCsv] = useState('')
+  const [pasteBusy, setPasteBusy] = useState(false)
+  const [pasteError, setPasteError] = useState<string | null>(null)
+  const [pastedSheet, setPastedSheet] = useState<ParsedSheet | null>(null)
 
   function rowsForValidation(): Record<string, string>[] {
     if (!parsed) return []
@@ -110,6 +312,14 @@ export function BulkImportWizard() {
   )
 
   const mapStats = useMemo(() => mappingStats(mapping), [mapping])
+  const pastedAutoMapping = useMemo(
+    () => (pastedSheet ? autoMapColumns(pastedSheet.headers) : {}),
+    [pastedSheet],
+  )
+  const pastedMissingRequired = useMemo(
+    () => unmappedRequired(pastedAutoMapping),
+    [pastedAutoMapping],
+  )
 
   const filteredPreview = useMemo(() => {
     if (!validated) return []
@@ -136,6 +346,56 @@ export function BulkImportWizard() {
     }
   }, [])
 
+  const copyPrompt = useCallback(
+    async (flow: 'flowA' | 'flowB') => {
+      const prompt =
+        flow === 'flowA' ? buildFlowAPrompt(aiConfig) : buildFlowBPrompt(aiConfig)
+      try {
+        await navigator.clipboard.writeText(prompt)
+        setCopiedPrompt(flow)
+        toast(
+          flow === 'flowA'
+            ? 'Sample-assisted AI prompt copied.'
+            : 'Direct CSV AI prompt copied.',
+          'success',
+        )
+      } catch {
+        toast('Could not copy prompt. Please copy manually.', 'error')
+      }
+    },
+    [aiConfig, toast],
+  )
+
+  const parsePastedCsv = useCallback(async () => {
+    if (!pastedCsv.trim()) {
+      setPasteError('Paste CSV content first.')
+      return
+    }
+    setPasteBusy(true)
+    setPasteError(null)
+    try {
+      const file = new File([pastedCsv], 'ai-generated.csv', { type: 'text/csv' })
+      const sheet = await parseImportFile(file)
+      setPastedSheet(sheet)
+      toast(`Parsed ${sheet.rows.length} rows from pasted CSV.`, 'success')
+    } catch (err) {
+      setPastedSheet(null)
+      setPasteError(err instanceof Error ? err.message : 'Could not parse pasted CSV.')
+    } finally {
+      setPasteBusy(false)
+    }
+  }, [pastedCsv, toast])
+
+  const usePastedSheet = useCallback(() => {
+    if (!pastedSheet) return
+    setParsed(pastedSheet)
+    setImportBatch(createImportBatch('ai-generated.csv'))
+    setRowEdits({})
+    setMapping(autoMapColumns(pastedSheet.headers))
+    setValidated(null)
+    setStep('mapping')
+  }, [pastedSheet])
+
   const runValidation = useCallback(async () => {
     if (!parsed) return
     const missing = unmappedRequired(mapping)
@@ -157,7 +417,7 @@ export function BulkImportWizard() {
       setPreviewFilter('all')
       setStep('preview')
     } catch (err) {
-      toast(err instanceof Error ? err.message : 'Validation failed', 'info')
+      toast(err instanceof Error ? err.message : 'Validation failed', 'error')
     } finally {
       setValidating(false)
     }
@@ -182,7 +442,7 @@ export function BulkImportWizard() {
         setValidated(rows)
         toast('Row updated — validation refreshed', 'success')
       } catch (err) {
-        toast(err instanceof Error ? err.message : 'Re-validation failed', 'info')
+        toast(err instanceof Error ? err.message : 'Re-validation failed', 'error')
       } finally {
         setValidating(false)
       }
@@ -212,7 +472,7 @@ export function BulkImportWizard() {
         batchId: importBatch?.id,
       }).catch(() => undefined)
     } catch (err) {
-      toast(err instanceof Error ? err.message : 'Import failed', 'info')
+      toast(err instanceof Error ? err.message : 'Import failed', 'error')
     } finally {
       setImporting(false)
     }
@@ -507,6 +767,234 @@ export function BulkImportWizard() {
                 ))}
               </div>
             </div>
+
+            <div className="pc-csv-ai-assist">
+              <p className="pc-csv-kicker">AI-assisted CSV generation</p>
+              <h3 className="pc-csv-drop-title pc-serif">Dual-flow AI prompt assistant</h3>
+              <p className="pc-csv-step-lead">
+                Generate import-ready CSV using ChatGPT, Gemini, or Claude without manual
+                CSV formatting.
+              </p>
+
+              <div className="pc-csv-ai-grid">
+                <div className="pc-panel pc-panel-pad">
+                  <p className="pc-csv-kicker">Flow A · Sample-assisted</p>
+                  <p className="pc-csv-how-body">
+                    Download sample CSV, upload it to external AI, and use this prompt to
+                    preserve exact structure and column order.
+                  </p>
+                  <button
+                    type="button"
+                    className="pc-btn is-sm is-primary"
+                    onClick={() => void copyPrompt('flowA')}
+                  >
+                    <Copy size={12} strokeWidth={1.6} />
+                    {copiedPrompt === 'flowA' ? 'Copied' : 'Copy AI prompt'}
+                  </button>
+                </div>
+
+                <div className="pc-panel pc-panel-pad">
+                  <p className="pc-csv-kicker">Flow B · Direct schema prompt</p>
+                  <p className="pc-csv-how-body">
+                    No sample needed. Prompt includes exact headers, output rules, and sample
+                    rows so AI can produce full CSV directly.
+                  </p>
+                  <button
+                    type="button"
+                    className="pc-btn is-sm is-primary"
+                    onClick={() => void copyPrompt('flowB')}
+                  >
+                    <Copy size={12} strokeWidth={1.6} />
+                    {copiedPrompt === 'flowB' ? 'Copied' : 'Copy AI prompt'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="pc-csv-ai-config">
+                <div className="pc-csv-ai-config-row">
+                  <label>
+                    Class
+                    <input
+                      className="pc-csv-row-editor-input"
+                      value={aiConfig.classLabel}
+                      onChange={(e) =>
+                        setAiConfig((prev) => ({ ...prev, classLabel: e.target.value }))
+                      }
+                    />
+                  </label>
+                  <label>
+                    Stream (optional)
+                    <input
+                      className="pc-csv-row-editor-input"
+                      value={aiConfig.stream}
+                      onChange={(e) =>
+                        setAiConfig((prev) => ({ ...prev, stream: e.target.value }))
+                      }
+                    />
+                  </label>
+                  <label>
+                    Subject
+                    <input
+                      className="pc-csv-row-editor-input"
+                      value={aiConfig.subject}
+                      onChange={(e) =>
+                        setAiConfig((prev) => ({ ...prev, subject: e.target.value }))
+                      }
+                    />
+                  </label>
+                </div>
+                <div className="pc-csv-ai-config-row">
+                  <label>
+                    Chapter
+                    <input
+                      className="pc-csv-row-editor-input"
+                      value={aiConfig.chapter}
+                      onChange={(e) =>
+                        setAiConfig((prev) => ({ ...prev, chapter: e.target.value }))
+                      }
+                    />
+                  </label>
+                  <label>
+                    Topic
+                    <input
+                      className="pc-csv-row-editor-input"
+                      value={aiConfig.topic}
+                      onChange={(e) =>
+                        setAiConfig((prev) => ({ ...prev, topic: e.target.value }))
+                      }
+                    />
+                  </label>
+                  <label>
+                    Language mode
+                    <select
+                      className="pc-csv-row-editor-input"
+                      value={aiConfig.language}
+                      onChange={(e) =>
+                        setAiConfig((prev) => ({
+                          ...prev,
+                          language: e.target.value as AiPromptConfig['language'],
+                        }))
+                      }
+                    >
+                      <option value="english">English</option>
+                      <option value="hindi">Hindi</option>
+                      <option value="bilingual">Bilingual</option>
+                    </select>
+                  </label>
+                </div>
+                <div className="pc-csv-ai-config-row">
+                  <label>
+                    Marks profile
+                    <input
+                      className="pc-csv-row-editor-input"
+                      value={aiConfig.marks}
+                      onChange={(e) =>
+                        setAiConfig((prev) => ({ ...prev, marks: e.target.value }))
+                      }
+                    />
+                  </label>
+                  <label>
+                    Difficulty
+                    <select
+                      className="pc-csv-row-editor-input"
+                      value={aiConfig.difficulty}
+                      onChange={(e) =>
+                        setAiConfig((prev) => ({
+                          ...prev,
+                          difficulty: e.target.value as AiPromptConfig['difficulty'],
+                        }))
+                      }
+                    >
+                      <option value="mixed">Mixed</option>
+                      <option value="easy">Easy</option>
+                      <option value="medium">Medium</option>
+                      <option value="hard">Hard</option>
+                    </select>
+                  </label>
+                  <label>
+                    Question count
+                    <input
+                      className="pc-csv-row-editor-input"
+                      value={aiConfig.questionCount}
+                      onChange={(e) =>
+                        setAiConfig((prev) => ({ ...prev, questionCount: e.target.value }))
+                      }
+                    />
+                  </label>
+                </div>
+                <label>
+                  Question types (comma-separated)
+                  <input
+                    className="pc-csv-row-editor-input"
+                    value={aiConfig.questionTypes}
+                    onChange={(e) =>
+                      setAiConfig((prev) => ({ ...prev, questionTypes: e.target.value }))
+                    }
+                  />
+                </label>
+              </div>
+
+              <div className="pc-csv-ai-paste">
+                <p className="pc-csv-kicker">Direct CSV paste (from AI output)</p>
+                <textarea
+                  className="pc-csv-ai-textarea"
+                  value={pastedCsv}
+                  onChange={(e) => setPastedCsv(e.target.value)}
+                  placeholder="Paste generated CSV here. It should start with the header row."
+                />
+                <div className="pc-csv-drop-actions">
+                  <button
+                    type="button"
+                    className="pc-btn is-sm is-primary"
+                    onClick={() => void parsePastedCsv()}
+                    disabled={pasteBusy}
+                  >
+                    {pasteBusy ? 'Validating pasted CSV…' : 'Validate pasted CSV'}
+                  </button>
+                  <button
+                    type="button"
+                    className="pc-btn is-sm"
+                    onClick={async () => {
+                      try {
+                        const text = await navigator.clipboard.readText()
+                        setPastedCsv(text)
+                      } catch {
+                        toast('Clipboard read blocked. Paste manually.', 'info')
+                      }
+                    }}
+                  >
+                    Paste from clipboard
+                  </button>
+                </div>
+                {pasteError ? <p className="pc-csv-error">{pasteError}</p> : null}
+                {pastedSheet ? (
+                  <div className="pc-csv-ai-review">
+                    <p className="pc-csv-step-lead">
+                      Parsed <strong className="pc-num">{pastedSheet.rows.length}</strong>{' '}
+                      rows · <strong className="pc-num">{pastedSheet.headers.length}</strong>{' '}
+                      columns
+                    </p>
+                    {pastedMissingRequired.length > 0 ? (
+                      <p className="pc-csv-error">
+                        Missing required mapping targets:{' '}
+                        {pastedMissingRequired.map((f) => FIELD_LABELS[f]).join(', ')}
+                      </p>
+                    ) : (
+                      <p className="pc-csv-foot-note">
+                        Header structure looks import-ready. You can continue to mapping.
+                      </p>
+                    )}
+                    <button
+                      type="button"
+                      className="pc-btn is-sm is-primary"
+                      onClick={usePastedSheet}
+                    >
+                      Continue with this CSV
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            </div>
           </div>
 
           <aside className="pc-csv-upload-aside">
@@ -518,7 +1006,7 @@ export function BulkImportWizard() {
                 ['check', 'Every row validated', 'Types, marks, duplicates, curriculum.'],
                 ['eye', 'Preview before commit', 'Nothing is skipped silently.'],
                 ['check', 'Published automatically', 'Questions go live in the repository immediately.'],
-              ].map(([icon, title, body], i) => (
+              ].map(([icon, title, body]) => (
                 <div key={title} className="pc-csv-how-row">
                   <span className="pc-csv-how-icon">
                     {icon === 'upload' && <Upload size={13} />}

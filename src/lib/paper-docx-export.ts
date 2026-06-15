@@ -7,6 +7,7 @@ import {
   TextRun,
 } from 'docx'
 import { isMissingQuestion } from '@/lib/missing-question'
+import { richHtmlToRuns } from '@/lib/rich-text-docx'
 import { formatQuestionMarks } from '@/lib/paper-format-marks'
 import type { ExportProgress } from '@/lib/paper-export-formats'
 import { downloadBlob } from '@/lib/paper-export-formats'
@@ -59,11 +60,32 @@ function questionParagraphs(
 
   if (medium === 'bilingual' && question.bodyText?.trim() && question.hindi?.trim()) {
     lines.push(
-      paragraph(`${prefix}${question.bodyText.trim()}${marksSuffix}`, { spacingAfter: 80 }),
+      new Paragraph({
+        spacing: { after: 80 },
+        children: [
+          new TextRun({ text: prefix }),
+          ...richHtmlToRuns(question.bodyText),
+          ...(marksSuffix ? [new TextRun({ text: marksSuffix })] : []),
+        ],
+      }),
     )
-    lines.push(paragraph(question.hindi.trim(), { spacingAfter: 120 }))
+    lines.push(
+      new Paragraph({
+        spacing: { after: 120 },
+        children: richHtmlToRuns(question.hindi),
+      }),
+    )
   } else {
-    lines.push(paragraph(`${prefix}${body}${marksSuffix}`))
+    lines.push(
+      new Paragraph({
+        spacing: { after: 120 },
+        children: [
+          new TextRun({ text: prefix }),
+          ...richHtmlToRuns(body),
+          ...(marksSuffix ? [new TextRun({ text: marksSuffix })] : []),
+        ],
+      }),
+    )
   }
 
   const isMcq = question.typeRaw === 'mcq' || question.type === 'MCQ'
@@ -78,12 +100,15 @@ function questionParagraphs(
       const label = options[key]
       if (!label?.trim()) continue
       const hi = optionsHi?.[key]?.trim()
-      const optText = hi ? `(${key}) ${label} / ${hi}` : `(${key}) ${label}`
       lines.push(
         new Paragraph({
           spacing: { after: 60 },
           indent: { left: 720 },
-          children: [new TextRun({ text: optText })],
+          children: [
+            new TextRun({ text: `(${key}) ` }),
+            ...richHtmlToRuns(label),
+            ...(hi ? [new TextRun({ text: ' / ' }), ...richHtmlToRuns(hi)] : []),
+          ],
         }),
       )
     }

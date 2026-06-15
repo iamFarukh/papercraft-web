@@ -179,8 +179,8 @@ export function TeacherFormDialog({ open, teacher, onClose, onSaved }: Props) {
       return
     }
 
-    let finalScope = assignmentScope
-    let finalAssignments = assignments
+    const finalScope = assignmentScope
+    let finalAssignments: TeacherAssignment[]
 
     if (assignmentScope === 'custom') {
       finalAssignments = buildAssignmentsFromMatrix(
@@ -272,6 +272,7 @@ export function TeacherFormDialog({ open, teacher, onClose, onSaved }: Props) {
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="Rajesh Kumar"
                   required
+                  aria-required="true"
                 />
               </label>
               <label className="pc-field">
@@ -287,6 +288,8 @@ export function TeacherFormDialog({ open, teacher, onClose, onSaved }: Props) {
                   placeholder="jitu@school.edu"
                   autoComplete="off"
                   disabled={Boolean(teacher && !teacher.pendingSignIn)}
+                  aria-invalid={emailMissing}
+                  aria-describedby={emailMissing ? 'teacher-email-warn' : undefined}
                 />
                 <span className="pc-field-hint">
                   Email-style username only — not used to send mail. The teacher signs in with
@@ -317,7 +320,7 @@ export function TeacherFormDialog({ open, teacher, onClose, onSaved }: Props) {
               )}
             </div>
             {emailMissing ? (
-              <p className="pc-teacher-email-warn" role="status">
+              <p id="teacher-email-warn" className="pc-teacher-email-warn" role="status">
                 No email was saved for this teacher yet — enter their school email below.
               </p>
             ) : null}

@@ -34,64 +34,98 @@
   color: var(--pc-ink-4);
 }
 
+/*
+ * Page-transition wrapper sits between .pc-work-body (flex column, overflow
+ * hidden) and the routed page. It must be transparent to that layout — a flex
+ * column that fills the body — so the page's internal .pc-scroll containers
+ * keep their height and scroll. (Without flex:1/min-height:0 the height chain
+ * breaks and the page can't scroll.)
+ */
 .pc-page-motion {
-  min-height: 100%;
+  flex: 1;
+  min-height: 0;
   width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Elevated surfaces — cards, rows, chips */
+/* Elevated surfaces — cards, rows, chips. Transform/opacity only → 60fps. */
 .pc-motion-surface {
   transition:
-    box-shadow var(--pc-motion-fast, 160ms) ease,
-    border-color var(--pc-motion-fast, 160ms) ease,
-    background-color var(--pc-motion-fast, 160ms) ease,
-    transform var(--pc-motion-fast, 160ms) ease;
+    box-shadow var(--pc-motion-normal) var(--pc-ease-emphasized),
+    border-color var(--pc-motion-fast) var(--pc-ease-out),
+    background-color var(--pc-motion-fast) var(--pc-ease-out),
+    transform var(--pc-motion-normal) var(--pc-ease-emphasized);
+  will-change: transform;
 }
 
+/* Consistent subtle lift on every interactive surface (cards, paper/approval rows) */
 .pc-motion-surface:hover {
   box-shadow: var(--pc-shadow-sm);
-}
-
-.pc-motion-surface:active {
-  transform: translateY(0.5px);
-}
-
-.pc-q-card.pc-motion-surface:not(.is-list):hover {
   transform: translateY(-1px);
 }
 
-.pc-q-card.pc-motion-surface:active {
+.pc-motion-surface:active {
   transform: translateY(0);
+  transition-duration: var(--pc-motion-instant);
 }
 
-/* Buttons — tap feedback without bounce */
+/* List-view question cards stay flat (dense rows) — lift only the foot shadow */
+.pc-q-card.is-list.pc-motion-surface:hover {
+  transform: none;
+}
+
+/* Buttons — tactile press + subtle hover lift on primary CTAs */
 .pc-btn,
 .pc-icon-btn,
 .pc-pb-toolbar-actions .pc-btn {
   transition:
-    box-shadow var(--pc-motion-fast, 160ms) ease,
-    background var(--pc-motion-fast, 160ms) ease,
-    border-color var(--pc-motion-fast, 160ms) ease,
-    transform 100ms ease,
-    opacity var(--pc-motion-fast, 160ms) ease;
+    box-shadow var(--pc-motion-fast) var(--pc-ease-out),
+    background var(--pc-motion-fast) var(--pc-ease-out),
+    border-color var(--pc-motion-fast) var(--pc-ease-out),
+    transform var(--pc-motion-fast) var(--pc-ease-emphasized),
+    opacity var(--pc-motion-fast) var(--pc-ease-out);
+}
+
+.pc-btn.is-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
 }
 
 .pc-btn:active:not(:disabled),
 .pc-icon-btn:active:not(:disabled) {
-  transform: scale(0.98);
+  transform: scale(0.97);
+  transition-duration: var(--pc-motion-instant);
 }
 
 .pc-btn.is-primary:active:not(:disabled) {
-  transform: scale(0.985);
+  transform: scale(0.975);
 }
 
 /* Chips / tabs */
 .pc-approval-tab,
 .pc-tag {
   transition:
-    background var(--pc-motion-fast, 160ms) ease,
-    border-color var(--pc-motion-fast, 160ms) ease,
-    color var(--pc-motion-fast, 160ms) ease;
+    background var(--pc-motion-fast) var(--pc-ease-out),
+    border-color var(--pc-motion-fast) var(--pc-ease-out),
+    color var(--pc-motion-fast) var(--pc-ease-out),
+    transform var(--pc-motion-fast) var(--pc-ease-emphasized);
+}
+
+.pc-approval-tab:active:not(.is-active) {
+  transform: scale(0.97);
+}
+
+/* Icon-only affordances — gentle scale on hover for discoverability */
+.pc-q-card-icon-btn,
+.pc-icon-btn {
+  transition:
+    background var(--pc-motion-fast) var(--pc-ease-out),
+    color var(--pc-motion-fast) var(--pc-ease-out),
+    transform var(--pc-motion-fast) var(--pc-ease-emphasized);
+}
+
+.pc-q-card-icon-btn:hover {
+  transform: scale(1.08);
 }
 
 /* Skeleton → content */
@@ -118,13 +152,19 @@
 
   .pc-motion-surface,
   .pc-motion-surface:hover,
+  .pc-motion-surface:active,
   .pc-q-card.pc-motion-surface:hover {
     transform: none;
-    transition: none;
+    transition-property: box-shadow, border-color, background-color;
   }
 
+  .pc-btn,
+  .pc-btn:hover:not(:disabled),
   .pc-btn:active:not(:disabled),
-  .pc-icon-btn:active:not(:disabled) {
+  .pc-btn.is-primary:hover:not(:disabled),
+  .pc-icon-btn:active:not(:disabled),
+  .pc-q-card-icon-btn:hover,
+  .pc-approval-tab:active:not(.is-active) {
     transform: none;
   }
 

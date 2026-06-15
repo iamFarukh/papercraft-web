@@ -9,8 +9,11 @@ import { normalizeAssignmentScope } from '@/lib/teacher-assignments'
 import type { TeacherAssignment } from '@/types/teacher'
 import type { UserRole } from '@/services/firebase/users'
 
-function parseProfile(uid: string, data: Record<string, unknown>): UserProfile {
-  const role: UserRole = data.role === 'teacher' ? 'teacher' : 'admin'
+function parseProfile(uid: string, data: Record<string, unknown>): UserProfile | null {
+  if (data.role !== 'admin' && data.role !== 'teacher') {
+    return null
+  }
+  const role = data.role as UserRole
   const email = typeof data.email === 'string' ? data.email : ''
   const displayName =
     typeof data.displayName === 'string' && data.displayName.trim()

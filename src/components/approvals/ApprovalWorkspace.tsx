@@ -192,7 +192,7 @@ export function ApprovalWorkspace() {
       )
       toast('Paper approved and locked', 'success')
     } catch (err) {
-      toast(parsePaperError(err), 'info')
+      toast(parsePaperError(err), 'error')
     } finally {
       setBusy(false)
     }
@@ -214,7 +214,7 @@ export function ApprovalWorkspace() {
       toast('Paper reopened as draft', 'success')
       navigate(`/app/builder/${activePaperId}`)
     } catch (err) {
-      toast(parsePaperError(err), 'info')
+      toast(parsePaperError(err), 'error')
     } finally {
       setBusy(false)
     }
@@ -409,7 +409,9 @@ export function ApprovalWorkspace() {
           />
         ) : (
           <aside className="pc-approval-review-panel pc-approval-review-panel--placeholder">
-            <p className="pc-approval-queue-empty">Review tools appear here.</p>
+            <p className="pc-approval-queue-empty">
+              Select a paper from the queue to unlock review tools and approval actions.
+            </p>
           </aside>
         )}
       </div>

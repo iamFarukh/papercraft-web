@@ -39,9 +39,15 @@ export function ActivityFeed({ loading, error, activities }: Props) {
       ) : null}
 
       {!loading && !error && activities.length === 0 ? (
-        <p className="pc-section-sub" style={{ margin: 0 }}>
-          No paper activity yet. Create a draft in Paper Builder to get started.
-        </p>
+        <div className="pc-section-sub" style={{ margin: 0 }}>
+          <p style={{ margin: 0 }}>
+            No paper activity yet. Create a draft in Paper Builder to begin your workflow.
+          </p>
+          <p style={{ margin: '6px 0 0' }}>
+            Tip: use <strong>⌘K</strong> to jump quickly between Repository, Builder, and
+            Approvals.
+          </p>
+        </div>
       ) : null}
 
       {!loading && !error && activities.length > 0 ? (

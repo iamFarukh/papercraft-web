@@ -13,7 +13,6 @@ import { CURRICULUM_GROUPS } from '@/config/curriculum-catalog'
 import {
   findClosestName,
   nameKey,
-  normalizeDisplayName,
   slugFromName,
   validateTaxonomyName,
 } from '@/lib/curriculum-normalize'

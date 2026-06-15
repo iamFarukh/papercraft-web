@@ -12,8 +12,9 @@ type TopicFilterDropdownProps = {
   chapters: ChapterTreeNode[]
   chapterFilters: Record<string, boolean>
   counts: Record<string, number>
+  chapterKey: (chapter: string) => string
   onToggleChapter: (chapter: string) => void
-  onToggleAll: (chapters: string[], on: boolean) => void
+  onToggleAll: (chapterKeys: string[], on: boolean) => void
 }
 
 export function TopicFilterDropdown({
@@ -22,6 +23,7 @@ export function TopicFilterDropdown({
   chapters,
   chapterFilters,
   counts,
+  chapterKey,
   onToggleChapter,
   onToggleAll,
 }: TopicFilterDropdownProps) {
@@ -40,7 +42,7 @@ export function TopicFilterDropdown({
   )
 
   const activeCount = chapters.filter((ch) =>
-    isFilterOn(chapterFilters, ch.chapter),
+    isFilterOn(chapterFilters, chapterKey(ch.chapter)),
   ).length
   const allOn = activeCount === chapters.length && chapters.length > 0
   const noneOn = activeCount === 0
@@ -104,14 +106,14 @@ export function TopicFilterDropdown({
             <button
               type="button"
               className="pc-repo-topic-filter-action"
-              onClick={() => onToggleAll(chapters.map((c) => c.chapter), true)}
+              onClick={() => onToggleAll(chapters.map((c) => chapterKey(c.chapter)), true)}
             >
               Select all
             </button>
             <button
               type="button"
               className="pc-repo-topic-filter-action"
-              onClick={() => onToggleAll(chapters.map((c) => c.chapter), false)}
+              onClick={() => onToggleAll(chapters.map((c) => chapterKey(c.chapter)), false)}
             >
               Clear
             </button>
@@ -121,7 +123,8 @@ export function TopicFilterDropdown({
               <li className="pc-repo-topic-filter-empty">No matching topics</li>
             ) : (
               filtered.map((ch) => {
-                const on = isFilterOn(chapterFilters, ch.chapter)
+                const scopedKey = chapterKey(ch.chapter)
+                const on = isFilterOn(chapterFilters, scopedKey)
                 return (
                   <li key={ch.key}>
                     <button
@@ -141,7 +144,7 @@ export function TopicFilterDropdown({
                         {ch.chapter}
                       </span>
                       <span className="pc-repo-topic-filter-count pc-num">
-                        {counts[ch.chapter] ?? ch.count}
+                        {counts[scopedKey] ?? ch.count}
                       </span>
                     </button>
                   </li>

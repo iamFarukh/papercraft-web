@@ -46,8 +46,10 @@ import {
   type SyllabusToggleTarget,
 } from '@/lib/repository-filter-cascade'
 import { buildCurriculumTree } from '@/lib/repository-filter-tree'
+import { readContinuityState, writeContinuityState } from '@/lib/workflow-continuity'
 
 const REPO_VIEW_KEY = 'pc-repo-view'
+const REPO_CONTINUITY_SCOPE = 'repository-workspace'
 
 function loadSavedView(): 'card' | 'list' {
   try {
@@ -64,13 +66,19 @@ export function RepositoryWorkspace() {
   const { filterQuestions: scopeByAssignment, isScoped } = useTeacherScope()
   const { push: toast } = useToast()
   const filtersRef = useRef<HTMLDivElement>(null)
+  const workspaceRef = useRef<HTMLDivElement>(null)
+  const continuity = readContinuityState<{
+    query?: string
+    sort?: SortKey
+    showTrash?: boolean
+  }>(REPO_CONTINUITY_SCOPE)
   const [view, setView] = useState<'card' | 'list'>(loadSavedView)
   const [isSwitchingView, setIsSwitchingView] = useState(false)
   const switchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const [showTrash, setShowTrash] = useState(false)
+  const [showTrash, setShowTrash] = useState(Boolean(continuity?.showTrash))
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
-  const [query, setQuery] = useState('')
-  const [sort, setSort] = useState<SortKey>('recent')
+  const [query, setQuery] = useState(continuity?.query ?? '')
+  const [sort, setSort] = useState<SortKey>(continuity?.sort ?? 'recent')
   const [filters, setFilters] = useState<RepositoryFilters>(() =>
     buildEmptyFilters(true),
   )
@@ -175,6 +183,29 @@ export function RepositoryWorkspace() {
       }
     }
   }, [])
+
+  useEffect(() => {
+    writeContinuityState(REPO_CONTINUITY_SCOPE, { query, sort, showTrash })
+  }, [query, sort, showTrash])
+
+  useEffect(() => {
+    const root = workspaceRef.current?.querySelector<HTMLElement>('.pc-repo-stream')
+    if (!root) return
+    const saved = readContinuityState<{ streamScrollTop?: number }>(REPO_CONTINUITY_SCOPE)
+    if (typeof saved?.streamScrollTop === 'number') {
+      root.scrollTop = saved.streamScrollTop
+    }
+    const onScroll = () => {
+      writeContinuityState(REPO_CONTINUITY_SCOPE, {
+        query,
+        sort,
+        showTrash,
+        streamScrollTop: root.scrollTop,
+      })
+    }
+    root.addEventListener('scroll', onScroll)
+    return () => root.removeEventListener('scroll', onScroll)
+  }, [query, sort, showTrash])
 
   const curriculumTree = useMemo(
     () => buildCurriculumTree(activePool),
@@ -475,7 +506,7 @@ export function RepositoryWorkspace() {
   const showBulk = selectedIds.size > 0
 
   return (
-    <div className="pc-repo-workspace">
+    <div className="pc-repo-workspace" ref={workspaceRef}>
       {loading && !allLoaded.length ? (
         <RepositoryToolbarSkeleton />
       ) : (

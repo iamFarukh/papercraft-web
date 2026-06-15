@@ -1,4 +1,4 @@
-import { FilterX, Library, Plus, Search, Upload } from 'lucide-react'
+import { FilterX, Library, Search } from 'lucide-react'
 import { EmptyStatePanel } from '@/components/ui/EmptyStatePanel'
 
 type EmptyVariant =

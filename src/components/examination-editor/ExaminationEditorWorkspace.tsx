@@ -12,7 +12,6 @@ import type { EditSelection } from '@/types/paper-instance'
 import type { PaperPrintPreviewSnapshot } from '@/types/paper-print-preview'
 import {
   useExaminationEditorSession,
-  type EditorSaveStatus,
 } from '@/hooks/useExaminationEditorSession'
 import { PaperStructureNavigator } from '@/components/paper-builder/editing/PaperStructureNavigator'
 import { PaperDocumentInspector } from '@/components/paper-builder/editing/PaperDocumentInspector'
@@ -20,14 +19,22 @@ import { EditablePrintDocument } from '@/components/paper-builder/editing/Editab
 import { PrintLayoutProvider } from '@/context/PrintLayoutContext'
 import { useMeasuredPrintLayout } from '@/hooks/useMeasuredPrintLayout'
 import { PrintMeasureSurface } from '@/components/print/PrintMeasureSurface'
+import { DraftRecoveryBanner } from '@/components/ui/DraftRecoveryBanner'
 import { ExaminationEditorChrome, type EditorSurfaceMode } from './ExaminationEditorChrome'
 import { ExaminationEditorLeaveDialog } from './ExaminationEditorLeaveDialog'
 import { ExaminationEditorOfficialPreview } from './ExaminationEditorOfficialPreview'
 import { ExaminationEditorPreviewSidePanel } from './ExaminationEditorPreviewSidePanel'
 import { ExaminationEditorReadOnlyNotice } from './ExaminationEditorReadOnlyNotice'
 import { PaperExportLink } from '@/components/print/PaperExportLink'
+import { readContinuityState, writeContinuityState } from '@/lib/workflow-continuity'
 
 type SessionProps = Parameters<typeof useExaminationEditorSession>[0]
+type EditorContinuityState = {
+  surfaceMode?: EditorSurfaceMode
+  activePage?: number
+  centerScrollTop?: number
+  selection?: EditSelection
+}
 
 export function ExaminationEditorWorkspace(props: SessionProps) {
   const navigate = useNavigate()
@@ -49,11 +56,21 @@ export function ExaminationEditorWorkspace(props: SessionProps) {
     isDirty,
     save,
     persist,
+    tabConflict,
+    draftRecovery,
   } = session
+  const continuity = readContinuityState<EditorContinuityState>(
+    'examination-editor',
+    paperId,
+  )
 
-  const [selection, setSelection] = useState<EditSelection>({ kind: 'paper' })
-  const [surfaceMode, setSurfaceMode] = useState<EditorSurfaceMode>('edit')
-  const [activePage, setActivePage] = useState(0)
+  const [selection, setSelection] = useState<EditSelection>(
+    continuity?.selection ?? { kind: 'paper' },
+  )
+  const [surfaceMode, setSurfaceMode] = useState<EditorSurfaceMode>(
+    continuity?.surfaceMode ?? 'edit',
+  )
+  const [activePage, setActivePage] = useState(continuity?.activePage ?? 0)
   const [leaveOpen, setLeaveOpen] = useState(false)
   const [leaveSaving, setLeaveSaving] = useState(false)
 
@@ -65,6 +82,40 @@ export function ExaminationEditorWorkspace(props: SessionProps) {
   const { pages, pageCount, blocks, layoutSource, isLayoutReady, onPrintMeasured } = printLayout
   const sectionIds = sections.map((s) => s.id)
   const cleanSurface = surfaceMode === 'preview'
+
+  useEffect(() => {
+    writeContinuityState(
+      'examination-editor',
+      {
+        surfaceMode,
+        activePage,
+        selection,
+      },
+      paperId,
+    )
+  }, [paperId, surfaceMode, activePage, selection])
+
+  useEffect(() => {
+    const el = centerRef.current
+    if (!el) return
+    if (typeof continuity?.centerScrollTop === 'number') {
+      el.scrollTop = continuity.centerScrollTop
+    }
+    const onScroll = () => {
+      writeContinuityState(
+        'examination-editor',
+        {
+          surfaceMode,
+          activePage,
+          selection,
+          centerScrollTop: el.scrollTop,
+        },
+        paperId,
+      )
+    }
+    el.addEventListener('scroll', onScroll)
+    return () => el.removeEventListener('scroll', onScroll)
+  }, [paperId, continuity?.centerScrollTop, surfaceMode, activePage, selection])
 
   const handleMoveSection = useCallback(
     (sectionId: PaperSectionId, direction: 'up' | 'down') => {
@@ -153,9 +204,16 @@ export function ExaminationEditorWorkspace(props: SessionProps) {
 
   const openFullPreview = useCallback(() => {
     navigate(`/app/papers/${paperId}/preview?from=editor`, {
-      state: { printSnapshot: buildPrintSnapshot() },
+      state: {
+        printSnapshot: buildPrintSnapshot(),
+        editorContinuity: {
+          surfaceMode,
+          activePage,
+          selection,
+        },
+      },
     })
-  }, [navigate, paperId, buildPrintSnapshot])
+  }, [navigate, paperId, buildPrintSnapshot, surfaceMode, activePage, selection])
 
   return (
     <PrintLayoutProvider
@@ -173,9 +231,21 @@ export function ExaminationEditorWorkspace(props: SessionProps) {
         onMeasured={onPrintMeasured}
       />
       <div className={`pc-ee-workspace${readOnly ? ' is-read-only' : ''}${cleanSurface ? ' is-preview-surface' : ''}`}>
+      {draftRecovery.showRecovery && draftRecovery.recoveryLabel ? (
+        <DraftRecoveryBanner
+          savedLabel={draftRecovery.recoveryLabel}
+          onRecover={draftRecovery.applyRecovery}
+          onDismiss={draftRecovery.dismissRecovery}
+        />
+      ) : null}
+      {tabConflict ? (
+        <div className="pc-pb-missing-banner" role="status">
+          This paper may be open in another tab. Save here before editing elsewhere.
+        </div>
+      ) : null}
       <ExaminationEditorChrome
         title={toolbarTitleFromSetup(setup)}
-        saveStatus={saveStatus as EditorSaveStatus}
+        saveStatus={saveStatus}
         saveHint={saveHint}
         paperStatus={paperStatus}
         surfaceMode={surfaceMode}

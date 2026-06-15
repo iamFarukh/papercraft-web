@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { LazyMotion, domAnimation } from 'framer-motion'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '@/context/AuthContext'
@@ -6,34 +7,83 @@ import { WorkspaceSettingsProvider } from '@/context/WorkspaceSettingsContext'
 import { BookmarkProvider } from '@/context/BookmarkContext'
 import { QuestionCountProvider } from '@/context/QuestionCountContext'
 import { NotificationProvider } from '@/context/NotificationContext'
+import { ConnectivityProvider } from '@/context/ConnectivityContext'
 import { ToastProvider } from '@/context/ToastContext'
-import { BookmarksPage } from '@/pages/BookmarksPage'
 import { AppLayout } from '@/pages/AppLayout'
-import { ControlCenterPage } from '@/pages/ControlCenterPage'
-import { QuestionAuthorPage } from '@/pages/QuestionAuthorPage'
-import { BulkImportPage } from '@/pages/BulkImportPage'
-import { ExaminationEditorPage } from '@/pages/ExaminationEditorPage'
-import { PaperBuilderCanvasPage } from '@/pages/PaperBuilderCanvasPage'
-import { PaperBuilderSetupPage } from '@/pages/PaperBuilderSetupPage'
-import { ApprovalReviewPage } from '@/pages/ApprovalReviewPage'
-import { ApprovalsQueuePage } from '@/pages/ApprovalsQueuePage'
-import { PaperPrintPreviewPage } from '@/pages/PaperPrintPreviewPage'
-import { PapersListPage } from '@/pages/PapersListPage'
-import { BlueprintCreatePage, BlueprintEditPage } from '@/pages/BlueprintAuthorPage'
-import { BlueprintDetailPage } from '@/pages/BlueprintDetailPage'
-import { BlueprintLibraryPage } from '@/pages/BlueprintLibraryPage'
-import { CurriculumPage } from '@/pages/CurriculumPage'
-import { ProfilePage } from '@/pages/ProfilePage'
-import { SettingsPage } from '@/pages/SettingsPage'
-import { TeachersPage } from '@/pages/TeachersPage'
-import { RepositoryPage } from '@/pages/RepositoryPage'
+import { ErrorBoundary } from '@/components/system/ErrorBoundary'
+import { RouteFallback } from '@/components/system/RouteFallback'
 import { AdminRoute } from '@/routes/AdminRoute'
 import { LoginRoute } from '@/routes/LoginRoute'
 import { ProtectedRoute } from '@/routes/ProtectedRoute'
 
+// Code-split every route page into its own chunk so the initial bundle no
+// longer eagerly ships the editor, export (jspdf/html2canvas/docx) and import
+// (xlsx) libraries. AppLayout + route guards stay eager (the shell).
+const BookmarksPage = lazy(() =>
+  import('@/pages/BookmarksPage').then((m) => ({ default: m.BookmarksPage })),
+)
+const ControlCenterPage = lazy(() =>
+  import('@/pages/ControlCenterPage').then((m) => ({ default: m.ControlCenterPage })),
+)
+const QuestionAuthorPage = lazy(() =>
+  import('@/pages/QuestionAuthorPage').then((m) => ({ default: m.QuestionAuthorPage })),
+)
+const BulkImportPage = lazy(() =>
+  import('@/pages/BulkImportPage').then((m) => ({ default: m.BulkImportPage })),
+)
+const ExaminationEditorPage = lazy(() =>
+  import('@/pages/ExaminationEditorPage').then((m) => ({ default: m.ExaminationEditorPage })),
+)
+const PaperBuilderCanvasPage = lazy(() =>
+  import('@/pages/PaperBuilderCanvasPage').then((m) => ({ default: m.PaperBuilderCanvasPage })),
+)
+const PaperBuilderSetupPage = lazy(() =>
+  import('@/pages/PaperBuilderSetupPage').then((m) => ({ default: m.PaperBuilderSetupPage })),
+)
+const ApprovalReviewPage = lazy(() =>
+  import('@/pages/ApprovalReviewPage').then((m) => ({ default: m.ApprovalReviewPage })),
+)
+const ApprovalsQueuePage = lazy(() =>
+  import('@/pages/ApprovalsQueuePage').then((m) => ({ default: m.ApprovalsQueuePage })),
+)
+const PaperPrintPreviewPage = lazy(() =>
+  import('@/pages/PaperPrintPreviewPage').then((m) => ({ default: m.PaperPrintPreviewPage })),
+)
+const PapersListPage = lazy(() =>
+  import('@/pages/PapersListPage').then((m) => ({ default: m.PapersListPage })),
+)
+const BlueprintCreatePage = lazy(() =>
+  import('@/pages/BlueprintAuthorPage').then((m) => ({ default: m.BlueprintCreatePage })),
+)
+const BlueprintEditPage = lazy(() =>
+  import('@/pages/BlueprintAuthorPage').then((m) => ({ default: m.BlueprintEditPage })),
+)
+const BlueprintDetailPage = lazy(() =>
+  import('@/pages/BlueprintDetailPage').then((m) => ({ default: m.BlueprintDetailPage })),
+)
+const BlueprintLibraryPage = lazy(() =>
+  import('@/pages/BlueprintLibraryPage').then((m) => ({ default: m.BlueprintLibraryPage })),
+)
+const CurriculumPage = lazy(() =>
+  import('@/pages/CurriculumPage').then((m) => ({ default: m.CurriculumPage })),
+)
+const ProfilePage = lazy(() =>
+  import('@/pages/ProfilePage').then((m) => ({ default: m.ProfilePage })),
+)
+const SettingsPage = lazy(() =>
+  import('@/pages/SettingsPage').then((m) => ({ default: m.SettingsPage })),
+)
+const TeachersPage = lazy(() =>
+  import('@/pages/TeachersPage').then((m) => ({ default: m.TeachersPage })),
+)
+const RepositoryPage = lazy(() =>
+  import('@/pages/RepositoryPage').then((m) => ({ default: m.RepositoryPage })),
+)
+
 function App() {
   return (
     <LazyMotion features={domAnimation} strict>
+      <ErrorBoundary scopeLabel="the application">
       <AuthProvider>
         <WorkspaceSettingsProvider>
         <CommandCenterProvider>
@@ -41,11 +91,21 @@ function App() {
           <Routes>
           <Route path="/login" element={<LoginRoute />} />
           <Route element={<ProtectedRoute />}>
-            <Route path="/app/papers/:paperId/preview" element={<PaperPrintPreviewPage />} />
+            <Route
+              path="/app/papers/:paperId/preview"
+              element={
+                <ErrorBoundary scopeLabel="the print preview">
+                  <Suspense fallback={<RouteFallback />}>
+                    <PaperPrintPreviewPage />
+                  </Suspense>
+                </ErrorBoundary>
+              }
+            />
             <Route
               path="/app"
               element={
                 <ToastProvider>
+                  <ConnectivityProvider>
                   <NotificationProvider>
                     <BookmarkProvider>
                       <QuestionCountProvider>
@@ -53,6 +113,7 @@ function App() {
                       </QuestionCountProvider>
                     </BookmarkProvider>
                   </NotificationProvider>
+                  </ConnectivityProvider>
                 </ToastProvider>
               }
             >
@@ -98,6 +159,7 @@ function App() {
         </CommandCenterProvider>
         </WorkspaceSettingsProvider>
       </AuthProvider>
+      </ErrorBoundary>
     </LazyMotion>
   )
 }

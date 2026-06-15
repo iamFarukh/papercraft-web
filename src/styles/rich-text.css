@@ -1,0 +1,124 @@
+/* TipTap rich-text editor + rich content display */
+
+.pc-rte {
+  border: 1px solid var(--pc-line);
+  border-radius: var(--pc-r-md);
+  background: var(--pc-surface);
+  overflow: hidden;
+}
+
+.pc-rte-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 5px 6px;
+  border-bottom: 1px solid var(--pc-line);
+  background: var(--pc-surface-2, var(--pc-surface));
+}
+
+.pc-rte-toolbar-sep {
+  width: 1px;
+  height: 16px;
+  margin: 0 4px;
+  background: var(--pc-line);
+}
+
+.pc-rte-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: var(--pc-r-sm);
+  background: transparent;
+  color: var(--pc-ink-3);
+  cursor: pointer;
+}
+
+.pc-rte-btn:hover {
+  background: var(--pc-primary-50);
+  color: var(--pc-ink-1);
+}
+
+.pc-rte-btn.is-active {
+  background: var(--pc-primary-100);
+  color: var(--pc-primary-700);
+}
+
+.pc-rte-math-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-inline-start: auto;
+  padding-inline-end: 4px;
+  font-size: 11px;
+  color: var(--pc-ink-4);
+  cursor: help;
+}
+
+.pc-rte-content {
+  padding: 10px 12px;
+  min-height: 84px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--pc-ink-1);
+  outline: none;
+}
+
+.pc-rte.is-compact .pc-rte-content {
+  min-height: 56px;
+}
+
+.pc-rte-content:focus-visible {
+  box-shadow: none; /* container shows focus instead */
+}
+
+.pc-rte:focus-within {
+  border-color: var(--pc-primary-200);
+  box-shadow: var(--pc-ring-primary);
+}
+
+.pc-rte-content p {
+  margin: 0 0 0.4em;
+}
+
+.pc-rte-content p:last-child {
+  margin-bottom: 0;
+}
+
+.pc-rte-content ul,
+.pc-rte-content ol {
+  margin: 0 0 0.4em;
+  padding-inline-start: 1.4em;
+}
+
+/* Rich content display (read-only) */
+.pc-rich > :first-child {
+  margin-top: 0;
+}
+
+.pc-rich > :last-child {
+  margin-bottom: 0;
+}
+
+.pc-rich p {
+  margin: 0 0 0.4em;
+}
+
+.pc-rich ul,
+.pc-rich ol {
+  margin: 0 0 0.4em;
+  padding-inline-start: 1.4em;
+}
+
+.pc-rich .katex {
+  font-size: 1.02em;
+}
+
+/* Display-mode math shouldn't overflow narrow cards */
+.pc-rich .katex-display {
+  margin: 0.4em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}

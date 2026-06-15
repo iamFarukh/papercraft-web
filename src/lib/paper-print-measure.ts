@@ -118,13 +118,6 @@ function measuredSectionIntroPackHeight(
   return total
 }
 
-function isSectionIntroOnly(blocks: PrintBlock[]): boolean {
-  return (
-    blocks.length > 0 &&
-    blocks.every((b) => b.kind === 'section-head' || b.kind === 'section-instructions')
-  )
-}
-
 function recomputeContinuedSections(pages: PrintPageModel[]): PrintPageModel[] {
   return pages.map((page, index) => {
     if (index === 0) {

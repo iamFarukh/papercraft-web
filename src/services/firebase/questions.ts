@@ -85,8 +85,12 @@ function buildConstraints(
   const constraints: QueryConstraint[] = []
 
   if (!isAdmin) {
+    /**
+     * Teachers can only read published questions by rules.
+     * Do not add `deletedAt == null` here because many legacy questions don't
+     * have the field yet; that would hide valid published documents.
+     */
     constraints.push(where('status', '==', 'published'))
-    constraints.push(where('deletedAt', '==', null))
   } else {
     const statuses = active(filters.statuses)
     const allStatusesSelected = statuses.length >= ALL_STATUSES.length
@@ -121,7 +125,7 @@ async function runQuestionsQuery(
   }
 
   const snap = await getDocs(q)
-  let docs = [...snap.docs]
+  const docs = [...snap.docs]
 
   if (!useOrderBy) {
     docs.sort(
@@ -167,11 +171,7 @@ export async function getQuestions(
         // Last resort: minimal query (empty DB / missing index). Teachers only see published.
         const fallbackConstraints = options.isAdmin
           ? [limit(pageSize + 1)]
-          : [
-              where('status', '==', 'published'),
-              where('deletedAt', '==', null),
-              limit(pageSize + 1),
-            ]
+          : [where('status', '==', 'published'), limit(pageSize + 1)]
         const snap = await withTimeout(
           getDocs(query(collection(db, COLLECTION), ...fallbackConstraints)),
           FETCH_TIMEOUT_MS,
@@ -317,8 +317,7 @@ export function parseFirestoreError(err: unknown): {
   if (code === 'permission-denied') {
     return {
       kind: 'permission',
-      message:
-        'You do not have permission to view these questions. Contact your administrator.',
+      message: 'You no longer have access to this repository.',
     }
   }
   if (

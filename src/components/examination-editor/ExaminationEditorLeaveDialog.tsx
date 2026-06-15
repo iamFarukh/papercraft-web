@@ -35,7 +35,8 @@ export function ExaminationEditorLeaveDialog({
               Unsaved changes
             </h2>
             <p id="ee-leave-desc" className="pc-ee-leave-desc">
-              You have unsaved formatting changes. Leave anyway?
+              Your formatting changes are not synced yet. You can save before leaving, or
+              keep working — a local draft is preserved on this device.
             </p>
           </div>
         </div>

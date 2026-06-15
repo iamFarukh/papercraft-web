@@ -1,4 +1,5 @@
 import { TYPE_LABELS } from '@/config/curriculum'
+import { RichTextEditor } from '@/components/authoring/RichTextEditor'
 import type { QuestionAuthorForm } from '@/lib/question-authoring'
 import type { McqCorrectKey, QuestionLanguage } from '@/types/question'
 
@@ -34,12 +35,11 @@ export function AuthorCanvas({ form, onChange }: AuthorCanvasProps) {
             <label htmlFor="author-question">
               {bilingual ? 'Question text (English)' : 'Question text'}
             </label>
-            <textarea
+            <RichTextEditor
               id="author-question"
-              className="pc-author-textarea"
-              placeholder="Write the question stem in English…"
+              ariaLabel={bilingual ? 'Question text (English)' : 'Question text'}
               value={form.questionText}
-              onChange={(e) => onChange({ questionText: e.target.value })}
+              onChange={(html) => onChange({ questionText: html })}
             />
           </div>
         )}
@@ -49,12 +49,12 @@ export function AuthorCanvas({ form, onChange }: AuthorCanvasProps) {
             <label htmlFor="author-question-hi">
               {bilingual ? 'Question text (Hindi)' : 'Question text (Hindi medium)'}
             </label>
-            <textarea
+            <RichTextEditor
               id="author-question-hi"
-              className="pc-author-textarea"
-              placeholder="हिंदी में प्रश्न लिखें…"
+              hindi
+              ariaLabel={bilingual ? 'Question text (Hindi)' : 'Question text (Hindi medium)'}
               value={form.questionTextHi}
-              onChange={(e) => onChange({ questionTextHi: e.target.value })}
+              onChange={(html) => onChange({ questionTextHi: html })}
             />
           </div>
         )}
@@ -166,12 +166,16 @@ export function AuthorCanvas({ form, onChange }: AuthorCanvasProps) {
                     ? 'Accepted answer (English)'
                     : 'Model answer (English)'}
                 </label>
-                <textarea
+                <RichTextEditor
                   id="author-answer"
-                  className="pc-author-textarea is-compact"
-                  placeholder="Key points or model response…"
+                  compact
+                  ariaLabel={
+                    form.type === 'fill_blank'
+                      ? 'Accepted answer (English)'
+                      : 'Model answer (English)'
+                  }
                   value={form.answer}
-                  onChange={(e) => onChange({ answer: e.target.value })}
+                  onChange={(html) => onChange({ answer: html })}
                 />
               </div>
             )}
@@ -182,12 +186,17 @@ export function AuthorCanvas({ form, onChange }: AuthorCanvasProps) {
                     ? 'Accepted answer (Hindi)'
                     : 'Model answer (Hindi)'}
                 </label>
-                <textarea
+                <RichTextEditor
                   id="author-answer-hi"
-                  className="pc-author-textarea is-compact"
-                  placeholder="हिंदी में उत्तर…"
+                  compact
+                  hindi
+                  ariaLabel={
+                    form.type === 'fill_blank'
+                      ? 'Accepted answer (Hindi)'
+                      : 'Model answer (Hindi)'
+                  }
                   value={form.answerHi}
-                  onChange={(e) => onChange({ answerHi: e.target.value })}
+                  onChange={(html) => onChange({ answerHi: html })}
                 />
               </div>
             )}
@@ -198,24 +207,27 @@ export function AuthorCanvas({ form, onChange }: AuthorCanvasProps) {
           <label htmlFor="author-solution">
             {bilingual ? 'Solution / marking notes (English)' : 'Solution / marking notes'}
           </label>
-          <textarea
+          <RichTextEditor
             id="author-solution"
-            className="pc-author-textarea is-compact"
-            placeholder="Steps, rubric, or examiner guidance…"
+            compact
+            ariaLabel={
+              bilingual ? 'Solution / marking notes (English)' : 'Solution / marking notes'
+            }
             value={form.solution}
-            onChange={(e) => onChange({ solution: e.target.value })}
+            onChange={(html) => onChange({ solution: html })}
           />
         </div>
 
         {bilingual && (
           <div className="pc-author-write">
             <label htmlFor="author-solution-hi">Solution / marking notes (Hindi)</label>
-            <textarea
+            <RichTextEditor
               id="author-solution-hi"
-              className="pc-author-textarea is-compact"
-              placeholder="हिंदी में समाधान या अंकन नोट्स…"
+              compact
+              hindi
+              ariaLabel="Solution / marking notes (Hindi)"
               value={form.solutionHi}
-              onChange={(e) => onChange({ solutionHi: e.target.value })}
+              onChange={(html) => onChange({ solutionHi: html })}
             />
           </div>
         )}

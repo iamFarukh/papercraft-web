@@ -1,5 +1,7 @@
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { formatApprovalRelative, type ApprovalQueueFilters } from '@/lib/paper-approval'
+import { listItemReveal, listReveal } from '@/lib/motion/variants'
 import {
   queuePaperLabel,
   queueStatusTag,
@@ -7,6 +9,8 @@ import {
   teacherInitials,
 } from '@/lib/approval-ui'
 import type { ApprovalQueueItem } from '@/types/paper'
+
+const MotionLink = motion.create(Link)
 
 type StatusTab = 'all' | 'submitted' | 'approved'
 
@@ -60,6 +64,7 @@ export function ApprovalSubmissionQueue({
   })
 
   const grouped = groupByDay(filtered)
+  const reduced = useReducedMotion()
 
   return (
     <aside className="pc-approval-queue">
@@ -93,23 +98,35 @@ export function ApprovalSubmissionQueue({
 
       <div className="pc-approval-queue-list pc-scroll">
         {filtered.length === 0 ? (
-          <p className="pc-approval-queue-empty">No submissions match.</p>
+          <div className="pc-approval-queue-empty">
+            <p>No papers match this view yet.</p>
+            <p>Try switching to Submitted or clear class and subject filters.</p>
+          </div>
         ) : (
-          grouped.map((group) => (
-            <div key={group.label}>
-              <div className="pc-approval-queue-group">{group.label}</div>
-              {group.items.map((item) => {
-                const uid = item.submittedBy ?? item.createdBy
-                const tone = teacherAvatarTone(uid)
-                const tag = queueStatusTag(item.status)
-                const isActive = item.id === activePaperId
-                return (
-                  <Link
-                    key={item.id}
-                    to={`/app/approvals/${item.id}`}
-                    className={`pc-approval-row pc-motion-surface${isActive ? ' is-active' : ''}`}
-                  >
-                    <div className="pc-approval-row-title-row">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={statusTab}
+              variants={reduced ? undefined : listReveal}
+              initial={reduced ? false : 'hidden'}
+              animate="visible"
+            >
+              {grouped.flatMap((group) => [
+                <div className="pc-approval-queue-group" key={`group-${group.label}`}>
+                  {group.label}
+                </div>,
+                ...group.items.map((item) => {
+                  const uid = item.submittedBy ?? item.createdBy
+                  const tone = teacherAvatarTone(uid)
+                  const tag = queueStatusTag(item.status)
+                  const isActive = item.id === activePaperId
+                  return (
+                    <MotionLink
+                      key={item.id}
+                      variants={reduced ? undefined : listItemReveal}
+                      to={`/app/approvals/${item.id}`}
+                      className={`pc-approval-row pc-motion-surface${isActive ? ' is-active' : ''}`}
+                    >
+                      <div className="pc-approval-row-title-row">
                       <span className="pc-approval-row-title pc-serif">
                         {queuePaperLabel(item)}
                       </span>
@@ -131,11 +148,12 @@ export function ApprovalSubmissionQueue({
                       </span>
                       <span className={`pc-tag ${tag.className}`}>{tag.label}</span>
                     </div>
-                  </Link>
-                )
-              })}
-            </div>
-          ))
+                    </MotionLink>
+                  )
+                }),
+              ])}
+            </motion.div>
+          </AnimatePresence>
         )}
       </div>
     </aside>

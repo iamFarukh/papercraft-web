@@ -11,6 +11,18 @@ export type SyllabusToggleTarget =
   | { level: 'subject'; classLabel: string; subject: string }
   | { level: 'chapter'; classLabel: string; subject: string; chapter: string }
 
+export function subjectFilterKey(classLabel: string, subject: string): string {
+  return `${classLabel}|${subject}`
+}
+
+export function chapterFilterKey(
+  classLabel: string,
+  subject: string,
+  chapter: string,
+): string {
+  return `${classLabel}|${subject}|${chapter}`
+}
+
 export function isFilterOn(
   group: Record<string, boolean>,
   key: string,
@@ -42,9 +54,15 @@ function findSubject(
 
 function subjectNodeHasChapterOn(
   filters: RepositoryFilters,
+  classLabel: string,
   sub: SubjectTreeNode,
 ): boolean {
-  return sub.chapters.some((ch) => isFilterOn(filters.chapters, ch.chapter))
+  return sub.chapters.some((ch) =>
+    isFilterOn(
+      filters.chapters,
+      chapterFilterKey(classLabel, sub.subject, ch.chapter),
+    ),
+  )
 }
 
 function classNodeHasContentOn(
@@ -52,8 +70,11 @@ function classNodeHasContentOn(
   cls: ClassTreeNode,
 ): boolean {
   for (const sub of cls.subjects) {
-    if (subjectNodeHasChapterOn(filters, sub)) return true
-    if (isFilterOn(filters.subjects, sub.subject) && sub.chapters.length === 0) {
+    if (subjectNodeHasChapterOn(filters, cls.classLabel, sub)) return true
+    if (
+      isFilterOn(filters.subjects, subjectFilterKey(cls.classLabel, sub.subject)) &&
+      sub.chapters.length === 0
+    ) {
       return true
     }
   }
@@ -61,16 +82,18 @@ function classNodeHasContentOn(
 }
 
 export function subjectTriState(
+  classLabel: string,
   sub: SubjectTreeNode,
   filters: RepositoryFilters,
 ): TriState {
+  const subKey = subjectFilterKey(classLabel, sub.subject)
   if (sub.chapters.length === 0) {
-    return isFilterOn(filters.subjects, sub.subject) ? 'on' : 'off'
+    return isFilterOn(filters.subjects, subKey) ? 'on' : 'off'
   }
 
   let on = 0
   for (const ch of sub.chapters) {
-    if (isFilterOn(filters.chapters, ch.chapter)) on++
+    if (isFilterOn(filters.chapters, chapterFilterKey(classLabel, sub.subject, ch.chapter))) on++
   }
   if (on === 0) return 'off'
   if (on === sub.chapters.length) return 'on'
@@ -89,7 +112,7 @@ export function classTriState(
   let allOff = true
 
   for (const sub of cls.subjects) {
-    const st = subjectTriState(sub, filters)
+    const st = subjectTriState(cls.classLabel, sub, filters)
     if (st !== 'on') allOn = false
     if (st !== 'off') allOff = false
   }
@@ -107,7 +130,7 @@ export function cascadeSyllabusToggle(
   const cls = findClass(tree, target.classLabel)
   if (!cls) return filters
 
-  let next: RepositoryFilters = {
+  const next: RepositoryFilters = {
     ...filters,
     classes: { ...filters.classes },
     subjects: { ...filters.subjects },
@@ -118,9 +141,11 @@ export function cascadeSyllabusToggle(
     const turnOn = classTriState(cls, filters) !== 'on'
     next.classes = setOn(next.classes, cls.classLabel, turnOn)
     for (const sub of cls.subjects) {
-      next.subjects = setOn(next.subjects, sub.subject, turnOn)
+      const subKey = subjectFilterKey(cls.classLabel, sub.subject)
+      next.subjects = setOn(next.subjects, subKey, turnOn)
       for (const ch of sub.chapters) {
-        next.chapters = setOn(next.chapters, ch.chapter, turnOn)
+        const chKey = chapterFilterKey(cls.classLabel, sub.subject, ch.chapter)
+        next.chapters = setOn(next.chapters, chKey, turnOn)
       }
     }
     return next
@@ -130,10 +155,12 @@ export function cascadeSyllabusToggle(
     const sub = findSubject(cls, target.subject)
     if (!sub) return filters
 
-    const turnOn = subjectTriState(sub, filters) !== 'on'
-    next.subjects = setOn(next.subjects, sub.subject, turnOn)
+    const subKey = subjectFilterKey(cls.classLabel, sub.subject)
+    const turnOn = subjectTriState(cls.classLabel, sub, filters) !== 'on'
+    next.subjects = setOn(next.subjects, subKey, turnOn)
     for (const ch of sub.chapters) {
-      next.chapters = setOn(next.chapters, ch.chapter, turnOn)
+      const chKey = chapterFilterKey(cls.classLabel, sub.subject, ch.chapter)
+      next.chapters = setOn(next.chapters, chKey, turnOn)
     }
     if (turnOn) {
       next.classes = setOn(next.classes, cls.classLabel, true)
@@ -146,17 +173,24 @@ export function cascadeSyllabusToggle(
   const sub = findSubject(cls, target.subject)
   if (!sub) return filters
 
-  const turnOn = !isFilterOn(filters.chapters, target.chapter)
-  next.chapters = setOn(next.chapters, target.chapter, turnOn)
+  const targetChapterKey = chapterFilterKey(
+    cls.classLabel,
+    sub.subject,
+    target.chapter,
+  )
+  const turnOn = !isFilterOn(filters.chapters, targetChapterKey)
+  next.chapters = setOn(next.chapters, targetChapterKey, turnOn)
 
   if (turnOn) {
-    next.subjects = setOn(next.subjects, sub.subject, true)
+    const subKey = subjectFilterKey(cls.classLabel, sub.subject)
+    next.subjects = setOn(next.subjects, subKey, true)
     next.classes = setOn(next.classes, cls.classLabel, true)
     return next
   }
 
-  if (!subjectNodeHasChapterOn(next, sub)) {
-    next.subjects = setOn(next.subjects, sub.subject, false)
+  if (!subjectNodeHasChapterOn(next, cls.classLabel, sub)) {
+    const subKey = subjectFilterKey(cls.classLabel, sub.subject)
+    next.subjects = setOn(next.subjects, subKey, false)
   }
   if (!classNodeHasContentOn(next, cls)) {
     next.classes = setOn(next.classes, cls.classLabel, false)

@@ -3,7 +3,6 @@ import {
   Bookmark,
   Check,
   FileText,
-  GraduationCap,
   Home,
   Layers,
   Pencil,

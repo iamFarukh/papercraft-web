@@ -1,4 +1,4 @@
-import { ChevronDown, FileDown, FileText, Loader2 } from 'lucide-react'
+import { ChevronDown, FileDown, FileText, KeyRound, Loader2 } from 'lucide-react'
 import { useCallback, useEffect, useId, useRef, useState, type RefObject } from 'react'
 import { Link } from 'react-router-dom'
 import { paperPrintPreviewPath } from '@/config/nav-routes'
@@ -8,6 +8,7 @@ import {
   PAPER_EXPORT_FORMATS,
   type ExportProgress,
   type PaperExportFormat,
+  type PaperExportKind,
 } from '@/lib/paper-export-formats'
 import { runPaperExport } from '@/lib/paper-export'
 import type { PaperSetupState } from '@/lib/paper-builder'
@@ -27,6 +28,7 @@ type DirectProps = BaseProps & {
   documentRootRef: RefObject<HTMLElement | null>
   resolved: ResolvedPaper
   autoStartFormat?: PaperExportFormat | null
+  autoStartKind?: PaperExportKind
 }
 
 type NavigateProps = BaseProps & {
@@ -36,6 +38,13 @@ type NavigateProps = BaseProps & {
 }
 
 type Props = DirectProps | NavigateProps
+
+type ExportAction = { format: PaperExportFormat; kind: PaperExportKind }
+
+const EXPORT_GROUPS: { kind: PaperExportKind; label: string }[] = [
+  { kind: 'paper', label: 'Question paper' },
+  { kind: 'answer-key', label: 'Answer key' },
+]
 
 function formatIcon(format: PaperExportFormat) {
   return format === 'docx' ? (
@@ -50,7 +59,8 @@ export function PaperExportMenu(props: Props) {
   const menuId = useId()
   const wrapRef = useRef<HTMLDivElement>(null)
   const [open, setOpen] = useState(false)
-  const [busyFormat, setBusyFormat] = useState<PaperExportFormat | null>(null)
+  const [busyAction, setBusyAction] = useState<ExportAction | null>(null)
+  const [lastFailed, setLastFailed] = useState<ExportAction | null>(null)
   const [statusLine, setStatusLine] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const autoRan = useRef(false)
@@ -63,15 +73,18 @@ export function PaperExportMenu(props: Props) {
         : 'pc-btn is-sm'
 
   const runDirectExport = useCallback(
-    async (format: PaperExportFormat) => {
+    async (format: PaperExportFormat, kind: PaperExportKind) => {
       if (props.mode !== 'direct' || !canExport) return
       const root = props.documentRootRef.current
       if (!root) return
 
+      const action: ExportAction = { format, kind }
+      const noun = kind === 'answer-key' ? 'answer key' : exportFormatLabel(format)
       setOpen(false)
-      setBusyFormat(format)
+      setBusyAction(action)
       setError(null)
-      setStatusLine(`Preparing ${exportFormatLabel(format)}…`)
+      setLastFailed(null)
+      setStatusLine(`Preparing ${noun}…`)
 
       const onProgress = (p: ExportProgress) => {
         if (p.message) setStatusLine(p.message)
@@ -83,6 +96,7 @@ export function PaperExportMenu(props: Props) {
           setup: props.setup,
           resolved: props.resolved,
           documentRoot: root,
+          kind,
           onProgress,
         })
         setStatusLine(`${exportFormatLabel(format)} saved to your downloads.`)
@@ -93,9 +107,10 @@ export function PaperExportMenu(props: Props) {
             ? err.message
             : `The ${exportFormatLabel(format)} file could not be generated.`
         setError(message)
+        setLastFailed(action)
         setStatusLine(null)
       } finally {
-        setBusyFormat(null)
+        setBusyAction(null)
       }
     },
     [canExport, props],
@@ -106,10 +121,9 @@ export function PaperExportMenu(props: Props) {
       return
     }
     autoRan.current = true
-    const t = window.setTimeout(
-      () => void runDirectExport(props.autoStartFormat!),
-      400,
-    )
+    const fmt = props.autoStartFormat
+    const kind = props.autoStartKind ?? 'paper'
+    const t = window.setTimeout(() => void runDirectExport(fmt, kind), 400)
     return () => window.clearTimeout(t)
   }, [canExport, props, runDirectExport])
 
@@ -143,7 +157,7 @@ export function PaperExportMenu(props: Props) {
     )
   }
 
-  const busy = busyFormat != null
+  const busy = busyAction != null
 
   return (
     <div
@@ -169,36 +183,46 @@ export function PaperExportMenu(props: Props) {
           <ChevronDown size={11} strokeWidth={1.6} aria-hidden />
         </button>
         {open ? (
-          <ul id={menuId} className="pc-paper-export-menu" role="menu">
-            {PAPER_EXPORT_FORMATS.map((fmt) => (
-              <li key={fmt.id} role="none">
-                {props.mode === 'direct' ? (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="pc-paper-export-item"
-                    disabled={busy}
-                    title={fmt.hint}
-                    onClick={() => void runDirectExport(fmt.id)}
-                  >
-                    {formatIcon(fmt.id)}
-                    <span className="pc-paper-export-item-label">{fmt.label}</span>
-                  </button>
-                ) : (
-                  <Link
-                    role="menuitem"
-                    className="pc-paper-export-item"
-                    title={fmt.hint}
-                    to={`${paperPrintPreviewPath(props.paperId, props.from)}&export=${fmt.id}`}
-                    onClick={() => setOpen(false)}
-                  >
-                    {formatIcon(fmt.id)}
-                    <span className="pc-paper-export-item-label">{fmt.label}</span>
-                  </Link>
+          <div id={menuId} className="pc-paper-export-menu" role="menu">
+            {EXPORT_GROUPS.map((group) => (
+              <div key={group.kind} className="pc-paper-export-group" role="none">
+                <span className="pc-paper-export-group-label" aria-hidden>
+                  {group.kind === 'answer-key' ? (
+                    <KeyRound size={11} strokeWidth={1.6} />
+                  ) : null}
+                  {group.label}
+                </span>
+                {PAPER_EXPORT_FORMATS.map((fmt) =>
+                  props.mode === 'direct' ? (
+                    <button
+                      key={`${group.kind}:${fmt.id}`}
+                      type="button"
+                      role="menuitem"
+                      className="pc-paper-export-item"
+                      disabled={busy}
+                      title={fmt.hint}
+                      onClick={() => void runDirectExport(fmt.id, group.kind)}
+                    >
+                      {formatIcon(fmt.id)}
+                      <span className="pc-paper-export-item-label">{fmt.label}</span>
+                    </button>
+                  ) : (
+                    <Link
+                      key={`${group.kind}:${fmt.id}`}
+                      role="menuitem"
+                      className="pc-paper-export-item"
+                      title={fmt.hint}
+                      to={`${paperPrintPreviewPath(props.paperId, props.from)}&export=${fmt.id}${group.kind === 'answer-key' ? '&kind=answer-key' : ''}`}
+                      onClick={() => setOpen(false)}
+                    >
+                      {formatIcon(fmt.id)}
+                      <span className="pc-paper-export-item-label">{fmt.label}</span>
+                    </Link>
+                  ),
                 )}
-              </li>
+              </div>
             ))}
-          </ul>
+          </div>
         ) : null}
       </div>
       {busy && statusLine ? (
@@ -212,9 +236,18 @@ export function PaperExportMenu(props: Props) {
         </p>
       ) : null}
       {error ? (
-        <p className="pc-paper-export-status is-error" role="alert">
-          {error}
-        </p>
+        <div className="pc-paper-export-status is-error" role="alert">
+          <p>{error}</p>
+          {props.mode === 'direct' && lastFailed ? (
+            <button
+              type="button"
+              className="pc-btn is-sm"
+              onClick={() => void runDirectExport(lastFailed.format, lastFailed.kind)}
+            >
+              Retry export
+            </button>
+          ) : null}
+        </div>
       ) : null}
     </div>
   )

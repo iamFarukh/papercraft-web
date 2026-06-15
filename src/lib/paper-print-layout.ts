@@ -7,7 +7,7 @@ import {
 } from '@/lib/paper-builder'
 import { questionDisplayText, type PaperMedium } from '@/lib/paper-medium'
 import { resolvePageHeader } from '@/lib/paper-print-header'
-import type { ResolvedPaper, ResolvedQuestion, ResolvedSection } from '@/lib/paper-instance'
+import type { ResolvedPaper, ResolvedSection } from '@/lib/paper-instance'
 import type { PaperFormatConfig, PaperPresentation, PaperSpacingMode } from '@/types/paper-instance'
 import type { QuestionRecord } from '@/types/question'
 
@@ -431,7 +431,7 @@ export function paginatePrintBlocks(
   let remaining = ctx.bodyHeightForPage(0)
   let continuedOnThisPage: PaperSectionDef | undefined
   let continuedOnNextPage: PaperSectionDef | undefined
-  let queue = [...blocks]
+  const queue = [...blocks]
 
   const flush = () => {
     pages.push({
@@ -480,7 +480,6 @@ export function paginatePrintBlocks(
         remaining -= height
         queue.shift()
         flush()
-        placed = true
         break
       }
 

@@ -1,4 +1,5 @@
 
+import { AnimatePresence } from 'framer-motion'
 import type { MouseEvent } from 'react'
 import type { QuestionRecord, RepositoryError } from '@/types/question'
 import { QuestionCard } from './QuestionCard'
@@ -84,7 +85,11 @@ export function QuestionStream({
       <div className="pc-repo-stream-head">
         <h3 className="pc-repo-stream-title">
           {questions.length === 0 ? (
-            'No questions in view'
+            hasQuery
+              ? 'No questions match this search'
+              : hasStrictFilters
+                ? 'No questions match these filters'
+                : 'No questions in this view'
           ) : (
             <>
               Showing <span className="pc-num">{questions.length}</span>
@@ -113,23 +118,23 @@ export function QuestionStream({
         />
       ) : (
           <div className={'pc-repo-cards' + (view === 'list' ? ' is-list' : '')}>
-            {questions.map((q) => (
-              <QuestionCard
-                key={q.id}
-                question={q}
-                view={view}
-                isSwitchingView={isSwitchingView}
-                isAdmin={isAdmin}
-                selected={selectedIds.has(q.id)}
-                active={activeId === q.id}
-                expanded={expandedId === q.id}
-                onToggleSelect={
-                  onToggleSelect ? (e) => onToggleSelect(q.id, e) : undefined
-                }
-                onOpen={() => onOpenQuestion(q.id)}
-                onToggleExpand={() => onToggleExpand(q.id)}
-              />
-            ))}
+            <AnimatePresence mode="popLayout" initial={false}>
+              {questions.map((q) => (
+                <QuestionCard
+                  key={q.id}
+                  question={q}
+                  view={view}
+                  isSwitchingView={isSwitchingView}
+                  isAdmin={isAdmin}
+                  selected={selectedIds.has(q.id)}
+                  active={activeId === q.id}
+                  expanded={expandedId === q.id}
+                  onToggleSelect={onToggleSelect}
+                  onOpen={onOpenQuestion}
+                  onToggleExpand={onToggleExpand}
+                />
+              ))}
+            </AnimatePresence>
           </div>
       )}
 

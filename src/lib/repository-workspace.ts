@@ -1,10 +1,6 @@
-import {
-  classLabelFromNumber,
-  STATUS_LABELS,
-  subjectLabelFromId,
-  typeLabelFromId,
-} from '@/config/curriculum'
+import { STATUS_LABELS } from '@/config/curriculum'
 import { bulkImportFilterLabel } from '@/lib/bulk-import/import-batch'
+import { stripHtml } from '@/lib/rich-text'
 import type {
   QuestionDifficulty,
   QuestionQueryFilters,
@@ -28,12 +24,6 @@ export type RepositoryFilters = {
 }
 
 export const DIFFICULTY_LABELS = ['Easy', 'Medium', 'Hard'] as const
-
-const DIFFICULTY_TO_LABEL: Record<QuestionDifficulty, string> = {
-  easy: 'Easy',
-  medium: 'Medium',
-  hard: 'Hard',
-}
 
 const LABEL_TO_DIFFICULTY: Record<string, QuestionDifficulty> = {
   Easy: 'easy',
@@ -176,6 +166,18 @@ function activeKeys(group: Record<string, boolean>): string[] {
     .map(([k]) => k)
 }
 
+function subjectScopedKey(classLabel: string, subject: string): string {
+  return `${classLabel}|${subject}`
+}
+
+function chapterScopedKey(
+  classLabel: string,
+  subject: string,
+  chapter: string,
+): string {
+  return `${classLabel}|${subject}|${chapter}`
+}
+
 /** Key for when to re-run the Firestore fetch (not client-side filters). */
 export function firestoreQueryKey(
   filters: RepositoryFilters,
@@ -235,8 +237,10 @@ export function filtersToQuery(
 /** Match chapter filter by id or display name */
 function chapterMatches(q: QuestionRecord, activeChapters: string[]): boolean {
   if (activeChapters.length === 0) return true
+  const scoped = chapterScopedKey(q.classLabel, q.subject, q.chapter)
   return activeChapters.some(
     (c) =>
+      c === scoped ||
       q.chapter === c ||
       q.chapterId === c ||
       q.chapterId === c.toLowerCase().replace(/\s+/g, '-'),
@@ -248,12 +252,12 @@ function matchesTextQuery(q: QuestionRecord, query: string): boolean {
   if (!needle) return true
   const haystack = [
     q.id,
-    q.bodyText,
+    stripHtml(q.bodyText),
     q.chapter,
     q.topic,
     q.classLabel,
     q.subject,
-    q.hindi ?? '',
+    stripHtml(q.hindi ?? ''),
     q.importFileName ?? '',
   ]
     .join(' ')
@@ -269,7 +273,13 @@ function matchesClientFilters(
     filters
 
   if (!isGroupFullyOff(classes) && classes[q.classLabel] === false) return false
-  if (!isGroupFullyOff(subjects) && subjects[q.subject] === false) return false
+  if (
+    !isGroupFullyOff(subjects) &&
+    subjects[q.subject] === false &&
+    subjects[subjectScopedKey(q.classLabel, q.subject)] === false
+  ) {
+    return false
+  }
   if (
     !isGroupFullyOff(bulkImports) &&
     q.importBatchId &&

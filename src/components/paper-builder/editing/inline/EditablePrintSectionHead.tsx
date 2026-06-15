@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react'
 import { getPrintLabels, type PaperMedium } from '@/lib/paper-medium'
 import type { ResolvedSection } from '@/lib/paper-instance'
 import type { SectionPrintSummary } from '@/lib/paper-print-layout'
-import type { PaperSectionId } from '@/lib/paper-builder'
 import { EditorialChip } from './EditorialChip'
 
 type Props = {
@@ -36,7 +35,7 @@ export function EditablePrintSectionHead({
   canMoveDown,
   onSelect,
   onTitleChange,
-  onInstructionsChange,
+  onInstructionsChange: _onInstructionsChange,
   onHide,
   onMove,
 }: Props) {

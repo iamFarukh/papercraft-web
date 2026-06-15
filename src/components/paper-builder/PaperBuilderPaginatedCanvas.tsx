@@ -6,6 +6,7 @@ import {
   PRINT_PAGE_HEIGHT_PX,
   PRINT_PAGE_WIDTH_PX,
   type PrintBlock,
+  type PrintPageModel,
 } from '@/lib/paper-print-layout'
 import { printSettingsClassName, type ResolvedPaper } from '@/lib/paper-instance'
 import { PrintBlockContent } from '@/components/print/PrintBlockContent'
@@ -42,6 +43,8 @@ type Props = {
   onFocusRepository?: () => void
   readOnly?: boolean
   paperMedium?: PaperMedium
+  /** Measured pages from the hidden print renderer (source of truth). Falls back to internal estimate when absent. */
+  pages?: PrintPageModel[]
 }
 
 export function PaperBuilderPaginatedCanvas({
@@ -60,14 +63,16 @@ export function PaperBuilderPaginatedCanvas({
   onFocusRepository,
   readOnly = false,
   paperMedium = 'english',
+  pages: pagesProp,
 }: Props) {
-  const pages = useMemo(
+  const fallbackPages = useMemo(
     () =>
       resolved
         ? buildPrintPagesFromResolved(resolved)
         : buildPrintPages(sections, composition, generalInstructions),
     [resolved, sections, composition, generalInstructions],
   )
+  const pages = pagesProp ?? fallbackPages
   const displayMeta = resolved?.meta ?? meta
   const printClass = resolved ? printSettingsClassName(resolved.printSettings) : ''
   const marksDisplay = resolved?.printSettings.marksDisplay ?? 'bracket'

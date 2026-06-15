@@ -1,5 +1,6 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { CommandPalette } from '@/components/command-center/CommandPalette'
+import { ConnectivityBanner } from '@/components/ui/ConnectivityBanner'
 import { useTeacherScope } from '@/hooks/useTeacherScope'
 import { AppTabBar } from './AppTabBar'
 import { Sidebar } from './Sidebar'
@@ -20,13 +21,37 @@ export function AppShell({
 }: AppShellProps) {
   const { isScoped, isActive, hasAssignments, hasFullAccess } = useTeacherScope()
   const showInactiveBanner = isScoped && (!isActive || (!hasAssignments && !hasFullAccess))
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('pc-sidebar-collapsed') === '1'
+    } catch {
+      return false
+    }
+  })
+
+  function handleToggleSidebar() {
+    setSidebarCollapsed((prev) => {
+      const next = !prev
+      try {
+        localStorage.setItem('pc-sidebar-collapsed', next ? '1' : '0')
+      } catch {
+        /* ignore storage in private mode */
+      }
+      return next
+    })
+  }
 
   return (
     <div className="pc-screen">
-      <div className="pc-shell">
-        <Sidebar activeKey={activeNav} />
+      <div className={'pc-shell' + (sidebarCollapsed ? ' is-sidebar-collapsed' : '')}>
+        <Sidebar
+          activeKey={activeNav}
+          collapsed={sidebarCollapsed}
+          onToggleCollapsed={handleToggleSidebar}
+        />
         <div className="pc-work">
           <Topbar crumbs={crumbs} actions={topbarActions} />
+          <ConnectivityBanner />
           {showInactiveBanner ? (
             <p className="pc-teacher-inactive-banner" role="status">
               {!isActive

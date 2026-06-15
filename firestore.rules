@@ -14,26 +14,179 @@ service cloud.firestore {
       return exists(userPath());
     }
 
-    function getUserRole() {
-      return hasUserDoc() ? get(userPath()).data.role : '';
+    /** Only explicit admin role — no legacy fallback. */
+    function isAdmin() {
+      return isAuth()
+        && hasUserDoc()
+        && get(userPath()).data.role == 'admin';
     }
 
-    /** Admins explicitly tagged, or legacy user docs with no role field yet. */
-    function isAdmin() {
-      return isAuth() && hasUserDoc() && (
-        !('role' in get(userPath()).data) ||
-        get(userPath()).data.role == 'admin'
-      );
+    function isTeacher() {
+      return isAuth()
+        && hasUserDoc()
+        && get(userPath()).data.role == 'teacher';
+    }
+
+    /**
+     * A teacher whose account has not been deactivated. `active` defaults to
+     * true when the field is absent (legacy docs). Deactivated teachers keep
+     * read access but lose write capability — enforced server-side, not just UI.
+     * NOTE: assignment-scope (class/subject) enforcement is a documented
+     * follow-up — it requires reconciling assignment data shapes first.
+     */
+    function isActiveTeacher() {
+      return isTeacher()
+        && get(userPath()).data.get('active', true) != false;
     }
 
     function questionNotTrashed() {
       return !('deletedAt' in resource.data) || resource.data.deletedAt == null;
     }
 
+    function validPaperStatus(status) {
+      return status in ['draft', 'submitted', 'approved', 'archived'];
+    }
+
+    function teacherPaperUpdateAllowed() {
+      return resource.data.createdBy == request.auth.uid
+        && resource.data.status == 'draft'
+        && validPaperStatus(request.resource.data.status)
+        && request.resource.data.createdBy == resource.data.createdBy
+        && (
+          request.resource.data.status == 'draft'
+          || (
+            request.resource.data.status == 'submitted'
+            && request.resource.data.submittedBy == request.auth.uid
+            && request.resource.data.submittedAt is timestamp
+          )
+        );
+    }
+
+    function adminPaperUpdateAllowed() {
+      let fromStatus = resource.data.status;
+      let toStatus = request.resource.data.status;
+      return validPaperStatus(fromStatus)
+        && validPaperStatus(toStatus)
+        && request.resource.data.createdBy == resource.data.createdBy
+        && (
+          (fromStatus == 'draft' && toStatus in ['draft', 'submitted', 'approved', 'archived'])
+          || (fromStatus == 'submitted' && toStatus in ['submitted', 'approved', 'draft', 'archived'])
+          || (fromStatus == 'approved' && toStatus in ['approved', 'draft', 'archived'])
+          || (fromStatus == 'archived' && toStatus in ['archived', 'draft'])
+        )
+        && (
+          toStatus != 'approved'
+          || (
+            fromStatus == 'submitted'
+            && request.resource.data.approvedBy == request.auth.uid
+            && request.resource.data.approvedAt is timestamp
+          )
+        )
+        && (
+          toStatus != 'submitted'
+          || fromStatus == 'draft'
+        );
+    }
+
+    function validQuestionStatus(status) {
+      return status in ['draft', 'published', 'locked', 'archived'];
+    }
+
+    function validQuestionStatusTransition(fromStatus, toStatus) {
+      return fromStatus == toStatus
+        || (fromStatus == 'draft' && toStatus in ['published', 'archived'])
+        || (fromStatus == 'published' && toStatus in ['draft', 'locked', 'archived'])
+        || (fromStatus == 'locked' && toStatus in ['draft', 'archived'])
+        || (fromStatus == 'archived' && toStatus in ['draft', 'published']);
+    }
+
+    function questionUpdateAllowed() {
+      let fromStatus = resource.data.status;
+      let toStatus = request.resource.data.status;
+      return validQuestionStatus(fromStatus)
+        && validQuestionStatus(toStatus)
+        && validQuestionStatusTransition(fromStatus, toStatus)
+        && (
+          !('createdBy' in resource.data)
+          || request.resource.data.get('createdBy', resource.data.createdBy) == resource.data.createdBy
+        );
+    }
+
+    function selfProfileFieldsOnly() {
+      return request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(['displayName', 'photoURL', 'settings', 'updatedAt', 'lastActiveAt']);
+    }
+
+    function privilegedUserFieldsUnchanged() {
+      return request.resource.data.get('role', resource.data.get('role', null))
+          == resource.data.get('role', null)
+        && request.resource.data.get('active', resource.data.get('active', true))
+          == resource.data.get('active', true)
+        && request.resource.data.get('assignments', resource.data.get('assignments', []))
+          == resource.data.get('assignments', [])
+        && request.resource.data.get('assignmentScope', resource.data.get('assignmentScope', 'full'))
+          == resource.data.get('assignmentScope', 'full')
+        && request.resource.data.get('email', resource.data.get('email', ''))
+          == resource.data.get('email', '');
+    }
+
+    function teacherBootstrapCreate() {
+      return request.resource.data.role == 'teacher'
+        && request.auth.token.email != null
+        && request.resource.data.get('email', '') == string.lower(request.auth.token.email)
+        && request.resource.data.get('active', true) is bool
+        && request.resource.data.get('assignments', []) is list;
+    }
+
+    function selfProfileCreateAllowed() {
+      return !('role' in request.resource.data)
+        || (
+          request.resource.data.role == 'teacher'
+          && request.auth.token.email != null
+          && request.resource.data.get('email', '') == string.lower(request.auth.token.email)
+        );
+    }
+
+    function trustedNotificationCreate() {
+      let type = request.resource.data.type;
+      let entityKind = request.resource.data.get('entityKind', null);
+      let entityId = request.resource.data.get('entityId', null);
+
+      return (
+        type == 'paper_submitted'
+        && entityKind == 'paper'
+        && entityId is string
+        && isActiveTeacher()
+        && exists(/databases/$(database)/documents/papers/$(entityId))
+        && get(/databases/$(database)/documents/papers/$(entityId)).data.status == 'submitted'
+        && (
+          get(/databases/$(database)/documents/papers/$(entityId)).data.submittedBy == request.auth.uid
+          || get(/databases/$(database)/documents/papers/$(entityId)).data.createdBy == request.auth.uid
+        )
+      ) || (
+        isAdmin()
+        && type in [
+          'paper_approved',
+          'paper_reopened',
+          'paper_returned_draft',
+          'bulk_import_completed',
+          'curriculum_warning',
+          'system_warning'
+        ]
+      );
+    }
+
     match /questions/{questionId} {
       allow read: if isAuth() && resource.data.status == 'published' && questionNotTrashed();
       allow read: if isAdmin();
-      allow create, update, delete: if isAdmin();
+
+      allow create: if isAdmin()
+        && validQuestionStatus(request.resource.data.status)
+        && request.resource.data.status in ['draft', 'published'];
+
+      allow update: if isAdmin() && questionUpdateAllowed();
+
+      allow delete: if isAdmin();
     }
 
     match /curriculum_classes/{docId} {
@@ -65,32 +218,39 @@ service cloud.firestore {
       allow read: if isAuth() && (
         resource.data.createdBy == request.auth.uid || isAdmin()
       );
-      allow create: if isAuth()
+
+      allow create: if (isAdmin() || isActiveTeacher())
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.status == 'draft';
+
       allow update: if isAuth() && (
-        isAdmin() ||
-        (
-          resource.data.createdBy == request.auth.uid
-          && resource.data.status == 'draft'
-          && (
-            request.resource.data.status == 'draft' ||
-            (
-              request.resource.data.status == 'submitted'
-              && request.resource.data.submittedBy == request.auth.uid
-              && request.resource.data.submittedAt is timestamp
-            )
-          )
-        )
+        (isAdmin() && adminPaperUpdateAllowed())
+        || (isActiveTeacher() && teacherPaperUpdateAllowed())
       );
+
       allow delete: if isAdmin();
     }
 
     match /users/{userId} {
       allow read: if isAuth() && (request.auth.uid == userId || isAdmin());
-      /** Self on first login, or admin provisioning teachers (users/{teacherUid}). */
-      allow create: if isAuth() && (request.auth.uid == userId || isAdmin());
-      allow update: if isAuth() && (request.auth.uid == userId || isAdmin());
+
+      allow create: if isAdmin() || (
+        isAuth()
+        && request.auth.uid == userId
+        && request.resource.data.get('role', null) != 'admin'
+        && (
+          teacherBootstrapCreate()
+          || selfProfileCreateAllowed()
+        )
+      );
+
+      allow update: if isAdmin() || (
+        isAuth()
+        && request.auth.uid == userId
+        && selfProfileFieldsOnly()
+        && privilegedUserFieldsUnchanged()
+      );
+
       allow delete: if isAdmin();
 
       match /bookmark_folders/{folderId} {
@@ -108,17 +268,26 @@ service cloud.firestore {
 
     match /teacher_pending/{pendingId} {
       allow read: if isAdmin() || (
-        isAuth() &&
-        request.auth.token.email != null &&
-        resource.data.email == string.lower(request.auth.token.email)
+        isAuth()
+        && request.auth.token.email != null
+        && resource.data.email == string.lower(request.auth.token.email)
       );
       allow write: if isAdmin();
     }
 
     match /notifications/{notificationId} {
       allow read: if isAuth() && resource.data.userId == request.auth.uid;
-      allow create: if isAuth();
-      allow update: if isAuth() && resource.data.userId == request.auth.uid;
+
+      allow create: if isAuth() && (
+        request.resource.data.userId == request.auth.uid
+        || trustedNotificationCreate()
+      );
+
+      allow update: if isAuth()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+
       allow delete: if isAuth() && resource.data.userId == request.auth.uid;
     }
 

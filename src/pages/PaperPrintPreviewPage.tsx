@@ -1,5 +1,5 @@
 import { Loader2 } from 'lucide-react'
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { OfficialPrintDocument } from '@/components/print/OfficialPrintDocument'
 import { PrintMeasureSurface } from '@/components/print/PrintMeasureSurface'
@@ -10,9 +10,11 @@ import { resolvePaper } from '@/lib/paper-instance'
 import {
   EXPORT_UNAVAILABLE_MSG,
   parseExportFormatFromQuery,
+  parseExportKindFromQuery,
 } from '@/lib/paper-export-formats'
 import { usePaperPrintData } from '@/hooks/usePaperPrintData'
 import { useSchoolBranding } from '@/hooks/useSchoolBranding'
+import { readContinuityState, writeContinuityState } from '@/lib/workflow-continuity'
 import type { PrintPageModel } from '@/lib/paper-print-layout'
 import type { PaperComposition, PaperSectionDef, PaperSetupState } from '@/lib/paper-builder'
 import type { ResolvedPaper } from '@/lib/paper-instance'
@@ -60,8 +62,13 @@ export function PaperPrintPreviewPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const documentRootRef = useRef<HTMLDivElement>(null)
+  const continuity = readContinuityState<{ scrollTop?: number }>(
+    'paper-preview',
+    paperId ?? 'unknown',
+  )
   const from = searchParams.get('from')
   const autoExportFormat = parseExportFormatFromQuery(searchParams.get('export'))
+  const autoExportKind = parseExportKindFromQuery(searchParams.get('kind'))
   const printSnapshot = (location.state as PaperPrintPreviewLocationState | null)?.printSnapshot
   const { phase: remotePhase, data: remoteData } = usePaperPrintData(
     printSnapshot ? undefined : paperId,
@@ -90,6 +97,19 @@ export function PaperPrintPreviewPage() {
   const phase = printSnapshot ? 'ready' : remotePhase
   const data = sessionData ?? remoteData
 
+  useEffect(() => {
+    const el = documentRootRef.current
+    if (!el || !paperId) return
+    if (typeof continuity?.scrollTop === 'number') {
+      el.scrollTop = continuity.scrollTop
+    }
+    const onScroll = () => {
+      writeContinuityState('paper-preview', { scrollTop: el.scrollTop }, paperId)
+    }
+    el.addEventListener('scroll', onScroll)
+    return () => el.removeEventListener('scroll', onScroll)
+  }, [paperId, continuity?.scrollTop, phase])
+
   const handleExit = () => {
     if (from === 'editor' && paperId) {
       navigate(`/app/builder/${paperId}/editor`, {
@@ -114,6 +134,10 @@ export function PaperPrintPreviewPage() {
     navigate('/app/papers')
   }
 
+  const handleRetry = () => {
+    window.location.reload()
+  }
+
   if (phase === 'loading') {
     return (
       <div className="pc-print-preview-root pc-print-preview-root--loading">
@@ -133,9 +157,14 @@ export function PaperPrintPreviewPage() {
         <div className="pc-pb-load-state is-error">
           <p className="pc-pb-load-title pc-serif">Paper not available</p>
           <p className="pc-pb-load-muted">This paper could not be loaded for preview.</p>
-          <Link to="/app/papers" className="pc-btn">
-            Paper library
-          </Link>
+          <div className="pc-pb-load-actions">
+            <button type="button" className="pc-btn is-primary" onClick={handleRetry}>
+              Retry preview
+            </button>
+            <Link to="/app/papers" className="pc-btn">
+              Paper library
+            </Link>
+          </div>
         </div>
       </div>
     )
@@ -157,6 +186,7 @@ export function PaperPrintPreviewPage() {
       canExport={isApproved}
       documentRootRef={documentRootRef}
       autoExportFormat={isApproved ? autoExportFormat : null}
+      autoExportKind={autoExportKind}
     >
       {printSnapshot ? (
         <p className="pc-print-preview-session-tip">

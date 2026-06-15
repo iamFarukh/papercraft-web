@@ -76,7 +76,7 @@ export async function listTeachers(): Promise<TeacherListItem[]> {
     ])
   } catch (err) {
     if (isPermissionDenied(err)) {
-      throw new Error(ADMIN_SETUP_HINT)
+      throw new Error(ADMIN_SETUP_HINT, { cause: err })
     }
     throw err
   }
@@ -232,6 +232,7 @@ export async function saveTeacher(
     if (isPermissionDenied(err)) {
       throw new Error(
         `${ADMIN_SETUP_HINT} After deploying rules, save the teacher again with the same initial password to link their login.`,
+        { cause: err },
       )
     }
     throw err
@@ -256,7 +257,8 @@ export async function applyPendingTeacherProfile(
       email: normalizeTeacherEmail(email),
       displayName: pending.displayName,
       active: pending.active,
-      assignmentScope: pending.assignmentScope ?? 'custom',
+      assignmentScope:
+        pending.assignmentScope ?? ((pending.assignments?.length ?? 0) > 0 ? 'custom' : 'full'),
       assignments: pending.assignments ?? [],
       updatedAt: serverTimestamp(),
     },

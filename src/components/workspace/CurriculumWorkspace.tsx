@@ -53,6 +53,7 @@ export function CurriculumWorkspace() {
           selectionId={selection?.id ?? null}
           selectionType={selection?.type ?? null}
           loading={loading}
+          error={error}
           showArchived={showArchived}
           onToggleArchived={setShowArchived}
           onSelect={selectNode}

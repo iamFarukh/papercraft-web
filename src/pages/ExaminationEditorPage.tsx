@@ -28,7 +28,7 @@ type LocationState = {
 
 function paperLoadMessage(code: string): string {
   if (code === 'permission-denied') {
-    return 'You do not have permission to open this paper.'
+    return 'You no longer have access to open this paper.'
   }
   if (code === 'unavailable') {
     return 'Could not reach the server. Check your connection and try again.'

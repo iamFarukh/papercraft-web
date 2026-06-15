@@ -6,6 +6,18 @@ export type UserRole = 'admin' | 'teacher'
 
 const ROLE_LOOKUP_MS = 5_000
 
+/**
+ * Dev-only role escape hatch. Returns the configured VITE_DEV_ROLE ONLY in a
+ * development build (`import.meta.env.DEV`). In any production build this always
+ * returns null, so a leaked/misconfigured VITE_DEV_ROLE can never elevate a
+ * real user — guarding against the client-side admin-escalation path.
+ */
+function devRoleOverride(): UserRole | null {
+  if (!import.meta.env.DEV) return null
+  const devRole = import.meta.env.VITE_DEV_ROLE
+  return devRole === 'admin' || devRole === 'teacher' ? devRole : null
+}
+
 function isPermissionDenied(err: unknown): boolean {
   const code =
     err && typeof err === 'object' && 'code' in err
@@ -31,10 +43,7 @@ export async function getUserRole(uid: string): Promise<UserRole | null> {
     // fall through
   }
 
-  const devRole = import.meta.env.VITE_DEV_ROLE
-  if (devRole === 'admin' || devRole === 'teacher') return devRole
-
-  return null
+  return devRoleOverride()
 }
 
 /**
@@ -62,8 +71,8 @@ export async function ensureUserProfile(
       }
     }
 
-    const devRole = import.meta.env.VITE_DEV_ROLE
-    if (devRole === 'admin' || devRole === 'teacher') {
+    const devRole = devRoleOverride()
+    if (devRole) {
       await setDoc(
         ref,
         {

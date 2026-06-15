@@ -17,7 +17,7 @@ import {
   isSoftDeleted,
 } from '@/lib/question-delete'
 import { getQuestionById } from '@/services/firebase/questions'
-import type { QuestionDocument, QuestionStatus } from '@/types/question'
+import type { QuestionStatus } from '@/types/question'
 
 const COLLECTION = 'questions'
 const BATCH_LIMIT = 400

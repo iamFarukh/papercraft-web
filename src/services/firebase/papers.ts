@@ -93,19 +93,62 @@ export async function approvePaper(
   })
 }
 
-export async function listApprovalQueue(max = 80): Promise<ApprovalQueueItem[]> {
-  // Use updatedAt + client filter/sort so the queue works without a composite
-  // status+submittedAt index (and includes papers missing submittedAt).
-  const snap = await getDocs(
-    query(collection(db, COLLECTION), orderBy('updatedAt', 'desc'), limit(150)),
-  )
+type QueueRow = { id: string; data: PaperDocument }
 
-  const rows = snap.docs
-    .map((d) => {
-      const data = d.data() as PaperDocument
-      return { id: d.id, data }
-    })
-    .filter((r) => r.data.status === 'submitted' || r.data.status === 'approved')
+function isMissingIndexError(err: unknown): boolean {
+  const code =
+    err && typeof err === 'object' && 'code' in err
+      ? String((err as { code: string }).code)
+      : ''
+  return code === 'failed-precondition'
+}
+
+/**
+ * Targeted, status-scoped queries so NO submitted paper is ever dropped from
+ * the queue (the previous updatedAt+limit(150) scan silently lost any submitted
+ * paper outside the 150 most-recently-updated docs). Requires composite indexes
+ * on (status, submittedAt) and (status, approvedAt) — see firestore.indexes.json.
+ * Falls back to the legacy scan if those indexes aren't deployed yet.
+ */
+export async function listApprovalQueue(max = 80): Promise<ApprovalQueueItem[]> {
+  let rows: QueueRow[]
+  try {
+    const [submittedSnap, approvedSnap] = await Promise.all([
+      getDocs(
+        query(
+          collection(db, COLLECTION),
+          where('status', '==', 'submitted'),
+          orderBy('submittedAt', 'desc'),
+          limit(max),
+        ),
+      ),
+      getDocs(
+        query(
+          collection(db, COLLECTION),
+          where('status', '==', 'approved'),
+          orderBy('approvedAt', 'desc'),
+          limit(max),
+        ),
+      ),
+    ])
+    rows = [...submittedSnap.docs, ...approvedSnap.docs].map((d) => ({
+      id: d.id,
+      data: d.data() as PaperDocument,
+    }))
+  } catch (err) {
+    if (!isMissingIndexError(err)) throw err
+    // Index not deployed yet — fall back to the legacy single-collection scan.
+    const snap = await getDocs(
+      query(collection(db, COLLECTION), orderBy('updatedAt', 'desc'), limit(150)),
+    )
+    rows = snap.docs
+      .map((d) => ({ id: d.id, data: d.data() as PaperDocument }))
+      .filter(
+        (r) => r.data.status === 'submitted' || r.data.status === 'approved',
+      )
+  }
+
+  rows = rows
     .sort((a, b) => {
       const aMs =
         a.data.submittedAt?.toMillis?.() ?? a.data.updatedAt?.toMillis?.() ?? 0
@@ -182,7 +225,7 @@ export function parsePaperError(err: unknown): string {
   const code = firebaseErrorCode(err)
   const message = err instanceof Error ? err.message : ''
   if (code === 'permission-denied') {
-    return 'You do not have permission to save this paper.'
+    return 'You no longer have access to modify this paper.'
   }
   if (code === 'not-found') return 'Paper not found.'
   if (code === 'failed-precondition' && message.includes('index')) {

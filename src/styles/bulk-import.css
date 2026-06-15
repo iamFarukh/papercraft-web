@@ -33,7 +33,7 @@
   width: 30px;
   height: 30px;
   border-radius: 7px;
-  background: linear-gradient(135deg, #14b87a, #0e9560);
+  background: linear-gradient(135deg, var(--pc-success), var(--pc-success-text));
   color: #fff;
   display: grid;
   place-items: center;
@@ -377,11 +377,11 @@
 }
 
 .pc-csv-template-badge.is-green {
-  background: #2e7d5f;
+  background: var(--pc-success-text);
 }
 
 .pc-csv-template-badge.is-blue {
-  background: #1f6fe0;
+  background: var(--pc-primary-600);
 }
 
 .pc-csv-template-title {
@@ -502,8 +502,8 @@
 
 .pc-csv-banner.is-success {
   background: var(--pc-success-bg);
-  border: 1px solid #bce5cf;
-  color: #0e7a52;
+  border: 1px solid color-mix(in srgb, var(--pc-success) 40%, var(--pc-surface));
+  color: var(--pc-success-text);
 }
 
 .pc-csv-banner.is-success button {
@@ -876,8 +876,12 @@
 
 .pc-csv-draft-banner.is-published,
 .pc-csv-draft-panel.is-published {
-  border-color: rgb(34 150 110 / 28%);
-  background: linear-gradient(90deg, rgb(34 150 110 / 6%) 0%, var(--pc-surface) 55%);
+  border-color: color-mix(in srgb, var(--pc-success) 28%, transparent);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--pc-success) 6%, var(--pc-surface)) 0%,
+    var(--pc-surface) 55%
+  );
 }
 
 .pc-csv-status.is-ready {
@@ -890,7 +894,7 @@
 }
 .pc-csv-status.is-review {
   background: var(--pc-warning-bg);
-  color: #7a4f0e;
+  color: var(--pc-warning-text);
 }
 .pc-csv-status.is-failed {
   background: var(--pc-danger-bg);
@@ -898,8 +902,8 @@
 }
 
 .pc-csv-curriculum-panel {
-  background: linear-gradient(180deg, #f1f4ff, #e7ecff);
-  border: 1px solid #c9d4ff;
+  background: linear-gradient(180deg, var(--pc-primary-50), var(--pc-info-bg));
+  border: 1px solid var(--pc-primary-200);
   border-radius: 10px;
   padding: 12px 14px;
   margin-bottom: 12px;
@@ -907,7 +911,7 @@
 
 .pc-csv-curriculum-lead {
   font-size: 11.5px;
-  color: #3f4f8c;
+  color: var(--pc-primary-ink);
   margin: 0 0 8px;
 }
 
@@ -938,7 +942,7 @@
 
 .pc-csv-issue-panel.is-danger {
   background: var(--pc-danger-bg);
-  border: 1px solid #f0c4bc;
+  border: 1px solid color-mix(in srgb, var(--pc-danger) 35%, var(--pc-surface));
   color: var(--pc-danger);
 }
 
@@ -1025,10 +1029,14 @@
   display: flex;
   gap: 12px;
   padding: 16px 18px;
-  background: linear-gradient(180deg, #fffcec, #fbf2df);
-  border: 1px solid #f0d798;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--pc-warning-bg) 60%, var(--pc-surface)),
+    var(--pc-warning-bg)
+  );
+  border: 1px solid color-mix(in srgb, var(--pc-warning) 45%, var(--pc-surface));
   border-radius: 12px;
-  color: #7a4f0e;
+  color: var(--pc-warning-text);
   font-size: 12px;
   line-height: 1.5;
 }
@@ -1066,7 +1074,12 @@
   width: 64px;
   height: 64px;
   border-radius: 18px;
-  background: linear-gradient(160deg, #1ed68a, #14b87a 60%, #0e9560);
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--pc-success) 80%, #fff),
+    var(--pc-success) 60%,
+    var(--pc-success-text)
+  );
   color: #fff;
   display: grid;
   place-items: center;
@@ -1102,8 +1115,12 @@
   gap: 16px;
   padding: 18px 22px;
   margin-bottom: 28px;
-  background: linear-gradient(180deg, #fffcec, #fbf2df);
-  border: 1px solid #f0d798;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--pc-warning-bg) 60%, var(--pc-surface)),
+    var(--pc-warning-bg)
+  );
+  border: 1px solid color-mix(in srgb, var(--pc-warning) 45%, var(--pc-surface));
   border-radius: 14px;
 }
 
@@ -1122,12 +1139,12 @@
   font-size: 16px;
   font-weight: 500;
   margin: 0;
-  color: #5c3a07;
+  color: var(--pc-warning-text);
 }
 
 .pc-csv-draft-banner-body {
   font-size: 12.5px;
-  color: #7a4f0e;
+  color: var(--pc-warning-text);
   margin: 3px 0 0;
   line-height: 1.5;
 }
@@ -1174,4 +1191,74 @@
   .pc-csv-map-arrow {
     display: none;
   }
+}
+
+.pc-csv-ai-assist {
+  margin-top: 22px;
+  padding: 18px;
+  border: 1px solid var(--pc-line);
+  border-radius: 12px;
+  background: var(--pc-surface);
+  box-shadow: var(--pc-shadow-xs);
+}
+
+.pc-csv-ai-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.pc-csv-ai-config {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--pc-line);
+  background: var(--pc-surface-2);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pc-csv-ai-config-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.pc-csv-ai-config label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--pc-ink-4);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pc-csv-ai-paste {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--pc-line);
+}
+
+.pc-csv-ai-textarea {
+  width: 100%;
+  min-height: 140px;
+  resize: vertical;
+  border-radius: 10px;
+  border: 1px solid var(--pc-line);
+  background: var(--pc-bg);
+  padding: 10px 12px;
+  font-family: var(--pc-mono);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.pc-csv-ai-review {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--pc-line);
+  background: var(--pc-surface-2);
 }

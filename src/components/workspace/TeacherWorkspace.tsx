@@ -69,14 +69,26 @@ export function TeacherWorkspace() {
       ) : null}
 
       {error ? (
-        <p className="pc-teachers-error">{error}</p>
+        <EmptyStatePanel
+          icon={Users}
+          title="Could not load teachers"
+          description="We could not load the teacher roster right now."
+          hint="Please retry in a moment."
+          variant="error"
+          actions={[{ kind: 'button', label: 'Retry', onClick: load, primary: true }]}
+        />
       ) : null}
 
       {!loading && !error && teachers.length === 0 ? (
         <EmptyStatePanel
           icon={Users}
           title="No teachers yet"
-          description="Add teachers with class and subject assignments. They can sign in with their school email when ready."
+          description="Add teachers with class and subject assignments so the workspace reflects real classroom ownership."
+          hint="Teachers can sign in with their school email once invited."
+          actions={[{ kind: 'button', label: 'Add first teacher', onClick: () => {
+            setEditing(null)
+            setDialogOpen(true)
+          }, primary: true }]}
         />
       ) : null}
 

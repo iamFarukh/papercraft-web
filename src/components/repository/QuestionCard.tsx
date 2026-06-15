@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState, type MouseEvent } from 'react'
+import { memo, useEffect, useRef, useState, type MouseEvent } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { ChevronDown, MoreHorizontal, Star } from 'lucide-react'
 import { PC_DURATION, PC_EASE, PC_TRANSITION } from '@/lib/motion/tokens'
 import type { QuestionRecord } from '@/types/question'
 import { questionDisplayRef } from '@/lib/question-display'
+import { RichContent } from '@/components/ui/RichContent'
 import { BookmarkPickerMenu } from '@/components/bookmarks/BookmarkPickerMenu'
 import { QuestionCardMenu } from '@/components/bookmarks/QuestionCardMenu'
 import { useQuestionBookmarkState } from '@/hooks/useQuestionBookmarkState'
@@ -44,14 +45,16 @@ type QuestionCardProps = {
   expanded?: boolean
   view?: 'card' | 'list'
   isSwitchingView?: boolean
-  onToggleSelect?: (e: MouseEvent) => void
-  onOpen: () => void
-  onToggleExpand: () => void
+  // id-based handlers so the parent can pass stable useCallback refs directly
+  // (no per-row closures) — required for React.memo below to actually skip work.
+  onToggleSelect?: (id: string, e: MouseEvent) => void
+  onOpen: (id: string) => void
+  onToggleExpand: (id: string) => void
   isAdmin?: boolean
   showBookmark?: boolean
 }
 
-export function QuestionCard({
+function QuestionCardComponent({
   question: q,
   selected = false,
   active = false,
@@ -108,7 +111,7 @@ export function QuestionCard({
   function openDetails(e: MouseEvent) {
     e.stopPropagation()
     if (menuOpen) return
-    onOpen()
+    onOpen(q.id)
   }
 
   function handleCardClick(e: MouseEvent) {
@@ -117,7 +120,7 @@ export function QuestionCard({
     if (target.closest('.pc-q-card-select-wrap, button, a, input, [role="menu"]')) {
       return
     }
-    onOpen()
+    onOpen(q.id)
   }
 
   return (
@@ -127,6 +130,7 @@ export function QuestionCard({
       tabIndex={0}
       layout={isInViewport && !reduceMotion}
       initial={false}
+      exit={reduceMotion ? undefined : { opacity: 0, scale: 0.97 }}
       transition={{ layout: reduceMotion ? { duration: 0 } : CARD_LAYOUT }}
       animate={
         reduceMotion
@@ -149,7 +153,7 @@ export function QuestionCard({
         if (menuOpen) return
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault()
-          onOpen()
+          onOpen(q.id)
         }
       }}
       aria-selected={selected}
@@ -179,7 +183,7 @@ export function QuestionCard({
                 aria-label={`Select ${questionDisplayRef(q)}`}
                 onClick={(e) => {
                   e.stopPropagation()
-                  onToggleSelect(e)
+                  onToggleSelect(q.id, e)
                 }}
                 readOnly
               />
@@ -234,7 +238,7 @@ export function QuestionCard({
             aria-expanded={expanded}
             onClick={(e) => {
               e.stopPropagation()
-              onToggleExpand()
+              onToggleExpand(q.id)
             }}
           >
             <ChevronDown size={14} strokeWidth={1.6} />
@@ -270,18 +274,20 @@ export function QuestionCard({
         anchorRect={moreRef.current?.getBoundingClientRect() ?? null}
         onClose={() => setMoreOpen(false)}
         onBookmark={() => setBookmarkOpen(true)}
-        onViewDetails={onOpen}
+        onViewDetails={() => onOpen(q.id)}
       />
 
       <div className="pc-q-card-main">
-        <div className="pc-q-card-body pc-serif">{q.bodyText}</div>
+        <RichContent className="pc-q-card-body pc-serif" html={q.bodyText} />
         {q.hindi && !isList ? (
-          <p className={'pc-q-card-hindi' + (expanded ? '' : ' is-clamped')}>
-            {q.hindi}
-          </p>
+          <RichContent
+            className={'pc-q-card-hindi' + (expanded ? '' : ' is-clamped')}
+            as="div"
+            html={q.hindi}
+          />
         ) : null}
         {q.hindi && isList && expanded ? (
-          <p className="pc-q-card-hindi pc-q-card-hindi--list">{q.hindi}</p>
+          <RichContent className="pc-q-card-hindi pc-q-card-hindi--list" html={q.hindi} />
         ) : null}
       </div>
 
@@ -309,3 +315,11 @@ export function QuestionCard({
     </motion.article>
   )
 }
+
+/**
+ * Memoized so a state change in the workspace (search typing, hover, selecting
+ * one card) only re-renders the cards whose own props actually changed, instead
+ * of every card in the stream. Relies on the parent passing stable id-based
+ * handlers (see QuestionStream).
+ */
+export const QuestionCard = memo(QuestionCardComponent)

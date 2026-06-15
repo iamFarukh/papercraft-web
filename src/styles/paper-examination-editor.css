@@ -388,7 +388,7 @@ html.pc-ee-route.pc-ee-shell-nav-open .pc-tab-bar {
   width: 5px;
   height: 5px;
   border-radius: 3px;
-  background: #8b5cf6;
+  background: var(--pc-override);
   flex-shrink: 0;
 }
 

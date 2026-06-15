@@ -591,6 +591,16 @@
 
 .pc-print-doc--builder .pc-print-page {
   box-shadow: var(--pc-shadow-md);
+  /* Builder renders editable blocks (toolbars make them taller than the print
+     blocks the page breaks are measured from). Let the page grow to fit so a
+     question is NEVER clipped — page breaks stay accurate to the print output,
+     the card just expands a little when needed. */
+  height: auto;
+  min-height: var(--pc-print-page-h, 842px);
+}
+
+.pc-print-doc--builder .pc-print-page-body {
+  overflow: visible;
 }
 
 /* A4 at 72dpi (matches design preview / print baseline) */
