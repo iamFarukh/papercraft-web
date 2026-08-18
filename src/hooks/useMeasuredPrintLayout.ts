@@ -10,6 +10,7 @@ import {
 import {
   paginateMeasuredBlocks,
   type MeasuredBodyBudgets,
+  type MeasuredChromeHeights,
   type MeasuredPrintLayout,
 } from '@/lib/paper-print-measure'
 import type { PrintMeasureResult } from '@/components/print/PrintMeasureSurface'
@@ -36,6 +37,7 @@ export function useMeasuredPrintLayout(resolved: ResolvedPaper): UseMeasuredPrin
 
   const [measuredHeights, setMeasuredHeights] = useState<number[] | null>(null)
   const [probeBudgets, setProbeBudgets] = useState<MeasuredBodyBudgets | null>(null)
+  const [chromeHeights, setChromeHeights] = useState<MeasuredChromeHeights | null>(null)
 
   const measureKey = useMemo(
     () =>
@@ -54,12 +56,19 @@ export function useMeasuredPrintLayout(resolved: ResolvedPaper): UseMeasuredPrin
   useEffect(() => {
     setMeasuredHeights(null)
     setProbeBudgets(null)
+    setChromeHeights(null)
   }, [measureKey, ctx.bodyHeightPage1, ctx.bodyHeightContinued])
 
   const layout: MeasuredPrintLayout = useMemo(() => {
     if (measuredHeights && measuredHeights.length === blocks.length) {
       return {
-        pages: paginateMeasuredBlocks(blocks, measuredHeights, ctx, probeBudgets ?? undefined),
+        pages: paginateMeasuredBlocks(
+          blocks,
+          measuredHeights,
+          ctx,
+          probeBudgets ?? undefined,
+          chromeHeights ?? undefined,
+        ),
         blockHeights: measuredHeights,
         source: 'measured',
       }
@@ -69,7 +78,7 @@ export function useMeasuredPrintLayout(resolved: ResolvedPaper): UseMeasuredPrin
       blockHeights: [],
       source: 'estimated',
     }
-  }, [blocks, measuredHeights, probeBudgets, ctx, resolved])
+  }, [blocks, measuredHeights, probeBudgets, chromeHeights, ctx, resolved])
 
   const onPrintMeasured = useCallback(
     (result: PrintMeasureResult) => {
@@ -88,6 +97,18 @@ export function useMeasuredPrintLayout(resolved: ResolvedPaper): UseMeasuredPrin
         const next = result.bodyBudgets
         if (!next) return prev
         if (prev && prev.page1 === next.page1 && prev.continued === next.continued) return prev
+        return next
+      })
+      setChromeHeights((prev) => {
+        const next = result.chrome
+        if (!next) return prev
+        if (
+          prev &&
+          prev.continuedBanner === next.continuedBanner &&
+          prev.endMark === next.endMark
+        ) {
+          return prev
+        }
         return next
       })
     },

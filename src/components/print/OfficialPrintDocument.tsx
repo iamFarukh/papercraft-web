@@ -20,9 +20,11 @@ export type OfficialPrintLayout = 'preview' | 'embedded' | 'builder' | 'edit'
 
 type Props = {
   meta: PaperMeta
-  sections: PaperSectionDef[]
+  /** Only used for the legacy no-`resolved`, no-`pages` fallback. */
+  sections?: PaperSectionDef[]
   generalInstructions?: string
-  composition: PaperComposition
+  /** Only used for the legacy no-`resolved`, no-`pages` fallback. */
+  composition?: PaperComposition
   /** When set, formatting overrides and marks flow through print layout. */
   resolved?: ResolvedPaper
   /** Measured pages from print layout engine (preferred). */
@@ -52,7 +54,7 @@ export function OfficialPrintDocument({
       pagesProp ??
       (resolved != null
         ? buildPrintPagesFromResolved(resolved)
-        : buildPrintPages(sections, composition, generalInstructions)),
+        : buildPrintPages(sections ?? [], composition ?? ({} as PaperComposition), generalInstructions)),
     [pagesProp, resolved, sections, composition, generalInstructions],
   )
 

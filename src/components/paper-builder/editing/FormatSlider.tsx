@@ -1,4 +1,4 @@
-import { useCallback, useId, useRef, useState } from 'react'
+import { useCallback, useId, useState } from 'react'
 
 export type FormatSliderSpec = {
   label: string
@@ -46,7 +46,6 @@ export function FormatSlider({
   const id = useId()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const hasOverride = globalValue != null && Math.abs(value - globalValue) > 0.01
   const trackClass = zoneClass(value, warningBelow, warningAbove)
@@ -61,8 +60,6 @@ export function FormatSlider({
   )
 
   function handleSlider(v: number) {
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => commit(v), 16)
     commit(v)
   }
 

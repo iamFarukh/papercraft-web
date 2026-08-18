@@ -9,7 +9,7 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 
-const POPOVER_WIDTH = 176
+const DEFAULT_POPOVER_WIDTH = 176
 
 type Props = {
   open: boolean
@@ -18,6 +18,8 @@ type Props = {
   children: ReactNode
   className?: string
   align?: 'start' | 'end'
+  /** Override the default 176px width (e.g. wider format panels). */
+  width?: number
 }
 
 export function EditorPopover({
@@ -27,6 +29,7 @@ export function EditorPopover({
   children,
   className = '',
   align = 'start',
+  width = DEFAULT_POPOVER_WIDTH,
 }: Props) {
   const popRef = useRef<HTMLDivElement>(null)
   const [style, setStyle] = useState<CSSProperties>({ visibility: 'hidden' })
@@ -38,14 +41,14 @@ export function EditorPopover({
       const anchor = anchorRef.current
       if (!anchor) return
       const rect = anchor.getBoundingClientRect()
-      let left = align === 'end' ? rect.right - POPOVER_WIDTH : rect.left
-      left = Math.max(8, Math.min(left, window.innerWidth - POPOVER_WIDTH - 8))
+      let left = align === 'end' ? rect.right - width : rect.left
+      left = Math.max(8, Math.min(left, window.innerWidth - width - 8))
       const top = rect.bottom + 6
       setStyle({
         position: 'fixed',
         top,
         left,
-        width: POPOVER_WIDTH,
+        width,
         zIndex: 12000,
         visibility: 'visible',
       })
@@ -58,7 +61,7 @@ export function EditorPopover({
       window.removeEventListener('resize', update)
       window.removeEventListener('scroll', update, true)
     }
-  }, [open, align, anchorRef])
+  }, [open, align, anchorRef, width])
 
   useEffect(() => {
     if (!open) return

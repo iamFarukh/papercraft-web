@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { builderBlockEnter } from '@/lib/motion'
 import {
@@ -49,9 +50,19 @@ export function PaperQuestionBlock({
   onMoveDown,
 }: Props) {
   const missing = isMissingQuestion(question)
+  const ref = useRef<HTMLElement>(null)
+
+  // Bring a freshly added/replaced question into view — the highlight is otherwise
+  // easy to miss when the canvas is scrolled away from the insertion point.
+  useEffect(() => {
+    if (isNew && ref.current) {
+      ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [isNew])
 
   return (
     <motion.article
+      ref={ref}
       className={`pc-pb-q-block pc-motion-surface${isNew ? ' is-new' : ''}${isReplacing ? ' is-replacing' : ''}${missing ? ' is-missing' : ''}`}
       layout
       initial={isNew ? { opacity: 0, y: 6 } : false}

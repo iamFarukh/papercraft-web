@@ -1,4 +1,4 @@
-import { Sparkles } from 'lucide-react'
+import { Link2, Link2Off, Minus, Plus, Sparkles } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import {
   applyGlobalDensity,
@@ -6,7 +6,11 @@ import {
   applyHeaderPreset,
   applyLinkedMargin,
   applyMarginPreset,
+  applyMarginsLinked,
+  applySideMargin,
+  clamp,
   MARGIN_PRESETS,
+  type PaperMarginSide,
 } from '@/lib/paper-format-config'
 import {
   applySmartFitSettings,
@@ -36,7 +40,10 @@ type Props = {
   pageCount: number
   readOnly?: boolean
   onSetupChange: (patch: Partial<PaperSetupState>) => void
-  onInstanceChange: (next: PaperInstanceLayer) => void
+  /** Accepts a value or a functional updater so rapid stepper clicks accumulate. */
+  onInstanceChange: (
+    next: PaperInstanceLayer | ((prev: PaperInstanceLayer) => PaperInstanceLayer),
+  ) => void
   variant?: 'sidebar' | 'editor'
 }
 
@@ -66,6 +73,103 @@ function CollapsibleGroup({
   )
 }
 
+function fmtMm(n: number) {
+  return n.toFixed(n % 1 === 0 ? 0 : 1)
+}
+
+function MarginStepper({
+  label,
+  value,
+  disabled,
+  onStep,
+}: {
+  label: string
+  value: number
+  disabled?: boolean
+  onStep: (dir: 1 | -1) => void
+}) {
+  return (
+    <div className="pc-fmt-margin-cell">
+      <span className="pc-fmt-margin-cell-label">{label}</span>
+      <div className="pc-fmt-margin-stepper">
+        <button
+          type="button"
+          className="pc-fmt-margin-step"
+          aria-label={`Decrease ${label} margin`}
+          disabled={disabled}
+          onClick={() => onStep(-1)}
+        >
+          <Minus size={12} strokeWidth={2} />
+        </button>
+        <span className="pc-fmt-margin-value pc-num">
+          {fmtMm(value)}
+          <span className="pc-fmt-margin-unit">mm</span>
+        </span>
+        <button
+          type="button"
+          className="pc-fmt-margin-step"
+          aria-label={`Increase ${label} margin`}
+          disabled={disabled}
+          onClick={() => onStep(1)}
+        >
+          <Plus size={12} strokeWidth={2} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/** Per-side page-margin editor with a link toggle. */
+function MarginEditor({
+  config,
+  disabled,
+  onChange,
+}: {
+  config: PaperFormatConfig
+  disabled?: boolean
+  onChange: (updater: (c: PaperFormatConfig) => PaperFormatConfig) => void
+}) {
+  const m = config.pageMargins
+  // Per-side edit reads the live value from the updater's config so rapid
+  // clicks accumulate; the linked control moves all four via applyLinkedMargin.
+  const stepSide = (side: PaperMarginSide, dir: 1 | -1) =>
+    onChange((c) => applySideMargin(c, side, clamp((c.pageMargins[side] ?? 15) + dir, 5, 40)))
+  const stepLinked = (dir: 1 | -1) =>
+    onChange((c) => applyLinkedMargin(c, clamp(c.pageMargins.left + dir, 5, 40)))
+
+  return (
+    <div className="pc-fmt-margins">
+      <div className="pc-fmt-margins-head">
+        <span className="pc-fmt-segment-label">Page margins</span>
+        <button
+          type="button"
+          className={`pc-fmt-margin-link${m.linked ? ' is-on' : ''}`}
+          disabled={disabled}
+          title={
+            m.linked
+              ? 'Margins linked — all four sides move together'
+              : 'Margins independent — adjust each side'
+          }
+          onClick={() => onChange((c) => applyMarginsLinked(c, !c.pageMargins.linked))}
+        >
+          {m.linked ? <Link2 size={12} strokeWidth={1.8} /> : <Link2Off size={12} strokeWidth={1.8} />}
+          {m.linked ? 'Linked' : 'Per side'}
+        </button>
+      </div>
+      {m.linked ? (
+        <MarginStepper label="All sides" value={m.left} disabled={disabled} onStep={stepLinked} />
+      ) : (
+        <div className="pc-fmt-margin-grid">
+          <MarginStepper label="Left" value={m.left} disabled={disabled} onStep={(d) => stepSide('left', d)} />
+          <MarginStepper label="Right" value={m.right} disabled={disabled} onStep={(d) => stepSide('right', d)} />
+          <MarginStepper label="Top" value={m.top} disabled={disabled} onStep={(d) => stepSide('top', d)} />
+          <MarginStepper label="Bottom" value={m.bottom} disabled={disabled} onStep={(d) => stepSide('bottom', d)} />
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function PaperDocumentInspector({
   selection,
   setup,
@@ -88,14 +192,14 @@ export function PaperDocumentInspector({
   }
 
   function patchFormat(updater: (c: PaperFormatConfig) => PaperFormatConfig) {
-    onInstanceChange(patchFormatConfig(instanceLayer, updater))
+    onInstanceChange((prev) => patchFormatConfig(prev, updater))
   }
 
   function patchPresentation(patch: Partial<typeof presentation>) {
-    onInstanceChange({
-      ...instanceLayer,
-      presentation: { ...presentation, ...patch },
-    })
+    onInstanceChange((prev) => ({
+      ...prev,
+      presentation: { showHeader: true, showFooter: true, ...prev.presentation, ...patch },
+    }))
   }
 
   const blockScoped = selection.kind !== 'paper'
@@ -107,15 +211,6 @@ export function PaperDocumentInspector({
         : 'Click a question or section on the paper for per-block control, or use whole-paper tuning below.'
 
   const pageLabel = pageCount === 1 ? 'page' : 'pages'
-  const linkedMargin = formatConfig.pageMargins.linked
-    ? formatConfig.pageMargins.top
-    : Math.round(
-        (formatConfig.pageMargins.top +
-          formatConfig.pageMargins.bottom +
-          formatConfig.pageMargins.left +
-          formatConfig.pageMargins.right) /
-          4,
-      )
 
   function setLayoutMode(mode: PaperLayoutMode) {
     if (mode === 'advanced' && !isAdvanced) {
@@ -303,9 +398,25 @@ export function PaperDocumentInspector({
                 }))
               }
             />
+            <FormatSlider
+              label="Line spacing"
+              value={formatConfig.typography.lineHeight}
+              min={1}
+              max={2.2}
+              step={0.05}
+              unit="×"
+              warningBelow={1.15}
+              warningAbove={1.9}
+              disabled={readOnly}
+              onChange={(v) =>
+                patchFormat((c) => ({
+                  ...c,
+                  typography: { ...c.typography, lineHeight: v },
+                }))
+              }
+            />
             <div className="pc-fmt-margin-presets">
-              <span className="pc-fmt-segment-label">Page margins</span>
-              <div className="pc-fmt-segment" role="radiogroup" aria-label="Page margins">
+              <div className="pc-fmt-segment" role="radiogroup" aria-label="Margin presets">
                 {(['tight', 'normal', 'wide'] as PaperMarginPreset[]).map((preset) => (
                   <button
                     key={preset}
@@ -320,16 +431,7 @@ export function PaperDocumentInspector({
                   </button>
                 ))}
               </div>
-              <FormatSlider
-                label="All margins"
-                value={linkedMargin}
-                min={5}
-                max={40}
-                step={1}
-                unit="mm"
-                disabled={readOnly}
-                onChange={(v) => patchFormat((c) => applyLinkedMargin(c, v))}
-              />
+              <MarginEditor config={formatConfig} disabled={readOnly} onChange={patchFormat} />
             </div>
           </div>
         ) : (

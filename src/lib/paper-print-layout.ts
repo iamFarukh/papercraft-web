@@ -15,21 +15,30 @@ import type { QuestionRecord } from '@/types/question'
 export const PRINT_PAGE_WIDTH_PX = 595
 export const PRINT_PAGE_HEIGHT_PX = 842
 
-const BLOCK_GAP = 2
+/** Inter-block gap added by pagination. Kept at 0 to match the measured path
+ *  (paper-print-measure.ts) so the estimated fallback doesn't disagree on page
+ *  counts and cause a re-paginate flash; real spacing comes from block margins. */
+const BLOCK_GAP = 0
 const MM_TO_PX = 3.7795275591
-const FOOTER_RESERVE_PX = 40
+const FOOTER_RESERVE_PX = 44
 
-/** Placement pass — break pages (slightly conservative). */
-const PLACEMENT_FACTOR = 0.90
-/** Render pass — never assign more than fits on screen (slightly optimistic). */
-const RENDER_FACTOR = 0.90
+/** Height factors kept at 1.0 — under-estimating packs too many blocks per
+ *  page and the overflow gets clipped in fixed-height surfaces (editor, PDF,
+ *  browser print). An over-estimate merely under-fills a page, which the
+ *  DOM-measured pass corrects moments later. */
+const PLACEMENT_FACTOR = 1.0
+const RENDER_FACTOR = 1.0
 /** Only pull blocks back when a page is clearly under-filled. */
 const BALANCE_UNDERFILL_RATIO = 0.62
 
+/** Estimated height of the end-of-paper mark rendered inside the last page body. */
+const END_MARK_ESTIMATE = 54
+
 /** Reference school name size (pt) for scaling header block height estimates. */
 const HEADER_STANDARD_SCHOOL_PT = 14
-const FULL_HEADER_HEIGHT = 132
-const COMPACT_HEADER_HEIGHT = 48
+/* Match the real rendered chrome (verified against the DOM probes). */
+const FULL_HEADER_HEIGHT = 158
+const COMPACT_HEADER_HEIGHT = 64
 
 export type SectionPrintSummary = {
   questionCount: number
@@ -178,7 +187,8 @@ function estimateQuestionHeight(block: Extract<PrintBlock, { kind: 'question' }>
   const { question, localInstructions, layout, medium = 'english' } = block
   const text = questionDisplayText(question, medium)
   const fontPt = layout?.fontSizePt ?? 10
-  const linePx = Math.max(14, fontPt * 1.28 * (96 / 72))
+  // CSS renders question text at line-height ~1.55 (px = pt · 96/72 · 1.55).
+  const linePx = Math.max(16, fontPt * 1.55 * (96 / 72))
 
   const bodyLines = estimateLinesForText(text)
 
@@ -231,11 +241,6 @@ function estimatePlacementHeight(block: PrintBlock): number {
 
 function estimateRenderHeight(block: PrintBlock): number {
   return Math.max(10, Math.ceil(estimateBlockHeightRaw(block) * RENDER_FACTOR))
-}
-
-/** @deprecated use estimatePlacementHeight internally */
-export function estimateBlockHeight(block: PrintBlock): number {
-  return estimatePlacementHeight(block)
 }
 
 function pageBlocksHeight(
@@ -337,7 +342,7 @@ function enforcePageBudgets(
   for (let i = 0; i < flat.length; i++) {
     const block = flat[i]!
     const budget = ctx.bodyHeightForPage(pageIndex)
-    const h = estimateRenderHeight(block)
+    const h = estimateRenderHeight(block) + (i === flat.length - 1 ? END_MARK_ESTIMATE : 0)
     const gap = current.length > 0 ? BLOCK_GAP : 0
 
     if (block.kind === 'section-head' && current.length > 0) {
@@ -452,7 +457,8 @@ export function paginatePrintBlocks(
     let placed = false
 
     while (!placed) {
-      const height = estimatePlacementHeight(block)
+      const height =
+        estimatePlacementHeight(block) + (queue.length === 1 ? END_MARK_ESTIMATE : 0)
       const gap = pageBlocks.length > 0 ? BLOCK_GAP : 0
       const needed = height + gap
 

@@ -109,6 +109,9 @@ type FilterPanelProps = {
   hasMore?: boolean
   loadingMore?: boolean
   isAdmin?: boolean
+  /** 'panel' = standalone side panel (default). 'modal' = embedded in the
+   *  Advanced Filter modal (hides the internal header/reset; modal owns them). */
+  variant?: 'panel' | 'modal'
   onToggle: (group: keyof RepositoryFilters, key: string) => void
   onSyllabusToggle: (target: SyllabusToggleTarget) => void
   onChapterBulkToggle: (chapters: string[], on: boolean) => void
@@ -123,6 +126,7 @@ export function FilterPanel({
   hasMore = false,
   loadingMore = false,
   isAdmin = false,
+  variant = 'panel',
   onToggle,
   onSyllabusToggle,
   onChapterBulkToggle,
@@ -209,20 +213,27 @@ export function FilterPanel({
     return sub?.chapters ?? []
   }, [topicScope, tree])
 
+  const isModal = variant === 'modal'
+
   return (
-    <aside className="pc-repo-filters pc-scroll" aria-label="Filters">
-      <div className="pc-repo-filters-intro">
-        <div>
-          <span className="pc-repo-filters-title">Smart filters</span>
-          <span className="pc-repo-filters-sub">
-            {activeSummary}
-            {(hasMore || loadingMore) && ' · loading more…'}
-          </span>
+    <aside
+      className={`pc-repo-filters pc-scroll${isModal ? ' pc-repo-filters--modal' : ''}`}
+      aria-label="Filters"
+    >
+      {!isModal ? (
+        <div className="pc-repo-filters-intro">
+          <div>
+            <span className="pc-repo-filters-title">Smart filters</span>
+            <span className="pc-repo-filters-sub">
+              {activeSummary}
+              {(hasMore || loadingMore) && ' · loading more…'}
+            </span>
+          </div>
+          <button type="button" className="pc-repo-filters-reset" onClick={onReset}>
+            Reset
+          </button>
         </div>
-        <button type="button" className="pc-repo-filters-reset" onClick={onReset}>
-          Reset
-        </button>
-      </div>
+      ) : null}
 
       <div className="pc-repo-filter-search">
         <Search size={14} strokeWidth={1.6} />

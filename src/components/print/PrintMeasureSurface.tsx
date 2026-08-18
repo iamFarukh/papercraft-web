@@ -9,9 +9,11 @@ import {
   type PrintBlock,
 } from '@/lib/paper-print-layout'
 import {
+  measureChromeHeights,
   measurePrintBlockHeights,
   measureProbeBodyBudgets,
   type MeasuredBodyBudgets,
+  type MeasuredChromeHeights,
 } from '@/lib/paper-print-measure'
 import { PrintBlockContent } from './PrintBlockContent'
 import { PrintPageFooter } from './PrintPageFooter'
@@ -20,6 +22,7 @@ import { PrintPageHeader } from './PrintPageHeader'
 export type PrintMeasureResult = {
   blockHeights: number[]
   bodyBudgets: MeasuredBodyBudgets | null
+  chrome: MeasuredChromeHeights | null
 }
 
 type Props = {
@@ -48,20 +51,47 @@ export function PrintMeasureSurface({ resolved, blocks, onMeasured }: Props) {
     if (!root || blocks.length === 0) return
 
     let cancelled = false
+    let attempts = 0
+    const MAX_ATTEMPTS = 8
 
     const run = () => {
       if (cancelled || !rootRef.current) return
       const blockHeights = measurePrintBlockHeights(rootRef.current)
-      if (blockHeights.length !== blocks.length) return
+      // The measure column may not have committed all blocks yet (fonts, async
+      // layout). Retry a bounded number of frames before giving up so we never
+      // silently stay on the estimated layout.
+      if (blockHeights.length !== blocks.length) {
+        attempts += 1
+        if (attempts < MAX_ATTEMPTS) {
+          requestAnimationFrame(run)
+        } else if (import.meta.env?.DEV) {
+          console.warn(
+            `[PrintMeasureSurface] measured ${blockHeights.length} blocks, expected ${blocks.length}; keeping estimated layout.`,
+          )
+        }
+        return
+      }
       onMeasured({
         blockHeights,
         bodyBudgets: measureProbeBodyBudgets(rootRef.current),
+        chrome: measureChromeHeights(rootRef.current),
       })
     }
 
     requestAnimationFrame(() => {
       requestAnimationFrame(run)
     })
+
+    // Web fonts (Newsreader / Devanagari) change line wrapping after the first
+    // measure — re-measure once they settle so pagination stays exact.
+    if (typeof document !== 'undefined' && document.fonts?.ready) {
+      void document.fonts.ready.then(() => {
+        if (!cancelled) {
+          attempts = 0
+          requestAnimationFrame(run)
+        }
+      })
+    }
 
     return () => {
       cancelled = true
@@ -131,6 +161,14 @@ export function PrintMeasureSurface({ resolved, blocks, onMeasured }: Props) {
             />
           </div>
         ))}
+        {/* In-body chrome probes — pagination reserves these real heights. */}
+        <p className="pc-print-continued-banner" data-measure-chrome="banner">
+          Continued · Section A
+          <span className="pc-print-continued-banner-sub"> · Sample</span>
+        </p>
+        <p className="pc-print-end-mark pc-serif" data-measure-chrome="endmark">
+          — end of paper · all the best —
+        </p>
       </div>
     </div>
   )

@@ -586,18 +586,34 @@ export function PaperBuilderWorkspace({
     toast,
   ])
 
+  // User-initiated section switch. Abandons an in-flight replace targeting a
+  // different section so a candidate click can't be applied to the wrong section.
+  const selectSection = useCallback(
+    (id: PaperSectionId) => {
+      setReplaceTarget((prev) => (prev && prev.sectionId !== id ? null : prev))
+      setActiveSection(id)
+    },
+    [],
+  )
+
   const addQuestion = useCallback(
     (question: QuestionRecord) => {
       if (readOnly) return
       if (replaceTarget) return
       if (usedIds.has(question.id)) return
+      // Guard against a stale activeSection (e.g. after a section-count change)
+      // creating an orphan composition key.
+      const targetSection = sections.some((s) => s.id === activeSection)
+        ? activeSection
+        : sections[0]?.id
+      if (!targetSection) return
       setComposition((prev) => ({
         ...prev,
-        [activeSection]: [...prev[activeSection], question],
+        [targetSection]: [...(prev[targetSection] ?? []), question],
       }))
       setLastInsertedId(question.id)
     },
-    [activeSection, usedIds, replaceTarget, readOnly],
+    [activeSection, sections, usedIds, replaceTarget, readOnly],
   )
 
   const replaceQuestionWith = useCallback(
@@ -860,7 +876,7 @@ export function PaperBuilderWorkspace({
           activeSection={activeSection}
           sections={sections}
           composition={composition}
-          onSelectSection={setActiveSection}
+          onSelectSection={selectSection}
           replaceTarget={replaceTarget}
           onCancelReplace={() => setReplaceTarget(null)}
           onAdd={addQuestion}
@@ -885,7 +901,7 @@ export function PaperBuilderWorkspace({
           lastInsertedId={lastInsertedId}
           readOnly={readOnly}
           paperMedium={setup.medium}
-          onSelectSection={setActiveSection}
+          onSelectSection={selectSection}
           onRemove={removeQuestion}
           onReplace={startReplace}
           onMove={moveQuestion}

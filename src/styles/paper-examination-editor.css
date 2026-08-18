@@ -297,6 +297,490 @@ html.pc-ee-route.pc-ee-shell-nav-open .pc-tab-bar {
   pointer-events: none;
 }
 
+/* ── Formatting toolbar (Word-like, context-aware) ──
+   A single thin row. Controls scroll horizontally so the bar NEVER wraps or
+   grows — the A4 paper below stays the visual hero and is never crowded. */
+.pc-ee-toolbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--pc-line);
+  background: var(--pc-surface);
+  overflow: hidden;
+}
+
+.pc-ee-tb-scope {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--pc-line);
+  background: var(--pc-surface-2);
+  font-family: var(--pc-sans);
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--pc-ink-2);
+  cursor: default;
+  white-space: nowrap;
+}
+
+.pc-ee-tb-scope.is-block {
+  cursor: pointer;
+  border-color: var(--pc-primary-200);
+  background: var(--pc-primary-50);
+  color: var(--pc-primary-ink);
+}
+
+.pc-ee-tb-scope.is-block:hover {
+  background: var(--pc-primary-100);
+}
+
+.pc-ee-tb-scope-icon {
+  display: inline-flex;
+  opacity: 0.85;
+}
+
+.pc-ee-tb-divider {
+  width: 1px;
+  height: 22px;
+  flex-shrink: 0;
+  background: var(--pc-line);
+  margin: 0 1px;
+}
+
+.pc-ee-tb-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 8px 2px;
+  scrollbar-width: thin;
+}
+
+.pc-ee-tb-controls > * {
+  flex-shrink: 0;
+}
+
+.pc-ee-tb-controls::-webkit-scrollbar {
+  height: 6px;
+}
+
+.pc-ee-tb-controls::-webkit-scrollbar-thumb {
+  background: var(--pc-line-2, #e4e4de);
+  border-radius: 3px;
+}
+
+.pc-ee-tb-group-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pc-ink-4);
+  white-space: nowrap;
+}
+
+.pc-ee-tb-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  height: 30px;
+  padding: 0 3px;
+  border: 1px solid var(--pc-line);
+  border-radius: 8px;
+  background: var(--pc-surface-2);
+}
+
+.pc-ee-tb-stepper-icon {
+  display: inline-flex;
+  color: var(--pc-ink-4);
+  margin: 0 1px 0 3px;
+}
+
+.pc-ee-tb-stepper-label {
+  font-size: 11px;
+  color: var(--pc-ink-3);
+  margin: 0 3px 0 3px;
+  white-space: nowrap;
+}
+
+.pc-ee-tb-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--pc-ink-2);
+  cursor: pointer;
+}
+
+.pc-ee-tb-step:hover:not(:disabled) {
+  background: var(--pc-surface);
+  color: var(--pc-ink);
+}
+
+.pc-ee-tb-step:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pc-ee-tb-stepper-value {
+  min-width: 32px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--pc-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.pc-ee-tb-stepper-unit {
+  font-size: 10px;
+  color: var(--pc-ink-4);
+  margin-left: 1px;
+}
+
+.pc-ee-tb-segment {
+  display: inline-flex;
+  height: 30px;
+  padding: 2px;
+  gap: 2px;
+  border: 1px solid var(--pc-line);
+  border-radius: 8px;
+  background: var(--pc-surface-2);
+}
+
+.pc-ee-tb-seg-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 9px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-family: var(--pc-sans);
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--pc-ink-3);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pc-ee-tb-seg-btn:hover:not(:disabled) {
+  color: var(--pc-ink);
+}
+
+.pc-ee-tb-seg-btn.is-active {
+  background: var(--pc-surface);
+  color: var(--pc-ink);
+  box-shadow: var(--pc-shadow-xs);
+}
+
+.pc-ee-tb-seg-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pc-ee-tb-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--pc-line);
+  border-radius: 8px;
+  background: var(--pc-surface-2);
+  font-family: var(--pc-sans);
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--pc-ink-2);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pc-ee-tb-toggle:hover:not(:disabled) {
+  border-color: var(--pc-ink-5);
+  color: var(--pc-ink);
+}
+
+.pc-ee-tb-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pc-ee-tb-toggle.is-on {
+  border-color: var(--pc-primary-200);
+  background: var(--pc-primary-50);
+  color: var(--pc-primary-ink);
+}
+
+.pc-ee-tb-smartfit {
+  color: var(--pc-primary-ink);
+  border-color: var(--pc-primary-200);
+  background: var(--pc-primary-50);
+}
+
+.pc-ee-tb-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--pc-line);
+  border-radius: 8px;
+  background: var(--pc-surface-2);
+  color: var(--pc-ink-2);
+  cursor: pointer;
+}
+
+.pc-ee-tb-icon-btn:hover:not(:disabled) {
+  border-color: var(--pc-ink-5);
+  color: var(--pc-ink);
+}
+
+.pc-ee-tb-icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pc-ee-tb-trailing {
+  flex-shrink: 0;
+  margin-left: auto;
+  padding-left: 6px;
+}
+
+.pc-ee-tb-details {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--pc-line);
+  border-radius: 8px;
+  background: var(--pc-surface);
+  font-family: var(--pc-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--pc-ink-2);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pc-ee-tb-details:hover {
+  border-color: var(--pc-primary-200);
+  color: var(--pc-ink);
+}
+
+.pc-ee-tb-details.is-open {
+  border-color: var(--pc-primary);
+  background: var(--pc-primary-50);
+  color: var(--pc-primary-ink);
+}
+
+/* Wide format popover — hosts the full document / block inspector */
+.pc-ed-popover-portal.pc-ee-fmt-popover {
+  padding: 0;
+  max-height: min(74vh, 660px);
+  overflow: hidden;
+}
+
+.pc-ee-fmt-popover .pc-pe-controls {
+  border: none;
+  padding: 14px 14px 18px;
+  max-height: min(74vh, 660px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Read-only lock bar (submitted / approved papers) */
+.pc-ee-readonly-bar {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--pc-line);
+  background: var(--pc-surface);
+}
+
+.pc-ee-readonly-bar .pc-ee-readonly-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pc-ee-readonly-bar .pc-ee-readonly-copy {
+  margin: 0;
+  font-size: 12px;
+  color: var(--pc-ink-3);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.pc-ee-readonly-bar .pc-ee-readonly-cta {
+  margin-left: auto;
+}
+
+/* Left column now hosts the outline alone — let it fill the height */
+.pc-ee-left > .pc-pe-nav--embed {
+  flex: 1 1 0;
+  min-height: 0;
+  max-height: none;
+  height: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 14px 0 12px;
+}
+
+/* Double-click-to-rename affordance on section titles */
+.pc-ed-section-title-edit {
+  cursor: text;
+  border-radius: 3px;
+  padding: 0 2px;
+  margin: 0 -2px;
+  transition: background 0.15s ease;
+}
+
+.pc-ed-section-title-edit:hover {
+  background: var(--pc-primary-50);
+  box-shadow: inset 0 -1px 0 var(--pc-primary-200);
+}
+
+/* Per-side page-margin editor (Document settings panel) */
+.pc-fmt-margins {
+  margin-top: 10px;
+}
+
+.pc-fmt-margins-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.pc-fmt-margin-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 9px;
+  border: 1px solid var(--pc-line);
+  border-radius: 999px;
+  background: var(--pc-surface-2);
+  font-family: var(--pc-sans);
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--pc-ink-3);
+  cursor: pointer;
+}
+
+.pc-fmt-margin-link:hover:not(:disabled) {
+  border-color: var(--pc-ink-5);
+  color: var(--pc-ink);
+}
+
+.pc-fmt-margin-link.is-on {
+  border-color: var(--pc-primary-200);
+  background: var(--pc-primary-50);
+  color: var(--pc-primary-ink);
+}
+
+.pc-fmt-margin-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.pc-fmt-margin-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pc-fmt-margin-cell-label {
+  font-size: 10.5px;
+  color: var(--pc-ink-4);
+}
+
+.pc-fmt-margin-stepper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px;
+  height: 30px;
+  padding: 0 4px;
+  border: 1px solid var(--pc-line);
+  border-radius: 8px;
+  background: var(--pc-surface-2);
+}
+
+.pc-fmt-margin-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--pc-ink-2);
+  cursor: pointer;
+}
+
+.pc-fmt-margin-step:hover:not(:disabled) {
+  background: var(--pc-surface);
+  color: var(--pc-ink);
+}
+
+.pc-fmt-margin-step:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pc-fmt-margin-value {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--pc-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.pc-fmt-margin-unit {
+  font-size: 9.5px;
+  color: var(--pc-ink-4);
+  margin-left: 1px;
+}
+
+/* Explicit "Rename" affordance shown when a section is selected */
+.pc-ed-section-rename {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 10px;
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid var(--pc-primary-200);
+  border-radius: 999px;
+  background: var(--pc-primary-50);
+  color: var(--pc-primary-ink);
+  font-family: var(--pc-sans);
+  font-size: 10.5px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pc-ed-section-rename:hover {
+  background: var(--pc-primary-100);
+}
+
 /* Embed outline navigator */
 .pc-pe-nav--embed .pc-pe-nav-head {
   display: flex;
@@ -729,6 +1213,18 @@ html.pc-ee-route.pc-ee-shell-nav-open .pc-tab-bar {
 
 .pc-ee-official-doc--thumb .pc-print-page {
   margin: 0;
+}
+
+/* Thumbnails are fixed-size nav aids — keep the hard A4 box. Compound selector
+   (thumb + embedded share the doc root) outranks the screen-grow rule in
+   paper-print.css so over-tall pages don't distort the strip. */
+.pc-print-doc--embedded.pc-ee-official-doc--thumb .pc-print-page {
+  height: var(--pc-print-page-h, 842px);
+  min-height: var(--pc-print-page-h, 842px);
+}
+
+.pc-print-doc--embedded.pc-ee-official-doc--thumb .pc-print-page-body {
+  overflow: hidden;
 }
 
 .pc-ee-official-doc--thumb .pc-print-page-break {

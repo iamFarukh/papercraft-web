@@ -29,9 +29,14 @@ export function FormatFloatingToolbar({
       >
         <Minus size={11} strokeWidth={1.6} />
       </button>
-      <span className="pc-ed-float-value pc-num">
+      <span
+        className="pc-ed-float-value pc-num"
+        aria-label={`Space above: ${marginTopMm.toFixed(1)} millimetres`}
+      >
         {marginTopMm.toFixed(1)}
-        <span className="pc-ed-float-unit">mm</span>
+        <span className="pc-ed-float-unit" aria-hidden>
+          mm
+        </span>
       </span>
       <button
         type="button"
@@ -59,9 +64,14 @@ export function FormatFloatingToolbar({
       >
         <Minus size={11} strokeWidth={1.6} />
       </button>
-      <span className="pc-ed-float-value pc-num">
+      <span
+        className="pc-ed-float-value pc-num"
+        aria-label={`Indent: ${indentMm.toFixed(1)} millimetres`}
+      >
         {indentMm.toFixed(1)}
-        <span className="pc-ed-float-unit">mm</span>
+        <span className="pc-ed-float-unit" aria-hidden>
+          mm
+        </span>
       </span>
       <button
         type="button"

@@ -31,10 +31,15 @@ export function PrintQuestionBody({ question, medium }: Props) {
           <RichContent
             className="pc-print-question-text pc-print-question-text--hi pc-serif"
             html={question.hindi}
+            lang="hi"
           />
         </>
       ) : (
-        <RichContent className="pc-print-question-text pc-serif" html={text} />
+        <RichContent
+          className="pc-print-question-text pc-serif"
+          html={text}
+          lang={isHindi ? 'hi' : undefined}
+        />
       )}
 
       {isMcq && options ? (
@@ -52,6 +57,7 @@ export function PrintQuestionBody({ question, medium }: Props) {
                     as="span"
                     className="pc-print-mcq-opt-hi pc-print-is-hindi"
                     html={` / ${hi}`}
+                    lang="hi"
                   />
                 ) : null}
               </div>

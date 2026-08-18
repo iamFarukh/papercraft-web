@@ -35,6 +35,7 @@ export function BlueprintSetupPicker({
   const [applying, setApplying] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [previewSections, setPreviewSections] = useState<BlueprintSection[]>([])
+  const [previewLoading, setPreviewLoading] = useState(false)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -53,15 +54,20 @@ export function BlueprintSetupPicker({
   useEffect(() => {
     if (!selectedId) {
       setPreviewSections([])
+      setPreviewLoading(false)
       return
     }
     let cancelled = false
+    setPreviewLoading(true)
     getBlueprintById(selectedId)
       .then((doc) => {
         if (!cancelled && doc) setPreviewSections(doc.sections.slice(0, 3))
       })
       .catch(() => {
         if (!cancelled) setPreviewSections([])
+      })
+      .finally(() => {
+        if (!cancelled) setPreviewLoading(false)
       })
     return () => {
       cancelled = true
@@ -168,11 +174,15 @@ export function BlueprintSetupPicker({
                     maps the first three (A, B, C).
                   </p>
                 ) : null}
-                <BlueprintStructurePreview
-                  sections={previewSections}
-                  totalMarks={selected.totalMarks}
-                  compact
-                />
+                {previewLoading && previewSections.length === 0 ? (
+                  <p className="pc-pb-muted">Loading structure…</p>
+                ) : (
+                  <BlueprintStructurePreview
+                    sections={previewSections}
+                    totalMarks={selected.totalMarks}
+                    compact
+                  />
+                )}
                 <p className="pc-pb-bp-picker-preview-note">
                   Select a blueprint and continue — you can still adjust class, subject,
                   and instructions before composing.

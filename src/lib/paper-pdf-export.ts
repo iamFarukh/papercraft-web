@@ -69,22 +69,35 @@ export async function exportOfficialPrintToPdf(
       message: `Rendering page ${i + 1} of ${pages.length}…`,
     })
 
+    // Capture the page at its real rendered size. Normal pages are exactly A4
+    // (595×842 @72dpi); a page that grew to fit an over-tall block is captured
+    // in full rather than cut off at the fixed page height.
+    const captureW = Math.max(pageEl.offsetWidth, PRINT_PAGE_WIDTH_PX)
+    const captureH = Math.max(pageEl.offsetHeight, PRINT_PAGE_HEIGHT_PX)
+
     const canvas = await html2canvas(pageEl, {
       scale: 2,
       useCORS: true,
       logging: false,
       backgroundColor: '#ffffff',
-      width: PRINT_PAGE_WIDTH_PX,
-      height: PRINT_PAGE_HEIGHT_PX,
-      windowWidth: PRINT_PAGE_WIDTH_PX,
-      windowHeight: PRINT_PAGE_HEIGHT_PX,
+      width: captureW,
+      height: captureH,
+      windowWidth: captureW,
+      windowHeight: captureH,
       scrollX: 0,
       scrollY: 0,
     })
 
     const imgData = canvas.toDataURL('image/jpeg', 0.92)
     if (i > 0) pdf.addPage()
-    pdf.addImage(imgData, 'JPEG', 0, 0, A4_WIDTH_MM, A4_HEIGHT_MM, undefined, 'FAST')
+    // Fit the captured image into the A4 box preserving aspect ratio. A4-shaped
+    // pages fill the sheet exactly; an over-tall page is scaled down (letterboxed)
+    // so all content stays visible instead of being clipped.
+    const fit = Math.min(A4_WIDTH_MM / canvas.width, A4_HEIGHT_MM / canvas.height)
+    const drawW = canvas.width * fit
+    const drawH = canvas.height * fit
+    const offsetX = (A4_WIDTH_MM - drawW) / 2
+    pdf.addImage(imgData, 'JPEG', offsetX, 0, drawW, drawH, undefined, 'FAST')
   }
 
   onProgress?.({

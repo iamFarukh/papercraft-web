@@ -13,29 +13,29 @@ import { useAuth } from '@/context/AuthContext'
 import { useToast } from '@/context/ToastContext'
 import { BulkActionBar } from '@/components/repository/BulkActionBar'
 import { DeleteConfirmDialog } from '@/components/repository/DeleteConfirmDialog'
-import { FilterPanel } from '@/components/repository/FilterPanel'
+import { AdvancedFilterModal } from '@/components/repository/AdvancedFilterModal'
+import { RepositoryQuickFilters, type QuickFilterOption } from '@/components/repository/RepositoryQuickFilters'
 import { QuestionDetailDrawer } from '@/components/repository/QuestionDetailDrawer'
 import { QuestionStream } from '@/components/repository/QuestionStream'
 import { RepositoryToolbar } from '@/components/repository/RepositoryToolbar'
-import {
-  FilterPanelSkeleton,
-  RepositoryToolbarSkeleton,
-} from '@/components/repository/RepositorySkeleton'
+import { RepositoryToolbarSkeleton } from '@/components/repository/RepositorySkeleton'
 import { useQuestions } from '@/hooks/useQuestions'
 import { useTeacherScope } from '@/hooks/useTeacherScope'
 import {
   activeFilterChips,
   buildEmptyFilters,
   bulkImportFilterLabels,
-  filterOptionCounts,
-  filterQuestionsClient,
   isGroupFullyOff,
   mergeFilterOptions,
   sortQuestions,
-  toggleFilter,
   type RepositoryFilters,
   type SortKey,
 } from '@/lib/repository-workspace'
+import {
+  buildFilterRequest,
+  countActiveDimensions,
+  runFilterRequest,
+} from '@/lib/repository-filter-request'
 import {
   actionToStatus,
   type LifecycleAction,
@@ -43,6 +43,8 @@ import {
 import { parseFirestoreError } from '@/services/firebase/questions'
 import {
   cascadeSyllabusToggle,
+  classTriState,
+  subjectTriState,
   type SyllabusToggleTarget,
 } from '@/lib/repository-filter-cascade'
 import { buildCurriculumTree } from '@/lib/repository-filter-tree'
@@ -65,8 +67,8 @@ export function RepositoryWorkspace() {
   const { isAdmin, loading: authLoading, user } = useAuth()
   const { filterQuestions: scopeByAssignment, isScoped } = useTeacherScope()
   const { push: toast } = useToast()
-  const filtersRef = useRef<HTMLDivElement>(null)
   const workspaceRef = useRef<HTMLDivElement>(null)
+  const [filterModalOpen, setFilterModalOpen] = useState(false)
   const continuity = readContinuityState<{
     query?: string
     sort?: SortKey
@@ -152,9 +154,9 @@ export function RepositoryWorkspace() {
     [allLoaded],
   )
 
+  // Single filter path: every fetch flows through the filter request executor.
   const filtered = useMemo(
-    () =>
-      sortQuestions(filterQuestionsClient(activePool, filters, query), sort),
+    () => sortQuestions(runFilterRequest(activePool, filters, query), sort),
     [activePool, filters, query, sort],
   )
 
@@ -214,22 +216,76 @@ export function RepositoryWorkspace() {
 
   const bulkLabels = useMemo(() => bulkImportFilterLabels(activePool), [activePool])
 
-  const filterCounts = useMemo(
-    () => ({
-      classes: filterOptionCounts(activePool, 'classes', filters, query),
-      subjects: filterOptionCounts(activePool, 'subjects', filters, query),
-      chapters: filterOptionCounts(activePool, 'chapters', filters, query),
-      difficulty: filterOptionCounts(activePool, 'difficulty', filters, query),
-      types: filterOptionCounts(activePool, 'types', filters, query),
-      statuses: filterOptionCounts(activePool, 'statuses', filters, query),
-      bulkImports: filterOptionCounts(activePool, 'bulkImports', filters, query),
-    }),
-    [activePool, filters, query],
-  )
-
   const chips = useMemo(
     () => activeFilterChips(filters, bulkLabels),
     [filters, bulkLabels],
+  )
+
+  const activeFilterCount = useMemo(
+    () => countActiveDimensions(buildFilterRequest(filters, query)),
+    [filters, query],
+  )
+
+  // "Show all" defaults used when resetting from the advanced filter modal.
+  const defaultFilters = useMemo(
+    () =>
+      allLoaded.length > 0
+        ? initFiltersFromData(allLoaded)
+        : buildEmptyFilters(isAdmin),
+    [allLoaded, initFiltersFromData, isAdmin],
+  )
+
+  // Top quick filters (Class, Subject) — apply instantly to committed filters.
+  const quickClassOptions = useMemo<QuickFilterOption[]>(
+    () =>
+      curriculumTree.map((cls) => ({
+        value: cls.classLabel,
+        label: cls.classLabel,
+        on: classTriState(cls, filters) !== 'off',
+        count: cls.count,
+      })),
+    [curriculumTree, filters],
+  )
+
+  const quickSubjectOptions = useMemo<QuickFilterOption[]>(() => {
+    const map = new Map<string, { count: number; on: boolean }>()
+    for (const cls of curriculumTree) {
+      for (const sub of cls.subjects) {
+        const prev = map.get(sub.subject) ?? { count: 0, on: false }
+        const on = prev.on || subjectTriState(cls.classLabel, sub, filters) !== 'off'
+        map.set(sub.subject, { count: prev.count + sub.count, on })
+      }
+    }
+    return [...map.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([subject, { count, on }]) => ({ value: subject, label: subject, on, count }))
+  }, [curriculumTree, filters])
+
+  const handleToggleQuickSubject = useCallback(
+    (subject: string) => {
+      setFilters((f) => {
+        const anyOn = curriculumTree.some((cls) => {
+          const sub = cls.subjects.find((s) => s.subject === subject)
+          return sub ? subjectTriState(cls.classLabel, sub, f) !== 'off' : false
+        })
+        const desired = !anyOn
+        let next = f
+        for (const cls of curriculumTree) {
+          const sub = cls.subjects.find((s) => s.subject === subject)
+          if (!sub) continue
+          const curOn = subjectTriState(cls.classLabel, sub, next) !== 'off'
+          if (curOn !== desired) {
+            next = cascadeSyllabusToggle(next, curriculumTree, {
+              level: 'subject',
+              classLabel: cls.classLabel,
+              subject,
+            })
+          }
+        }
+        return next
+      })
+    },
+    [curriculumTree],
   )
 
   const selectedQuestion = useMemo(
@@ -273,13 +329,6 @@ export function RepositoryWorkspace() {
     }
   }, [filtered, activeId])
 
-  const handleToggleFilter = useCallback(
-    (group: keyof RepositoryFilters, key: string) => {
-      setFilters((f) => toggleFilter(f, group, key))
-    },
-    [],
-  )
-
   const handleSyllabusToggle = useCallback(
     (target: SyllabusToggleTarget) => {
       setFilters((f) => cascadeSyllabusToggle(f, curriculumTree, target))
@@ -287,21 +336,9 @@ export function RepositoryWorkspace() {
     [curriculumTree],
   )
 
-  const handleChapterBulkToggle = useCallback((chapters: string[], on: boolean) => {
-    setFilters((f) => {
-      const nextChapters = { ...f.chapters }
-      for (const ch of chapters) nextChapters[ch] = on
-      return { ...f, chapters: nextChapters }
-    })
-  }, [])
-
   const handleResetFilters = useCallback(() => {
-    setFilters(
-      allLoaded.length > 0
-        ? initFiltersFromData(allLoaded)
-        : buildEmptyFilters(isAdmin),
-    )
-  }, [allLoaded, initFiltersFromData, isAdmin])
+    setFilters(defaultFilters)
+  }, [defaultFilters])
 
   const handleToggleSelect = useCallback(
     (id: string, e: MouseEvent) => {
@@ -392,10 +429,6 @@ export function RepositoryWorkspace() {
   const handleNewQuestion = useCallback(() => {
     navigate('/app/repository/new')
   }, [navigate])
-
-  const handleFocusFilters = useCallback(() => {
-    filtersRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-  }, [])
 
   const clearSelection = useCallback(() => {
     setSelectedIds(new Set())
@@ -531,11 +564,23 @@ export function RepositoryWorkspace() {
           hasMore={hasMore}
           loadingMore={loadingMore}
           isAdmin={isAdmin}
-          onFocusFilters={handleFocusFilters}
+          onOpenFilters={() => setFilterModalOpen(true)}
+          activeFilterCount={activeFilterCount}
           filterChips={chips}
           showTrashMode={showTrash}
         />
       )}
+
+      {!loading || allLoaded.length > 0 ? (
+        <RepositoryQuickFilters
+          classOptions={quickClassOptions}
+          subjectOptions={quickSubjectOptions}
+          onToggleClass={(value) =>
+            handleSyllabusToggle({ level: 'class', classLabel: value })
+          }
+          onToggleSubject={handleToggleQuickSubject}
+        />
+      ) : null}
 
       {showTrash && !loading && isAdmin && (
         <p className="pc-repo-trash-banner" role="status">
@@ -568,30 +613,10 @@ export function RepositoryWorkspace() {
       )}
 
       <motion.div
-        className="pc-repo-panels"
+        className="pc-repo-panels pc-repo-panels--single"
         layout
         transition={{ layout: { duration: PC_DURATION.normal, ease: PC_EASE.out } }}
       >
-        {loading && !allLoaded.length ? (
-          <FilterPanelSkeleton />
-        ) : (
-          <div ref={filtersRef} className="pc-repo-filters-anchor">
-            <FilterPanel
-              questions={activePool}
-              filters={filters}
-              counts={filterCounts}
-              bulkImportLabels={bulkLabels}
-              hasMore={hasMore}
-              loadingMore={loadingMore}
-              isAdmin={isAdmin}
-              onToggle={handleToggleFilter}
-              onSyllabusToggle={handleSyllabusToggle}
-              onChapterBulkToggle={handleChapterBulkToggle}
-              onReset={handleResetFilters}
-            />
-          </div>
-        )}
-
         <QuestionStream
           questions={filtered}
           view={view}
@@ -623,6 +648,20 @@ export function RepositoryWorkspace() {
         />
 
       </motion.div>
+
+      <AdvancedFilterModal
+        open={filterModalOpen}
+        questions={activePool}
+        committedFilters={filters}
+        defaultFilters={defaultFilters}
+        query={query}
+        bulkImportLabels={bulkLabels}
+        isAdmin={isAdmin}
+        hasMore={hasMore}
+        loadingMore={loadingMore}
+        onApply={setFilters}
+        onClose={() => setFilterModalOpen(false)}
+      />
 
       <AnimatePresence>
         {drawerOpen && selectedQuestion ? (

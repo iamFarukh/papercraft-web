@@ -269,6 +269,11 @@ button.pc-repo-chip:hover {
   min-height: 0;
 }
 
+/* Filters moved into the Advanced Filter modal — the stream spans full width. */
+.pc-repo-panels--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 /* Filters — Pass 1 static */
 .pc-repo-filters-anchor {
   min-height: 0;

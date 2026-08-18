@@ -26,7 +26,8 @@ type RepositoryToolbarProps = {
   showTrashMode?: boolean
   trashCount?: number
   onToggleTrash?: () => void
-  onFocusFilters?: () => void
+  onOpenFilters?: () => void
+  activeFilterCount?: number
   filterChips?: string[]
 }
 
@@ -48,7 +49,8 @@ export function RepositoryToolbar({
   showTrash = false,
   trashCount = 0,
   onToggleTrash,
-  onFocusFilters,
+  onOpenFilters,
+  activeFilterCount = 0,
   filterChips = [],
   showTrashMode = false,
 }: RepositoryToolbarProps) {
@@ -146,12 +148,16 @@ export function RepositoryToolbar({
 
       <button
         type="button"
-        className="pc-btn is-ghost is-sm"
-        title="Focus filters"
-        onClick={onFocusFilters}
+        className={'pc-btn is-sm' + (activeFilterCount > 0 ? ' is-primary' : ' is-ghost')}
+        title="Open filters"
+        onClick={onOpenFilters}
+        aria-haspopup="dialog"
       >
         <Filter size={13} strokeWidth={1.6} />
         Filters
+        {activeFilterCount > 0 ? (
+          <span className="pc-repo-filter-count pc-num">{activeFilterCount}</span>
+        ) : null}
       </button>
 
       {isAdmin && onToggleTrash && (

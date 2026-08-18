@@ -1,80 +1,48 @@
-import { ChevronDown, EyeOff, MoreHorizontal } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { PrintQuestionBody } from '@/components/print/PrintQuestionBody'
 import { isMissingQuestion } from '@/lib/missing-question'
 import type { ResolvedQuestion } from '@/lib/paper-instance'
 import type { PaperMedium } from '@/lib/paper-medium'
 import { formatQuestionMarks } from '@/lib/paper-format-marks'
 import type { PaperMarksDisplay } from '@/types/paper-instance'
-import type { PaperSectionId } from '@/lib/paper-builder'
-import { EditorialChip } from './EditorialChip'
-import { EditorPopover } from './EditorPopover'
-import { FormatFloatingToolbar } from './FormatFloatingToolbar'
-import { InlineMarksEditor } from './InlineMarksEditor'
 
 type Props = {
   rq: ResolvedQuestion
-  sectionId: PaperSectionId
   medium: PaperMedium
   selected: boolean
-  advancedMode?: boolean
   readOnly?: boolean
-  questionGapMm: number
-  indentMm: number
-  defaultQuestionGap: number
-  hasSpacingOverride: boolean
   localInstructions?: string
   marksDisplay: PaperMarksDisplay
   formatStyle?: Record<string, string>
   hasFormatOverride?: boolean
-  onSelect: () => void
-  onMarksChange: (marks: number | undefined) => void
   showNumber: boolean
+  onSelect: () => void
   onNumberChange: (num: number | undefined) => void
-  onHideNumber: (hide: boolean) => void
-  onSpacingCycle: () => void
-  onMarginTopDelta: (deltaMm: number) => void
-  onIndentDelta: (deltaMm: number) => void
   onLocalInstructions: (text: string) => void
-  onHide: () => void
 }
 
+/**
+ * A question on the editable paper. Direct text editing (number, local note)
+ * happens here; all formatting lives in the top formatting toolbar, which acts
+ * on the selected block — so the paper itself stays clean and legible.
+ */
 export function EditablePrintQuestion({
   rq,
   medium,
   selected,
-  advancedMode,
   readOnly,
-  questionGapMm,
-  indentMm,
-  defaultQuestionGap,
-  hasSpacingOverride,
   localInstructions,
   marksDisplay,
   formatStyle,
   hasFormatOverride,
-  onSelect,
-  onMarksChange,
   showNumber,
+  onSelect,
   onNumberChange,
-  onHideNumber,
-  onSpacingCycle,
-  onMarginTopDelta,
-  onIndentDelta,
   onLocalInstructions,
-  onHide,
 }: Props) {
-  const [menuOpen, setMenuOpen] = useState(false)
   const [editingNumber, setEditingNumber] = useState(false)
-  const menuAnchorRef = useRef<HTMLDivElement>(null)
   const missing = isMissingQuestion(rq.question)
   const marksLabel = formatQuestionMarks(rq.effectiveMarks, marksDisplay)
-  const spacingLabel = (() => {
-    if (!hasSpacingOverride) return 'Normal'
-    if (questionGapMm < defaultQuestionGap * 0.75) return 'Compact'
-    if (questionGapMm > defaultQuestionGap * 1.25) return 'Spacious'
-    return 'Custom'
-  })()
   const showEditChrome = selected && !readOnly
 
   return (
@@ -116,7 +84,7 @@ export function EditablePrintQuestion({
               <button
                 type="button"
                 className="pc-print-question-num pc-serif pc-num pc-ed-num-btn"
-                title="Edit question number"
+                title="Click to edit the question number"
                 disabled={readOnly}
                 onClick={(e) => {
                   e.stopPropagation()
@@ -138,6 +106,16 @@ export function EditablePrintQuestion({
           {localInstructions?.trim() && !showEditChrome ? (
             <p className="pc-print-question-local-note">{localInstructions.trim()}</p>
           ) : null}
+          {showEditChrome ? (
+            <textarea
+              className="pc-ed-local-note-input pc-ed-question-local-field"
+              rows={1}
+              placeholder="Add a note under this question (optional) — e.g. Attempt any three."
+              value={localInstructions ?? ''}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => onLocalInstructions(e.target.value)}
+            />
+          ) : null}
         </div>
 
         <div className="pc-ed-question-marks-col">
@@ -147,85 +125,6 @@ export function EditablePrintQuestion({
             </span>
           ) : null}
         </div>
-
-        {showEditChrome ? (
-          <>
-            {advancedMode ? (
-              <FormatFloatingToolbar
-                marginTopMm={questionGapMm}
-                indentMm={indentMm}
-                onMarginTopChange={onMarginTopDelta}
-                onIndentChange={onIndentDelta}
-                onMore={() => setMenuOpen((v) => !v)}
-              />
-            ) : null}
-            <div className="pc-ed-question-inline-bar">
-              <InlineMarksEditor
-                value={rq.effectiveMarks}
-                repositoryMarks={rq.repositoryMarks}
-                disabled={readOnly}
-                onChange={onMarksChange}
-              />
-              <EditorialChip title="Spacing for this question only" onClick={onSpacingCycle}>
-                {spacingLabel}
-                <ChevronDown size={9} strokeWidth={1.6} />
-              </EditorialChip>
-              <EditorialChip
-                title="Question numbering"
-                onClick={() => {
-                  if (!showNumber) onHideNumber(false)
-                  else onNumberChange(undefined)
-                }}
-              >
-                {showNumber ? 'Auto #' : 'Hidden #'}
-                <ChevronDown size={9} strokeWidth={1.6} />
-              </EditorialChip>
-              <div className="pc-ed-menu-wrap" ref={menuAnchorRef}>
-                <EditorialChip title="More" onClick={() => setMenuOpen((v) => !v)}>
-                  <MoreHorizontal size={12} strokeWidth={1.6} />
-                </EditorialChip>
-                <EditorPopover
-                  open={menuOpen}
-                  anchorRef={menuAnchorRef}
-                  onClose={() => setMenuOpen(false)}
-                  className="pc-ed-popover-portal--menu"
-                  align="end"
-                >
-                  <button type="button" onClick={() => { onHide(); setMenuOpen(false) }}>
-                    <EyeOff size={12} /> Hide on paper
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onNumberChange(undefined)
-                      onHideNumber(false)
-                      setMenuOpen(false)
-                    }}
-                  >
-                    Auto numbering
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onHideNumber(!showNumber)
-                      setMenuOpen(false)
-                    }}
-                  >
-                    {showNumber ? 'Hide numbering' : 'Show numbering'}
-                  </button>
-                </EditorPopover>
-              </div>
-            </div>
-            <textarea
-              className="pc-ed-local-note-input pc-ed-question-local-field"
-              rows={1}
-              placeholder="Local instruction (optional) — e.g. Attempt any three."
-              value={localInstructions ?? ''}
-              onClick={(e) => e.stopPropagation()}
-              onChange={(e) => onLocalInstructions(e.target.value)}
-            />
-          </>
-        ) : null}
       </article>
     </div>
   )

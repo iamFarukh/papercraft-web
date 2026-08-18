@@ -288,6 +288,12 @@
     var(--pc-page-margin-right, 12mm)
     0
     var(--pc-page-margin-left, 18mm);
+
+  /* Mirror .pc-print-page-body exactly (flex column, full-width items, no gap)
+     so measured block heights match the real render — the inherited
+     .pc-print-doc centering/gap made blocks shrink-to-fit and skewed heights. */
+  align-items: stretch;
+  gap: 0;
 }
 
 .pc-print-measure-block {
@@ -391,10 +397,39 @@
   flex-shrink: 0;
 }
 
+/* Pin each region to an explicit grid row so the body always owns the 1fr
+   track — without this, hiding the header (default on pages 2+) auto-places
+   the body into the `auto` row and it collapses, which broke the hidden
+   measure probes and let content bleed over the footer. */
+.pc-print-page > .pc-print-header--full,
+.pc-print-page > .pc-print-header--compact {
+  grid-row: 1;
+}
+
 .pc-print-page-body {
+  grid-row: 2;
   min-height: 0;
   overflow: hidden;
   padding-bottom: 4px;
+}
+
+.pc-print-page > .pc-print-footer {
+  grid-row: 3;
+}
+
+/* Screen previews must never clip a question. If a block is taller than one A4
+   body the page grows rather than hiding the overflow. Actual paged output
+   (@media print, below) keeps fixed sheets and flows overflow to the next page;
+   the PDF raster path handles over-tall blocks separately. */
+.pc-print-doc--preview .pc-print-page,
+.pc-print-doc--embedded .pc-print-page {
+  height: auto;
+  min-height: var(--pc-print-page-h, 842px);
+}
+
+.pc-print-doc--preview .pc-print-page-body,
+.pc-print-doc--embedded .pc-print-page-body {
+  overflow: visible;
 }
 
 /* Full header */
@@ -808,6 +843,7 @@
   .pc-print-page-break,
   .pc-print-chrome,
   .pc-print-preview-tip,
+  .pc-print-preview-session-tip,
   .pc-sidebar,
   .pc-topbar,
   .pc-approval-workspace-bar,

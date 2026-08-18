@@ -216,7 +216,19 @@ export function computeBlueprintMatch(
   let actualQuestions = 0
   for (const section of snapshot.sections) {
     const def = sections.find((s) => s.id === section.paperSectionId)
-    if (!def) continue
+    if (!def) {
+      // Blueprint expects a section the current paper no longer has (e.g. the
+      // section count was reduced). Count its planned questions as fully missing
+      // so the match score reflects the gap instead of silently ignoring it.
+      plannedQuestions += section.questionCount
+      const label = `${section.questionCount} question${section.questionCount === 1 ? '' : 's'} in Section ${section.paperSectionId}`
+      missing.push(label)
+      issues.push({
+        kind: 'missing',
+        message: `Section ${section.paperSectionId} is in the blueprint but not in this paper — ${label.toLowerCase()} unplaced.`,
+      })
+      continue
+    }
     const count = stats.sectionCounts[def.id]
     const sectionMarks = stats.sectionMarks[def.id]
     plannedQuestions += section.questionCount

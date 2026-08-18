@@ -37,7 +37,6 @@ type Props = {
   cleanSurface?: boolean
   onSelect: (sel: EditSelection) => void
   onInstanceChange: (next: PaperInstanceLayer) => void
-  onMoveSection: (sectionId: PaperSectionId, direction: 'up' | 'down') => void
 }
 
 function resolvedSectionSummary(section: ResolvedPaper['sections'][0]) {
@@ -60,7 +59,6 @@ export function EditablePrintDocument({
   cleanSurface,
   onSelect,
   onInstanceChange,
-  onMoveSection,
 }: Props) {
   const layoutCtx = usePrintLayoutOptional()
   const pages = pagesProp ?? layoutCtx?.pages ?? []
@@ -68,7 +66,6 @@ export function EditablePrintDocument({
   const formatVars = configToCssVars(resolved.formatConfig)
   const presentation = resolved.presentation
   const pageCount = pages.length
-  const sectionOrder = resolved.sections.map((s) => s.id)
 
   function isQuestionSelected(sectionId: PaperSectionId, questionId: string) {
     return (
@@ -92,26 +89,18 @@ export function EditablePrintDocument({
       if (!rq) return null
       const qInst = instanceLayer.questions?.[rq.question.id] ?? {}
       const qFormat = rq.questionFormat
-      const defaultGap =
-        resolved.sections.find((s) => s.id === block.section.id)?.sectionFormat
-          .questionSpacing ?? resolved.formatConfig.spacing.betweenQuestions
       return (
         <EditablePrintQuestion
           key={key}
           rq={rq}
-          sectionId={block.section.id}
           medium={resolved.meta.medium}
           selected={isQuestionSelected(block.section.id, rq.question.id)}
-          advancedMode={resolved.formatConfig.layoutMode === 'advanced'}
           readOnly={readOnly}
-          questionGapMm={qFormat.marginTop}
-          indentMm={qFormat.indent}
-          defaultQuestionGap={defaultGap}
-          hasSpacingOverride={qInst.marginTop != null || qInst.marginBottom != null}
           localInstructions={qInst.localInstructions ?? rq.localInstructions}
           marksDisplay={resolved.printSettings.marksDisplay}
           formatStyle={questionFormatToStyle(qFormat)}
           hasFormatOverride={qFormat.hasOverrides}
+          showNumber={rq.showNumber}
           onSelect={() =>
             onSelect({
               kind: 'question',
@@ -119,14 +108,6 @@ export function EditablePrintDocument({
               questionId: rq.question.id,
             })
           }
-          onMarksChange={(marks) =>
-            onInstanceChange(
-              patchQuestionInstance(instanceLayer, rq.question.id, {
-                marksOverride: marks,
-              }),
-            )
-          }
-          showNumber={rq.showNumber}
           onNumberChange={(num) =>
             onInstanceChange(
               patchQuestionInstance(instanceLayer, rq.question.id, {
@@ -134,53 +115,11 @@ export function EditablePrintDocument({
               }),
             )
           }
-          onHideNumber={(hide) =>
-            onInstanceChange(
-              patchQuestionInstance(instanceLayer, rq.question.id, {
-                hideNumber: hide || undefined,
-                ...(hide ? { customNumber: undefined } : {}),
-              }),
-            )
-          }
-          onSpacingCycle={() => {
-            const cur = qInst.marginTop ?? qFormat.marginTop
-            let patch: Parameters<typeof patchQuestionInstance>[2]
-            if (cur <= defaultGap * 0.75) {
-              patch = { marginTop: defaultGap, spacingMode: undefined }
-            } else if (cur < defaultGap * 1.25) {
-              patch = { marginTop: Math.max(0, defaultGap * 0.5), spacingMode: undefined }
-            } else {
-              patch = { marginTop: undefined, marginBottom: undefined, spacingMode: undefined }
-            }
-            onInstanceChange(patchQuestionInstance(instanceLayer, rq.question.id, patch))
-          }}
-          onMarginTopDelta={(delta) => {
-            const next = Math.max(0, Math.round((qFormat.marginTop + delta) * 10) / 10)
-            onInstanceChange(
-              patchQuestionInstance(instanceLayer, rq.question.id, {
-                marginTop: next,
-                spacingMode: undefined,
-              }),
-            )
-          }}
-          onIndentDelta={(delta) => {
-            const next = Math.max(0, Math.round((qFormat.indent + delta) * 10) / 10)
-            onInstanceChange(
-              patchQuestionInstance(instanceLayer, rq.question.id, {
-                indent: next,
-              }),
-            )
-          }}
           onLocalInstructions={(text) =>
             onInstanceChange(
               patchQuestionInstance(instanceLayer, rq.question.id, {
                 localInstructions: text.trim() || undefined,
               }),
-            )
-          }
-          onHide={() =>
-            onInstanceChange(
-              patchQuestionInstance(instanceLayer, rq.question.id, { hidden: true }),
             )
           }
         />
@@ -190,7 +129,6 @@ export function EditablePrintDocument({
     if (block.kind === 'section-head') {
       const section = resolved.sections.find((s) => s.id === block.section.id)
       if (!section) return null
-      const si = sectionOrder.indexOf(section.id)
       const summary = resolvedSectionSummary(section)
       return (
         <EditablePrintSectionHead
@@ -202,21 +140,12 @@ export function EditablePrintDocument({
           formatStyle={sectionFormatToStyle(section.sectionFormat)}
           hasFormatOverride={section.sectionFormat.hasOverrides}
           readOnly={readOnly}
-          canMoveUp={si > 0}
-          canMoveDown={si < sectionOrder.length - 1}
           onSelect={() => onSelect({ kind: 'section', sectionId: section.id })}
           onTitleChange={(title) =>
             onInstanceChange(
               patchSectionInstance(instanceLayer, section.id, { title }),
             )
           }
-          onInstructionsChange={() => {}}
-          onHide={() =>
-            onInstanceChange(
-              patchSectionInstance(instanceLayer, section.id, { hidden: true }),
-            )
-          }
-          onMove={(dir) => onMoveSection(section.id, dir)}
         />
       )
     }

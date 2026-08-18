@@ -166,7 +166,9 @@ export function BuilderRepoBrowser({
         {replaceTarget ? (
           <div className="pc-pb-replace-banner">
             <div>
-              <strong>Replace Q{replaceNum}</strong>
+              <strong>
+                Replace Q{replaceNum} · Section {replaceTarget.sectionId}
+              </strong>
               <span>
                 Pick a question with {replaceTarget.source.marks} marks ·{' '}
                 {replaceTarget.source.type} ·{' '}

@@ -14,16 +14,15 @@ import {
   useExaminationEditorSession,
 } from '@/hooks/useExaminationEditorSession'
 import { PaperStructureNavigator } from '@/components/paper-builder/editing/PaperStructureNavigator'
-import { PaperDocumentInspector } from '@/components/paper-builder/editing/PaperDocumentInspector'
 import { EditablePrintDocument } from '@/components/paper-builder/editing/EditablePrintDocument'
 import { PrintLayoutProvider } from '@/context/PrintLayoutContext'
 import { useMeasuredPrintLayout } from '@/hooks/useMeasuredPrintLayout'
 import { PrintMeasureSurface } from '@/components/print/PrintMeasureSurface'
 import { DraftRecoveryBanner } from '@/components/ui/DraftRecoveryBanner'
 import { ExaminationEditorChrome, type EditorSurfaceMode } from './ExaminationEditorChrome'
+import { ExaminationEditorToolbar } from './ExaminationEditorToolbar'
 import { ExaminationEditorLeaveDialog } from './ExaminationEditorLeaveDialog'
 import { ExaminationEditorOfficialPreview } from './ExaminationEditorOfficialPreview'
-import { ExaminationEditorPreviewSidePanel } from './ExaminationEditorPreviewSidePanel'
 import { ExaminationEditorReadOnlyNotice } from './ExaminationEditorReadOnlyNotice'
 import { PaperExportLink } from '@/components/print/PaperExportLink'
 import { readContinuityState, writeContinuityState } from '@/lib/workflow-continuity'
@@ -266,43 +265,37 @@ export function ExaminationEditorWorkspace(props: SessionProps) {
         }
       />
 
+      {!cleanSurface ? (
+        <ExaminationEditorToolbar
+          resolved={resolved}
+          selection={selection}
+          setup={setup}
+          instanceLayer={instanceLayer}
+          pageCount={pageCount}
+          readOnly={readOnly}
+          onSelect={setSelection}
+          onInstanceChange={setInstanceLayer}
+          onSetupChange={(patch) => setSetup({ ...setup, ...patch })}
+          onMoveSection={handleMoveSection}
+        />
+      ) : null}
+
+      {readOnly ? (
+        <div className="pc-ee-readonly-bar">
+          <ExaminationEditorReadOnlyNotice onOpenPrintPreview={openFullPreview} />
+        </div>
+      ) : null}
+
       <div className="pc-ee-panels">
         <aside className="pc-ee-left">
-          <div className="pc-ee-left-outline">
-            <PaperStructureNavigator
-              variant="embed"
-              resolved={resolved}
-              selection={selection}
-              onSelect={setSelection}
-              onMoveSection={handleMoveSection}
-              readOnly={readOnly}
-            />
-          </div>
-          <div className="pc-ee-left-inspector pc-scroll">
-            {readOnly ? (
-              <ExaminationEditorReadOnlyNotice onOpenPrintPreview={openFullPreview} />
-            ) : null}
-            {cleanSurface && !readOnly ? (
-              <ExaminationEditorPreviewSidePanel
-                pageCount={pageCount}
-                activePage={activePage}
-                onPageSelect={scrollToPage}
-                onSurfaceModeChange={setSurfaceMode}
-              />
-            ) : (
-              <PaperDocumentInspector
-                selection={selection}
-                setup={setup}
-                resolved={resolved}
-                instanceLayer={instanceLayer}
-                pageCount={pageCount}
-                readOnly={readOnly}
-                variant="editor"
-                onSetupChange={(patch) => setSetup({ ...setup, ...patch })}
-                onInstanceChange={setInstanceLayer}
-              />
-            )}
-          </div>
+          <PaperStructureNavigator
+            variant="embed"
+            resolved={resolved}
+            selection={selection}
+            onSelect={setSelection}
+            onMoveSection={handleMoveSection}
+            readOnly={readOnly}
+          />
         </aside>
 
         <div className="pc-ee-center">
@@ -331,7 +324,6 @@ export function ExaminationEditorWorkspace(props: SessionProps) {
               cleanSurface={cleanSurface}
               onSelect={setSelection}
               onInstanceChange={setInstanceLayer}
-              onMoveSection={handleMoveSection}
             />
             {cleanSurface ? (
               <p className="pc-ee-center-footnote">

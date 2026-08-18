@@ -342,20 +342,22 @@
   line-height: 1.45;
 }
 
-/* Editable + embedded screen pages: fixed A4 (matches print preview / PDF) */
-.pc-print-doc--edit .pc-print-page,
-.pc-print-doc--embedded .pc-print-page {
+/* Editable screen pages: A4 sheets that grow instead of clipping.
+   Page breaks come from the measured pagination engine, so a sheet only grows
+   when editing chrome (toolbars, selection outlines) makes blocks taller than
+   the pure print output — content must NEVER be clipped while editing.
+   (--embedded pages are styled in paper-print.css; don't restyle them here.) */
+.pc-print-doc--edit .pc-print-page {
   box-shadow: var(--pc-shadow-md);
   width: var(--pc-print-page-w, 595px);
   min-height: var(--pc-print-page-h, 842px);
-  height: var(--pc-print-page-h, 842px);
+  height: auto;
   /* 1fr body pins footer to sheet bottom; spare room stays above footer, not below */
   grid-template-rows: auto 1fr auto;
 }
 
-.pc-print-doc--edit .pc-print-page-body,
-.pc-print-doc--embedded .pc-print-page-body {
-  overflow: hidden;
+.pc-print-doc--edit .pc-print-page-body {
+  overflow: visible;
   min-height: 0;
 }
 

@@ -56,26 +56,32 @@ export function clamp(n: number, min: number, max: number): number {
 }
 
 export function defaultFormatConfig(): PaperFormatConfig {
+  // Premium defaults — a fresh paper looks polished and board-exam formal
+  // before any control is touched: readable 11.5pt body, airy line-height, a
+  // spacious formal header, and generous binding-friendly margins.
+  const typography = defaultTypography('serif', 1.5, 11.5)
+  typography.sectionHeaderFontSize = 13
+  typography.instructionsFontSize = 10
   return {
     version: FORMAT_CONFIG_VERSION,
     layoutMode: 'standard',
     pageSize: 'A4',
     pageOrientation: 'portrait',
-    marginPreset: 'normal',
-    pageMargins: { ...MARGIN_PRESETS.normal, linked: true },
-    globalFontSize: 10,
+    marginPreset: 'custom',
+    pageMargins: { top: 18, bottom: 18, left: 22, right: 16, linked: false },
+    globalFontSize: 11.5,
     globalDensity: 2.5,
-    typography: defaultTypography('serif', 1.32),
+    typography,
     spacing: spacingFromDensity(2.5),
     header: {
-      preset: 'compact',
+      preset: 'spacious',
       repeatMode: 'firstPageOnly',
-      ...HEADER_PRESET_SIZES.compact,
+      ...HEADER_PRESET_SIZES.spacious,
     },
     marks: {
       style: 'bracket',
       position: 'rightAligned',
-      fontSize: roundHalf(11 * FONT_SCALE_RATIOS.marks),
+      fontSize: roundHalf(11.5 * FONT_SCALE_RATIOS.marks),
       showSectionTotal: true,
     },
     footer: {
@@ -316,6 +322,47 @@ export function applyLinkedMargin(
       right: v,
       linked: true,
     },
+  }
+}
+
+export type PaperMarginSide = 'top' | 'bottom' | 'left' | 'right'
+
+/**
+ * Set exactly one page-margin side (mm). Setting a single side always makes the
+ * margins independent (unlinks) — otherwise adjusting "Left" would silently move
+ * "Right" too. Use applyLinkedMargin to move all four sides together.
+ */
+export function applySideMargin(
+  config: PaperFormatConfig,
+  side: PaperMarginSide,
+  value: number,
+): PaperFormatConfig {
+  const v = clamp(Math.round(value * 2) / 2, 5, 40)
+  return {
+    ...config,
+    marginPreset: 'custom',
+    pageMargins: {
+      ...config.pageMargins,
+      [side]: v,
+      linked: false,
+    },
+  }
+}
+
+/**
+ * Toggle the margin link. Linking unifies all four sides to the current left
+ * value (the typical binding margin) so the switch is predictable.
+ */
+export function applyMarginsLinked(
+  config: PaperFormatConfig,
+  linked: boolean,
+): PaperFormatConfig {
+  if (linked) {
+    return applyLinkedMargin(config, config.pageMargins.left)
+  }
+  return {
+    ...config,
+    pageMargins: { ...config.pageMargins, linked: false },
   }
 }
 

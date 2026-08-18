@@ -1,4 +1,6 @@
 import { OfficialPrintDocument } from '@/components/print/OfficialPrintDocument'
+import { PrintMeasureSurface } from '@/components/print/PrintMeasureSurface'
+import { useMeasuredPrintLayout } from '@/hooks/useMeasuredPrintLayout'
 import type { ResolvedPaper } from '@/lib/paper-instance'
 import type { PaperComposition, PaperMeta, PaperSectionDef } from '@/lib/paper-builder'
 
@@ -18,14 +20,34 @@ export function PaperOfficialPreview({
   composition,
   resolved,
 }: Props) {
+  // When the paper resolves, paginate from DOM-measured heights (source of truth) so
+  // no question is clipped. The estimated fallback is only used before resolve.
+  if (resolved) {
+    return <MeasuredOfficialPreview resolved={resolved} />
+  }
+
   return (
     <OfficialPrintDocument
       meta={meta}
       sections={sections}
       generalInstructions={generalInstructions}
       composition={composition}
-      resolved={resolved}
       layout="embedded"
     />
+  )
+}
+
+function MeasuredOfficialPreview({ resolved }: { resolved: ResolvedPaper }) {
+  const { pages, blocks, onPrintMeasured } = useMeasuredPrintLayout(resolved)
+  return (
+    <>
+      <PrintMeasureSurface resolved={resolved} blocks={blocks} onMeasured={onPrintMeasured} />
+      <OfficialPrintDocument
+        meta={resolved.meta}
+        resolved={resolved}
+        pages={pages}
+        layout="embedded"
+      />
+    </>
   )
 }

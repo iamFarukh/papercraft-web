@@ -79,6 +79,13 @@ const TeachersPage = lazy(() =>
 const RepositoryPage = lazy(() =>
   import('@/pages/RepositoryPage').then((m) => ({ default: m.RepositoryPage })),
 )
+// Dev-only diagnostic harnesses (see src/pages/dev/)
+const PrintLabPage = lazy(() =>
+  import('@/pages/dev/PrintLabPage').then((m) => ({ default: m.PrintLabPage })),
+)
+const EditorLabPage = lazy(() =>
+  import('@/pages/dev/EditorLabPage').then((m) => ({ default: m.EditorLabPage })),
+)
 
 function App() {
   return (
@@ -90,6 +97,26 @@ function App() {
         <BrowserRouter>
           <Routes>
           <Route path="/login" element={<LoginRoute />} />
+          {import.meta.env.DEV ? (
+            <>
+              <Route
+                path="/dev/print-lab"
+                element={
+                  <Suspense fallback={<RouteFallback />}>
+                    <PrintLabPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/dev/editor-lab"
+                element={
+                  <Suspense fallback={<RouteFallback />}>
+                    <EditorLabPage />
+                  </Suspense>
+                }
+              />
+            </>
+          ) : null}
           <Route element={<ProtectedRoute />}>
             <Route
               path="/app/papers/:paperId/preview"

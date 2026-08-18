@@ -3,6 +3,7 @@ import {
   applyHeaderPreset,
   applyLinkedMargin,
   applyMarginPreset,
+  defaultFormatConfig,
   formatConfigToPrintSettings,
   normalizeFormatConfig,
   resolveQuestionFormat,
@@ -59,7 +60,11 @@ export function defaultPaperInstanceLayer(): PaperInstanceLayer {
   return {
     presentation: { ...DEFAULT_PRESENTATION },
     printSettings: { ...DEFAULT_PRINT_SETTINGS },
-    formatConfig: {},
+    // Seed the premium default formatting explicitly. Fresh papers then render
+    // with the polished defaults (11.5pt, 1.5 line-height, spacious header,
+    // generous margins) instead of falling back to the legacy printSettings
+    // path in normalizeFormatConfig, which is reserved for migrating old papers.
+    formatConfig: defaultFormatConfig(),
     sections: {},
     questions: {},
   }

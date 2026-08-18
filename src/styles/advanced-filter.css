@@ -1,0 +1,271 @@
+/* Question Repository — top quick filters + full-screen Advanced Filter modal */
+
+/* ---- Top quick-filter row ---------------------------------------------- */
+.pc-repo-quick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 0 2px;
+}
+
+.pc-repo-quick-label {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pc-ink-4);
+  margin-right: 2px;
+}
+
+.pc-repo-quick-select {
+  position: relative;
+}
+
+.pc-repo-quick-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--pc-line);
+  border-radius: 999px;
+  background: var(--pc-surface);
+  color: var(--pc-ink-2);
+  font-size: 12.5px;
+  cursor: pointer;
+  transition:
+    border-color var(--pc-motion-fast, 160ms) ease,
+    background var(--pc-motion-fast, 160ms) ease,
+    box-shadow var(--pc-motion-fast, 160ms) ease;
+}
+
+.pc-repo-quick-trigger:hover {
+  border-color: var(--pc-ink-4);
+}
+
+.pc-repo-quick-trigger.is-open {
+  box-shadow: var(--pc-ring-primary);
+  border-color: var(--pc-primary);
+}
+
+.pc-repo-quick-trigger.is-active {
+  border-color: var(--pc-primary);
+  background: var(--pc-primary-50);
+  color: var(--pc-ink);
+}
+
+.pc-repo-quick-name {
+  font-weight: 500;
+  color: var(--pc-ink-3);
+}
+
+.pc-repo-quick-trigger.is-active .pc-repo-quick-name {
+  color: var(--pc-primary);
+}
+
+.pc-repo-quick-summary {
+  color: var(--pc-ink);
+}
+
+.pc-repo-quick-chevron {
+  color: var(--pc-ink-4);
+}
+
+.pc-repo-quick-menu {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 220px;
+  max-height: 320px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--pc-surface);
+  border: 1px solid var(--pc-line);
+  border-radius: var(--pc-r-md, 10px);
+  box-shadow: var(--pc-shadow-lg);
+}
+
+.pc-repo-quick-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--pc-ink-2);
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pc-repo-quick-option:hover {
+  background: var(--pc-surface-3);
+}
+
+.pc-repo-quick-option.is-on {
+  color: var(--pc-ink);
+}
+
+.pc-repo-quick-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--pc-line);
+  border-radius: 5px;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.pc-repo-quick-option.is-on .pc-repo-quick-check {
+  background: var(--pc-primary);
+  border-color: var(--pc-primary);
+}
+
+.pc-repo-quick-option-label {
+  flex: 1;
+}
+
+.pc-repo-quick-count {
+  color: var(--pc-ink-4);
+  font-size: 11.5px;
+}
+
+/* Filters button count badge in the toolbar */
+.pc-repo-filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  margin-left: 2px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 28%);
+  font-size: 10.5px;
+  line-height: 1;
+}
+
+/* ---- Advanced Filter modal --------------------------------------------- */
+.pc-adv-filter-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 160;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3vh 16px;
+}
+
+.pc-adv-filter-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  width: min(1040px, 96vw);
+  height: min(92vh, 900px);
+  background: var(--pc-surface);
+  border: 1px solid var(--pc-line);
+  border-radius: var(--pc-r-lg, 14px);
+  box-shadow: var(--pc-shadow-lg);
+  overflow: hidden;
+}
+
+.pc-adv-filter-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--pc-line);
+}
+
+.pc-adv-filter-head-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--pc-ink-2);
+}
+
+.pc-adv-filter-title {
+  font-size: 16px;
+  margin: 0;
+}
+
+.pc-adv-filter-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--pc-ink-3);
+  cursor: pointer;
+  transition: background var(--pc-motion-fast, 160ms) ease;
+}
+
+.pc-adv-filter-close:hover {
+  background: var(--pc-surface-3);
+  color: var(--pc-ink);
+}
+
+.pc-adv-filter-body {
+  min-height: 0;
+  overflow: auto;
+  padding: 4px 8px;
+}
+
+/* FilterPanel embedded in the modal: drop the side-panel chrome, lay groups
+   out in responsive columns. */
+.pc-repo-filters--modal {
+  border-right: 0;
+  background: transparent;
+  padding: 12px 12px 4px;
+}
+
+@media (min-width: 760px) {
+  .pc-repo-filters--modal {
+    columns: 2;
+    column-gap: 28px;
+  }
+
+  .pc-repo-filters--modal > * {
+    break-inside: avoid;
+  }
+}
+
+.pc-adv-filter-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--pc-line);
+  background: var(--pc-surface-2);
+}
+
+.pc-adv-filter-foot-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Mobile: go truly full-screen */
+@media (max-width: 640px) {
+  .pc-adv-filter-overlay {
+    padding: 0;
+  }
+
+  .pc-adv-filter-panel {
+    width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border: 0;
+    border-radius: 0;
+  }
+}

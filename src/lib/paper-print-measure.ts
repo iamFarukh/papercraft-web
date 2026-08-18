@@ -2,13 +2,21 @@ import type { PaperSectionDef } from '@/lib/paper-builder'
 import type { PaginateContext, PrintBlock, PrintPageModel } from '@/lib/paper-print-layout'
 
 const BLOCK_GAP = 0
+/** Fallbacks when the chrome probes are unavailable (kept close to real render). */
 const CONTINUED_BANNER_HEIGHT = 28
-/** Rounding slack only — end mark lives inside the last page body at render time. */
+const END_MARK_HEIGHT = 54
+/** Rounding slack for sub-pixel drift between measure column and page body. */
 const ROUNDING_BUFFER = 4
 
 export type MeasuredBodyBudgets = {
   page1: number
   continued: number
+}
+
+/** Heights of page chrome rendered inside the body (not part of the block list). */
+export type MeasuredChromeHeights = {
+  continuedBanner: number
+  endMark: number
 }
 
 export type MeasuredPrintLayout = {
@@ -44,11 +52,29 @@ export function measureProbeBodyBudgets(root: HTMLElement): MeasuredBodyBudgets 
   return { page1, continued }
 }
 
+/** Measure in-body chrome (continued banner, end-of-paper mark) from the probes. */
+export function measureChromeHeights(root: HTMLElement): MeasuredChromeHeights | null {
+  const read = (kind: string): number | null => {
+    const el = root.querySelector<HTMLElement>(`[data-measure-chrome="${kind}"]`)
+    if (!el) return null
+    const style = window.getComputedStyle(el)
+    const mt = parseFloat(style.marginTop) || 0
+    const mb = parseFloat(style.marginBottom) || 0
+    const h = Math.ceil(el.getBoundingClientRect().height + mt + mb)
+    return h > 0 ? h : null
+  }
+  const continuedBanner = read('banner')
+  const endMark = read('endmark')
+  if (continuedBanner == null || endMark == null) return null
+  return { continuedBanner, endMark }
+}
+
 function bodyBudget(
   pageIndex: number,
   ctx: PaginateContext,
   continued: boolean,
   probe?: MeasuredBodyBudgets,
+  chrome?: MeasuredChromeHeights,
 ): number {
   const base =
     probe != null
@@ -57,7 +83,7 @@ function bodyBudget(
         : probe.continued
       : ctx.bodyHeightForPage(pageIndex)
   let budget = base - ROUNDING_BUFFER
-  if (continued) budget -= CONTINUED_BANNER_HEIGHT
+  if (continued) budget -= chrome?.continuedBanner ?? CONTINUED_BANNER_HEIGHT
   return Math.max(120, budget)
 }
 
@@ -146,6 +172,7 @@ export function paginateMeasuredBlocks(
   blockHeights: number[],
   ctx: PaginateContext,
   probeBudgets?: MeasuredBodyBudgets,
+  chrome?: MeasuredChromeHeights,
 ): PrintPageModel[] {
   if (blocks.length === 0) {
     return [{ pageIndex: 0, blocks: [], headerMode: 'full' }]
@@ -155,6 +182,8 @@ export function paginateMeasuredBlocks(
     return [{ pageIndex: 0, blocks: [], headerMode: 'full' }]
   }
 
+  const endMarkHeight = chrome?.endMark ?? END_MARK_HEIGHT
+
   const pages: PrintPageModel[] = []
   let pageBlocks: PrintBlock[] = []
   let pageIndex = 0
@@ -162,7 +191,7 @@ export function paginateMeasuredBlocks(
   let continuedOnThisPage: PaperSectionDef | undefined
   let continuedOnNextPage: PaperSectionDef | undefined
 
-  let remaining = bodyBudget(0, ctx, false, probeBudgets)
+  let remaining = bodyBudget(0, ctx, false, probeBudgets, chrome)
 
   const flush = () => {
     pages.push({
@@ -175,14 +204,17 @@ export function paginateMeasuredBlocks(
     continuedOnNextPage = undefined
     pageIndex += 1
     pageBlocks = []
-    remaining = bodyBudget(pageIndex, ctx, !!continuedOnThisPage, probeBudgets)
+    remaining = bodyBudget(pageIndex, ctx, !!continuedOnThisPage, probeBudgets, chrome)
   }
 
   while (blockIndex < blocks.length) {
     const block = blocks[blockIndex]!
+    const isLastBlock = blockIndex === blocks.length - 1
     const height = blockHeights[blockIndex]!
     const gap = pageBlocks.length > 0 ? BLOCK_GAP : 0
-    const needed = height + gap
+    // The final page also renders the end-of-paper mark inside the body —
+    // reserve room for it so the last question is never pushed into overflow.
+    const needed = height + gap + (isLastBlock ? endMarkHeight : 0)
 
     if (block.kind === 'section-head' && pageBlocks.length > 0) {
       const prefixH = measuredSectionIntroPrefixHeight(blocks, blockHeights, blockIndex)

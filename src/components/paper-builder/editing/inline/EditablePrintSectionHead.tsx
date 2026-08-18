@@ -1,10 +1,9 @@
 import { motion } from 'framer-motion'
-import { ChevronDown, ChevronUp, MoreHorizontal, Pencil } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { Pencil } from 'lucide-react'
+import { useState } from 'react'
 import { getPrintLabels, type PaperMedium } from '@/lib/paper-medium'
 import type { ResolvedSection } from '@/lib/paper-instance'
 import type { SectionPrintSummary } from '@/lib/paper-print-layout'
-import { EditorialChip } from './EditorialChip'
 
 type Props = {
   section: ResolvedSection
@@ -14,13 +13,8 @@ type Props = {
   formatStyle?: Record<string, string>
   hasFormatOverride?: boolean
   readOnly?: boolean
-  canMoveUp: boolean
-  canMoveDown: boolean
   onSelect: () => void
   onTitleChange: (title: string) => void
-  onInstructionsChange: (text: string) => void
-  onHide: () => void
-  onMove: (dir: 'up' | 'down') => void
 }
 
 export function EditablePrintSectionHead({
@@ -31,29 +25,13 @@ export function EditablePrintSectionHead({
   formatStyle,
   hasFormatOverride,
   readOnly,
-  canMoveUp,
-  canMoveDown,
   onSelect,
   onTitleChange,
-  onInstructionsChange: _onInstructionsChange,
-  onHide,
-  onMove,
 }: Props) {
   const labels = getPrintLabels(medium)
   const isHindi = medium === 'hindi'
   const [renaming, setRenaming] = useState(false)
-  const [menuOpen, setMenuOpen] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
   const namePart = section.effectiveTitle.split(' · ')[0]
-
-  useEffect(() => {
-    if (!menuOpen) return
-    function close(e: MouseEvent) {
-      if (!menuRef.current?.contains(e.target as Node)) setMenuOpen(false)
-    }
-    document.addEventListener('mousedown', close)
-    return () => document.removeEventListener('mousedown', close)
-  }, [menuOpen])
 
   return (
     <motion.div
@@ -93,42 +71,39 @@ export function EditablePrintSectionHead({
                 }}
               />
             ) : (
-              namePart
+              <span
+                className={!readOnly ? 'pc-ed-section-title-edit' : undefined}
+                title={!readOnly ? 'Double-click to rename this section' : undefined}
+                onDoubleClick={(e) => {
+                  if (readOnly) return
+                  e.stopPropagation()
+                  setRenaming(true)
+                }}
+              >
+                {namePart}
+              </span>
             )}
           </em>
         </h3>
+        {selected && !readOnly && !renaming ? (
+          <button
+            type="button"
+            className="pc-ed-section-rename"
+            title="Rename this section"
+            onClick={(e) => {
+              e.stopPropagation()
+              setRenaming(true)
+            }}
+          >
+            <Pencil size={11} strokeWidth={1.7} />
+            Rename
+          </button>
+        ) : null}
         <span className="pc-print-section-marks">
           <span className="pc-num">{summary.questionCount}</span> Q ·{' '}
           <span className="pc-num">{summary.totalMarks}</span> {labels.marksUnit}
         </span>
       </div>
-
-      {!readOnly ? (
-        <div className="pc-ed-section-toolbar">
-          <EditorialChip onClick={() => setRenaming(true)}>
-            <Pencil size={11} strokeWidth={1.6} />
-            Rename
-          </EditorialChip>
-          <EditorialChip disabled={!canMoveUp} onClick={() => canMoveUp && onMove('up')}>
-            <ChevronUp size={11} strokeWidth={1.6} />
-          </EditorialChip>
-          <EditorialChip disabled={!canMoveDown} onClick={() => canMoveDown && onMove('down')}>
-            <ChevronDown size={11} strokeWidth={1.6} />
-          </EditorialChip>
-          <div className="pc-ed-menu-wrap" ref={menuRef}>
-            <EditorialChip onClick={() => setMenuOpen((v) => !v)}>
-              <MoreHorizontal size={12} strokeWidth={1.6} />
-            </EditorialChip>
-            {menuOpen ? (
-              <div className="pc-ed-popover pc-ed-popover--menu">
-                <button type="button" onClick={() => { onHide(); setMenuOpen(false) }}>
-                  Hide section
-                </button>
-              </div>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
     </motion.div>
   )
 }
